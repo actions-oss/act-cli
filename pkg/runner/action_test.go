@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/fs"
 	"strings"
@@ -226,6 +227,8 @@ func TestActionRunner(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
+			actionDir := fmt.Sprintf("%s/dir", tt.step.getRunContext().ActionCacheDir())
+
 			cm := &containerMock{}
 			cm.Mock.On("CopyTarStream", ctx, "/var/run/act/actions/dir/", mock.Anything).Return(nil)
 
@@ -246,7 +249,7 @@ func TestActionRunner(t *testing.T) {
 			tt.step.getRunContext().JobContainer = cm
 			tt.step.getRunContext().Config.ActionCache = cacheMock
 
-			err := runActionImpl(tt.step, "dir", newRemoteAction("org/repo/path@ref"))(ctx)
+			err := runActionImpl(tt.step, actionDir, newRemoteAction("org/repo/path@ref"))(ctx)
 
 			assert.Nil(t, err)
 			cm.AssertExpectations(t)
