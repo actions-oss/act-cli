@@ -27,7 +27,7 @@ Please look at the [act user guide](https://nektosact.com) for more documentatio
 
 # Support
 
-Need help? Ask on [Gitter](https://gitter.im/nektos/act)!
+Need help? Ask on [Discussions](https://github.com/actions-oss/act-cli/discussions)!
 
 # Contributing
 
