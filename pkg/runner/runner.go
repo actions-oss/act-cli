@@ -7,9 +7,9 @@ import (
 	"os"
 	"runtime"
 
-	docker_container "github.com/docker/docker/api/types/container"
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/model"
+	docker_container "github.com/docker/docker/api/types/container"
 	log "github.com/sirupsen/logrus"
 )
 

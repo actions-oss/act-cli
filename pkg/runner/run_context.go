@@ -20,11 +20,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/go-connections/nat"
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/container"
 	"github.com/actions-oss/act-cli/pkg/exprparser"
 	"github.com/actions-oss/act-cli/pkg/model"
+	"github.com/docker/go-connections/nat"
 	"github.com/opencontainers/selinux/go-selinux"
 )
 
