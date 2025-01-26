@@ -116,7 +116,7 @@ func readActionImpl(ctx context.Context, step *model.Step, actionDir string, act
 	return action, err
 }
 
-func maybeCopyToActionDir(ctx context.Context, step actionStep, actionDir string, actionPath string, containerActionDir string) error {
+func maybeCopyToActionDir(ctx context.Context, step actionStep, actionPath string, containerActionDir string) error {
 	logger := common.Logger(ctx)
 	rc := step.getRunContext()
 	stepModel := step.getStepModel()
@@ -168,7 +168,7 @@ func runActionImpl(step actionStep, actionDir string, remoteAction *remoteAction
 
 		switch action.Runs.Using {
 		case model.ActionRunsUsingNode12, model.ActionRunsUsingNode16, model.ActionRunsUsingNode20:
-			if err := maybeCopyToActionDir(ctx, step, actionDir, actionPath, containerActionDir); err != nil {
+			if err := maybeCopyToActionDir(ctx, step, actionPath, containerActionDir); err != nil {
 				return err
 			}
 			containerArgs := []string{rc.GetNodeToolFullPath(ctx), path.Join(containerActionDir, action.Runs.Main)}
@@ -184,7 +184,7 @@ func runActionImpl(step actionStep, actionDir string, remoteAction *remoteAction
 			}
 			return execAsDocker(ctx, step, actionName, actionDir, actionPath, remoteAction == nil, "entrypoint")
 		case model.ActionRunsUsingComposite:
-			if err := maybeCopyToActionDir(ctx, step, actionDir, actionPath, containerActionDir); err != nil {
+			if err := maybeCopyToActionDir(ctx, step, actionPath, containerActionDir); err != nil {
 				return err
 			}
 
@@ -212,23 +212,6 @@ func setupActionEnv(ctx context.Context, step actionStep, _ *remoteAction) error
 	populateEnvsFromSavedState(step.getEnv(), step, rc)
 	populateEnvsFromInput(ctx, step.getEnv(), step.getActionModel(), rc)
 
-	return nil
-}
-
-// https://github.com/nektos/act/issues/228#issuecomment-629709055
-// files in .gitignore are not copied in a Docker container
-// this causes issues with actions that ignore other important resources
-// such as `node_modules` for example
-func removeGitIgnore(ctx context.Context, directory string) error {
-	gitIgnorePath := path.Join(directory, ".gitignore")
-	if _, err := os.Stat(gitIgnorePath); err == nil {
-		// .gitignore exists
-		common.Logger(ctx).Debugf("Removing %s before docker cp", gitIgnorePath)
-		err := os.Remove(gitIgnorePath)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -538,7 +521,7 @@ func runPreStep(step actionStep) common.Executor {
 
 		switch action.Runs.Using {
 		case model.ActionRunsUsingNode12, model.ActionRunsUsingNode16, model.ActionRunsUsingNode20:
-			if err := maybeCopyToActionDir(ctx, step, actionDir, actionPath, containerActionDir); err != nil {
+			if err := maybeCopyToActionDir(ctx, step, actionPath, containerActionDir); err != nil {
 				return err
 			}
 
@@ -662,7 +645,7 @@ func runPostStep(step actionStep) common.Executor {
 			return execAsDocker(ctx, step, actionName, actionDir, actionPath, remoteAction == nil, "post-entrypoint")
 
 		case model.ActionRunsUsingComposite:
-			if err := maybeCopyToActionDir(ctx, step, actionDir, actionPath, containerActionDir); err != nil {
+			if err := maybeCopyToActionDir(ctx, step, actionPath, containerActionDir); err != nil {
 				return err
 			}
 

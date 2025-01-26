@@ -72,19 +72,6 @@ func newActionCacheReusableWorkflowExecutor(rc *RunContext, filename string, rem
 	}
 }
 
-var (
-	executorLock sync.Mutex
-)
-
-func newMutexExecutor(executor common.Executor) common.Executor {
-	return func(ctx context.Context) error {
-		executorLock.Lock()
-		defer executorLock.Unlock()
-
-		return executor(ctx)
-	}
-}
-
 func cloneIfRequired(rc *RunContext, remoteReusableWorkflow remoteReusableWorkflow, targetDirectory string) common.Executor {
 	return common.NewConditionalExecutor(
 		func(_ context.Context) bool {

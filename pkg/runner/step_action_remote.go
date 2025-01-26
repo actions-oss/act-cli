@@ -30,10 +30,6 @@ type stepActionRemote struct {
 	resolvedSha         string
 }
 
-var (
-	stepActionRemoteNewCloneExecutor = git.NewGitCloneExecutor
-)
-
 func (sar *stepActionRemote) prepareActionExecutor() common.Executor {
 	return func(ctx context.Context) error {
 		if sar.remoteAction != nil && sar.action != nil {
