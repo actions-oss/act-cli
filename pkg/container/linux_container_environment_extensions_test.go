@@ -29,7 +29,7 @@ func TestContainerPath(t *testing.T) {
 		rootDrive := os.Getenv("SystemDrive")
 		rootDriveLetter := strings.ReplaceAll(strings.ToLower(rootDrive), `:`, "")
 		for _, v := range []containerPathJob{
-			{"/mnt/c/Users/act/go/src/github.com/nektos/act", "C:\\Users\\act\\go\\src\\github.com\\nektos\\act\\", ""},
+			{"/mnt/c/Users/act/go/src/github.com/actions-oss/act-cli", "C:\\Users\\act\\go\\src\\github.com\\nektos\\act\\", ""},
 			{"/mnt/f/work/dir", `F:\work\dir`, ""},
 			{"/mnt/c/windows/to/unix", "windows\\to\\unix", fmt.Sprintf("%s\\", rootDrive)},
 			{fmt.Sprintf("/mnt/%v/act", rootDriveLetter), "act", fmt.Sprintf("%s\\", rootDrive)},
@@ -53,7 +53,7 @@ func TestContainerPath(t *testing.T) {
 			log.Error(err)
 		}
 		for _, v := range []containerPathJob{
-			{"/home/act/go/src/github.com/nektos/act", "/home/act/go/src/github.com/nektos/act", ""},
+			{"/home/act/go/src/github.com/actions-oss/act-cli", "/home/act/go/src/github.com/actions-oss/act-cli", ""},
 			{"/home/act", `/home/act/`, ""},
 			{cwd, ".", ""},
 		} {

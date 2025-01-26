@@ -46,7 +46,7 @@ body:
       description: |
         Provide link to GitHub repository, you can skip it if the repository is private or you don't have it on GitHub, otherwise please provide it as it might help us troubleshoot problem
       placeholder: |
-        https://github.com/nektos/act
+        https://github.com/actions-oss/act-cli
     validations:
       required: false
   - type: textarea

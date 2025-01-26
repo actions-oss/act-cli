@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/model"
 )
 
 type jobInfo interface {

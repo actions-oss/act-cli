@@ -1,7 +1,7 @@
 blank_issues_enabled: true
 contact_links:
   - name: Start a discussion
-    url: https://github.com/nektos/act/discussions/new
+    url: https://github.com/actions-oss/act-cli/discussions/new
     about: You can ask for help here!
   - name: Ask on Gitter
     url: https://gitter.im/nektos/act
@@ -10,5 +10,5 @@ contact_links:
     url: https://matrix.to/#/#nektos_act:gitter.im?via=gitter.im&via=matrix.org
     about: If you prefer Matrix over Gitter
   - name: Want to contribute to act?
-    url: https://github.com/nektos/act/blob/master/CONTRIBUTING.md
+    url: https://github.com/actions-oss/act-cli/blob/master/CONTRIBUTING.md
     about: Be sure to read contributing guidelines!

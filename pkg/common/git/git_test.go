@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nektos/act/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/common"
 )
 
 func TestFindGitSlug(t *testing.T) {
@@ -28,10 +28,10 @@ func TestFindGitSlug(t *testing.T) {
 		{"ssh://git-codecommit.us-west-2.amazonaws.com/v1/repos/my-repo", "CodeCommit", "my-repo"},
 		{"git@github.com:nektos/act.git", "GitHub", "nektos/act"},
 		{"git@github.com:nektos/act", "GitHub", "nektos/act"},
-		{"https://github.com/nektos/act.git", "GitHub", "nektos/act"},
-		{"http://github.com/nektos/act.git", "GitHub", "nektos/act"},
-		{"https://github.com/nektos/act", "GitHub", "nektos/act"},
-		{"http://github.com/nektos/act", "GitHub", "nektos/act"},
+		{"https://github.com/actions-oss/act-cli.git", "GitHub", "nektos/act"},
+		{"http://github.com/actions-oss/act-cli.git", "GitHub", "nektos/act"},
+		{"https://github.com/actions-oss/act-cli", "GitHub", "nektos/act"},
+		{"http://github.com/actions-oss/act-cli", "GitHub", "nektos/act"},
 		{"git+ssh://git@github.com/owner/repo.git", "GitHub", "owner/repo"},
 		{"http://myotherrepo.com/act.git", "", "http://myotherrepo.com/act.git"},
 	}

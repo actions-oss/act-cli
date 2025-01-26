@@ -4,18 +4,18 @@
   <metadata>
     <id>act-cli</id>
     <version>0.0.0</version>
-    <packageSourceUrl>https://github.com/nektos/act</packageSourceUrl>
+    <packageSourceUrl>https://github.com/actions-oss/act-cli</packageSourceUrl>
     <owners>nektos</owners>
     <title>act (GitHub Actions CLI)</title>
     <authors>nektos</authors>
-    <projectUrl>https://github.com/nektos/act</projectUrl>
+    <projectUrl>https://github.com/actions-oss/act-cli</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/wiki/nektos/act/img/logo-150.png</iconUrl>
     <copyright>Nektos</copyright>
     <licenseUrl>https://raw.githubusercontent.com/nektos/act/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <projectSourceUrl>https://github.com/nektos/act</projectSourceUrl>
+    <projectSourceUrl>https://github.com/actions-oss/act-cli</projectSourceUrl>
     <docsUrl>https://raw.githubusercontent.com/nektos/act/master/README.md</docsUrl>
-    <bugTrackerUrl>https://github.com/nektos/act/issues</bugTrackerUrl>
+    <bugTrackerUrl>https://github.com/actions-oss/act-cli/issues</bugTrackerUrl>
     <tags>act github-actions actions golang ci devops</tags>
     <summary>Run your GitHub Actions locally 🚀</summary>
     <description>Run your GitHub Actions locally 🚀</description>
