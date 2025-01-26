@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/common/git"
 	"github.com/nektos/act/pkg/model"
 )
 

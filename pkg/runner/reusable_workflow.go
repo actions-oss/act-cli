@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"sync"
 
 	"github.com/nektos/act/pkg/common"
 	"github.com/nektos/act/pkg/common/git"
