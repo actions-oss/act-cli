@@ -7,8 +7,9 @@ import (
 	"runtime"
 
 	"github.com/docker/docker/api/types/system"
-	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/pkg/errors"
+
+	"github.com/actions-oss/act-cli/pkg/common"
 )
 
 // ImageExistsLocally returns a boolean indicating if an image with the

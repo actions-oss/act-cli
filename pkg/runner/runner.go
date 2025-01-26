@@ -8,9 +8,10 @@ import (
 	"runtime"
 
 	docker_container "github.com/docker/docker/api/types/container"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/model"
-	log "github.com/sirupsen/logrus"
 )
 
 // Runner provides capabilities to run GitHub actions

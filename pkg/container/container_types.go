@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/docker/go-connections/nat"
+
 	"github.com/actions-oss/act-cli/pkg/common"
 )
 

@@ -19,6 +19,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+
 	"github.com/actions-oss/act-cli/pkg/common"
 )
 
