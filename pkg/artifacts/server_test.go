@@ -17,8 +17,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/nektos/act/pkg/model"
-	"github.com/nektos/act/pkg/runner"
+	"github.com/actions-oss/act-cli/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/runner"
 )
 
 type writableMapFile struct {

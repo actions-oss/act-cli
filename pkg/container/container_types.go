@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/docker/go-connections/nat"
-	"github.com/nektos/act/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/common"
 )
 
 // NewContainerInput the input for the New function

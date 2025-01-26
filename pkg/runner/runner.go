@@ -8,8 +8,8 @@ import (
 	"runtime"
 
 	docker_container "github.com/docker/docker/api/types/container"
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/model"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/nektos/act/pkg/exprparser"
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/exprparser"
+	"github.com/actions-oss/act-cli/pkg/model"
 
 	log "github.com/sirupsen/logrus"
 	assert "github.com/stretchr/testify/assert"
