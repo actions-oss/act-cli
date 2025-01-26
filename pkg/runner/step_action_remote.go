@@ -71,7 +71,7 @@ func (sar *stepActionRemote) prepareActionExecutor() common.Executor {
 			return fmt.Errorf("failed to fetch \"%s\" version \"%s\": %w", repoURL, repoRef, err)
 		}
 
-		remoteReader := func(ctx context.Context) actionYamlReader {
+		remoteReader := func(_ context.Context) actionYamlReader {
 			return func(filename string) (io.Reader, io.Closer, error) {
 				spath := path.Join(sar.remoteAction.Path, filename)
 				for i := 0; i < maxSymlinkDepth; i++ {
