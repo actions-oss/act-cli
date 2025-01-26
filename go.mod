@@ -1,4 +1,4 @@
-module github.com/nektos/act
+module github.com/actions-oss/act-cli
 
 go 1.23
 
