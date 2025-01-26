@@ -122,24 +122,26 @@ jobs:
       - name: Upload All
         run: |
           const {DefaultArtifactClient} = require('@actions/artifact');
-          const aartifact = new DefaultArtifactClient();
-          var artifacts = JSON.parse(process.env.ARTIFACTS);
-          for(var artifact of artifacts) {
-            if(artifact.type === "Binary") {
-              const {id, size} = await aartifact.uploadArtifact(
-                // name of the artifact
-                `${artifact.name}-${artifact.target}`,
-                // files to include (supports absolute and relative paths)
-                [artifact.path],
-                {
-                  // optional: how long to retain the artifact
-                  // if unspecified, defaults to repository/org retention settings (the limit of this value)
-                  retentionDays: 10
-                }
-              );
-              console.log(`Created artifact with id: ${id} (bytes: ${size}`);
+          (async () => {
+            const aartifact = new DefaultArtifactClient();
+            var artifacts = JSON.parse(process.env.ARTIFACTS);
+            for(var artifact of artifacts) {
+              if(artifact.type === "Binary") {
+                const {id, size} = await aartifact.uploadArtifact(
+                  // name of the artifact
+                  `${artifact.name}-${artifact.target}`,
+                  // files to include (supports absolute and relative paths)
+                  [artifact.path],
+                  {
+                    // optional: how long to retain the artifact
+                    // if unspecified, defaults to repository/org retention settings (the limit of this value)
+                    retentionDays: 10
+                  }
+                );
+                console.log(`Created artifact with id: ${id} (bytes: ${size}`);
+              }
             }
-          }
+          })()
         env:
           ARTIFACTS: ${{ steps.goreleaser.outputs.artifacts }}
         shell: node {0}
