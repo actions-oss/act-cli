@@ -3,11 +3,8 @@ package runner
 import (
 	"context"
 	"embed"
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
 	"regexp"
