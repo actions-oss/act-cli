@@ -11,7 +11,6 @@ import (
 	"regexp"
 
 	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/common/git"
 	"github.com/nektos/act/pkg/model"
 )
 
@@ -69,27 +68,6 @@ func newActionCacheReusableWorkflowExecutor(rc *RunContext, filename string, rem
 
 		return runner.NewPlanExecutor(plan)(ctx)
 	}
-}
-
-func cloneIfRequired(rc *RunContext, remoteReusableWorkflow remoteReusableWorkflow, targetDirectory string) common.Executor {
-	return common.NewConditionalExecutor(
-		func(_ context.Context) bool {
-			_, err := os.Stat(targetDirectory)
-			notExists := errors.Is(err, fs.ErrNotExist)
-			return notExists
-		},
-		func(ctx context.Context) error {
-			remoteReusableWorkflow.URL = rc.getGithubContext(ctx).ServerURL
-			return git.NewGitCloneExecutor(git.NewGitCloneExecutorInput{
-				URL:         remoteReusableWorkflow.CloneURL(),
-				Ref:         remoteReusableWorkflow.Ref,
-				Dir:         targetDirectory,
-				Token:       rc.Config.Token,
-				OfflineMode: rc.Config.ActionOfflineMode,
-			})(ctx)
-		},
-		nil,
-	)
 }
 
 func newReusableWorkflowExecutor(rc *RunContext, directory string, workflow string) common.Executor {
