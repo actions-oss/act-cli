@@ -120,9 +120,10 @@ jobs:
       - name: Install @actions/artifact
         run: npm install @actions/artifact
       - name: Upload All
-        run: |
-          const {DefaultArtifactClient} = require('@actions/artifact');
-          (async () => {
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const {DefaultArtifactClient} = require('@actions/artifact');
             const aartifact = new DefaultArtifactClient();
             var artifacts = JSON.parse(process.env.ARTIFACTS);
             for(var artifact of artifacts) {
@@ -142,11 +143,8 @@ jobs:
                 console.log(`Created artifact with id: ${id} (bytes: ${size}`);
               }
             }
-          })()
         env:
           ARTIFACTS: ${{ steps.goreleaser.outputs.artifacts }}
-          NODE_PATH: ${{ github.workspace }}/node_modules
-        shell: node {0}
       - name: Chocolatey
         uses: ./.github/actions/choco
         with:
