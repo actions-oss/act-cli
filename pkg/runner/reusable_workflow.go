@@ -3,10 +3,7 @@ package runner
 import (
 	"archive/tar"
 	"context"
-	"errors"
 	"fmt"
-	"io/fs"
-	"os"
 	"path"
 	"regexp"
 
