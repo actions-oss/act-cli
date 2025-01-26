@@ -132,6 +132,7 @@ jobs:
                   `${artifact.name}-${artifact.target}`,
                   // files to include (supports absolute and relative paths)
                   [artifact.path],
+                  process.cwd(),
                   {
                     // optional: how long to retain the artifact
                     // if unspecified, defaults to repository/org retention settings (the limit of this value)
