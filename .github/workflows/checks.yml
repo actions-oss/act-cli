@@ -111,7 +111,7 @@ jobs:
         id: goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: latest
+          version: v2
           args: release --snapshot --clean
       - name: Setup Node
         uses: actions/setup-node@v4
