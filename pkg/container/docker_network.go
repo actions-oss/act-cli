@@ -5,8 +5,8 @@ package container
 import (
 	"context"
 
+	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/docker/docker/api/types/network"
-	"github.com/nektos/act/pkg/common"
 )
 
 func NewDockerNetworkCreateExecutor(name string) common.Executor {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/docker/go-connections/nat"
-	"github.com/nektos/act/pkg/common"
 )
 
 // NewContainerInput the input for the New function
