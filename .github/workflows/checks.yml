@@ -108,82 +108,43 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: GoReleaser
+        id: goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: release --snapshot --clean
-      - name: Capture x86_64 (64-bit) Linux binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          name: act-linux-amd64
-          path: dist/act-cli_linux_amd64_v1/act-cli
-      - name: Capture i386 (32-bit) Linux binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
+          node-version: 20
+      - name: Install @actions/artifact
+        run: npm install @actions/artifact
+      - name: Upload All
+        uses: actions/github-script@v7
         with:
-          name: act-linux-i386
-          path: dist/act-cli_linux_386/act-cli
-      - name: Capture arm64 (64-bit) Linux binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-linux-arm64
-          path: dist/act-cli_linux_arm64/act-cli
-      - name: Capture armv6 (32-bit) Linux binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-linux-armv6
-          path: dist/act-cli_linux_arm_6/act-cli
-      - name: Capture armv7 (32-bit) Linux binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-linux-armv7
-          path: dist/act-cli_linux_arm_7/act-cli
-      - name: Capture riscv64 (64-bit) Linux binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-linux-riscv64
-          path: dist/act-cli_linux_riscv64/act-cli
-      - name: Capture x86_64 (64-bit) Windows binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-windows-amd64
-          path: dist/act-cli_windows_amd64_v1/act-cli.exe
-      - name: Capture i386 (32-bit) Windows binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-windows-i386
-          path: dist/act-cli_windows_386/act-cli.exe
-      - name: Capture arm64 (64-bit) Windows binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-windows-arm64
-          path: dist/act-cli_windows_arm64/act-cli.exe
-      - name: Capture armv7 (32-bit) Windows binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-windows-armv7
-          path: dist/act-cli_windows_arm_7/act-cli.exe
-      - name: Capture x86_64 (64-bit) MacOS binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-macos-amd64
-          path: dist/act-cli_darwin_amd64_v1/act-cli
-      - name: Capture arm64 (64-bit) MacOS binary
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: act-macos-arm64
-          path: dist/act-cli_darwin_arm64/act-cli
+          script: |
+            const {DefaultArtifactClient} = require('@actions/artifact');
+            const aartifact = new DefaultArtifactClient();
+            var artifacts = JSON.parse(process.env.ARTIFACTS);
+            for(var artifact of artifacts) {
+              if(artifact.type === "Binary") {
+                const {id, size} = await aartifact.uploadArtifact(
+                  // name of the artifact
+                  `${artifact.name}-${artifact.target}`,
+                  // files to include (supports absolute and relative paths)
+                  [artifact.path],
+                  process.cwd(),
+                  {
+                    // optional: how long to retain the artifact
+                    // if unspecified, defaults to repository/org retention settings (the limit of this value)
+                    retentionDays: 10
+                  }
+                );
+                console.log(`Created artifact with id: ${id} (bytes: ${size}`);
+              }
+            }
+        env:
+          ARTIFACTS: ${{ steps.goreleaser.outputs.artifacts }}
       - name: Chocolatey
         uses: ./.github/actions/choco
         with:
