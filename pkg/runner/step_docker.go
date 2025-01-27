@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kballard/go-shellquote"
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/container"
 	"github.com/actions-oss/act-cli/pkg/model"
+	"github.com/kballard/go-shellquote"
 )
 
 type stepDocker struct {
