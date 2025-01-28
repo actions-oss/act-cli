@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/kballard/go-shellquote"
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/container"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/container"
 )
 
 type Environment struct {

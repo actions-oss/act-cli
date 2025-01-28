@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nektos/act/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/common"
 )
 
 func (rc *RunContext) startTartEnvironment() common.Executor {
