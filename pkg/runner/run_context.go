@@ -20,11 +20,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/container"
+	"github.com/actions-oss/act-cli/pkg/exprparser"
+	"github.com/actions-oss/act-cli/pkg/model"
 	"github.com/docker/go-connections/nat"
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/container"
-	"github.com/nektos/act/pkg/exprparser"
-	"github.com/nektos/act/pkg/model"
 	"github.com/opencontainers/selinux/go-selinux"
 )
 
@@ -243,7 +243,6 @@ func (rc *RunContext) startHostEnvironment() common.Executor {
 	}
 }
 
-//nolint:gocyclo
 func (rc *RunContext) startJobContainer() common.Executor {
 	return func(ctx context.Context) error {
 		logger := common.Logger(ctx)
@@ -344,7 +343,7 @@ func (rc *RunContext) startJobContainer() common.Executor {
 		}
 
 		rc.cleanUpJobContainer = func(ctx context.Context) error {
-			reuseJobContainer := func(ctx context.Context) bool {
+			reuseJobContainer := func(_ context.Context) bool {
 				return rc.Config.ReuseContainers
 			}
 
@@ -477,7 +476,7 @@ func (rc *RunContext) GetNodeToolFullPath(ctx context.Context) string {
 }
 
 func (rc *RunContext) ApplyExtraPath(ctx context.Context, env *map[string]string) {
-	if rc.ExtraPath != nil && len(rc.ExtraPath) > 0 {
+	if len(rc.ExtraPath) > 0 {
 		path := rc.JobContainer.GetPathVariableName()
 		if rc.JobContainer.IsEnvironmentCaseInsensitive() {
 			// On windows system Path and PATH could also be in the map
@@ -568,11 +567,11 @@ func (rc *RunContext) waitForServiceContainer(c container.ExecutionsEnvironment)
 	return func(ctx context.Context) error {
 		sctx, cancel := context.WithTimeout(ctx, time.Minute*5)
 		defer cancel()
-		health := container.ContainerHealthStarting
+		health := container.HealthStarting
 		delay := time.Second
 		for i := 0; ; i++ {
 			health = c.GetHealth(sctx)
-			if health != container.ContainerHealthStarting || i > 30 {
+			if health != container.HealthStarting || i > 30 {
 				break
 			}
 			time.Sleep(delay)
@@ -581,7 +580,7 @@ func (rc *RunContext) waitForServiceContainer(c container.ExecutionsEnvironment)
 				delay = 10 * time.Second
 			}
 		}
-		if health == container.ContainerHealthHealthy {
+		if health == container.HealthHealthy {
 			return nil
 		}
 		return fmt.Errorf("service container failed to start")
@@ -626,6 +625,15 @@ func (rc *RunContext) ActionCacheDir() string {
 		}
 	}
 	return filepath.Join(xdgCache, "act")
+}
+
+func (rc *RunContext) getActionCache() ActionCache {
+	if rc.Config.ActionCache == nil {
+		rc.Config.ActionCache = &GoGitActionCache{
+			Path: rc.ActionCacheDir(),
+		}
+	}
+	return rc.Config.ActionCache
 }
 
 // Interpolate outputs after a job is done
@@ -1003,9 +1011,9 @@ func nestedMapLookup(m map[string]interface{}, ks ...string) (rval interface{}) 
 		return rval
 	} else if m, ok = rval.(map[string]interface{}); !ok {
 		return nil
-	} else { // 1+ more keys
-		return nestedMapLookup(m, ks[1:]...)
 	}
+	// 1+ more keys
+	return nestedMapLookup(m, ks[1:]...)
 }
 
 func (rc *RunContext) withGithubEnv(ctx context.Context, github *model.GithubContext, env map[string]string) map[string]string {

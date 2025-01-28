@@ -19,7 +19,7 @@ import (
 	"github.com/mattn/go-isatty"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/nektos/act/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/common"
 )
 
 var (
@@ -330,7 +330,7 @@ func NewGitCloneExecutor(input NewGitCloneExecutorInput) common.Executor {
 			logger.Errorf("Unable to resolve %s: %v", input.Ref, err)
 		}
 
-		if hash.String() != input.Ref && strings.HasPrefix(hash.String(), input.Ref) {
+		if hash.String() != input.Ref && len(input.Ref) >= 4 && strings.HasPrefix(hash.String(), input.Ref) {
 			return &Error{
 				err:    ErrShortRef,
 				commit: hash.String(),

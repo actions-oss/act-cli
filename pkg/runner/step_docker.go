@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/container"
+	"github.com/actions-oss/act-cli/pkg/model"
 	"github.com/kballard/go-shellquote"
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/container"
-	"github.com/nektos/act/pkg/model"
 )
 
 type stepDocker struct {
@@ -18,7 +18,7 @@ type stepDocker struct {
 }
 
 func (sd *stepDocker) pre() common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }
@@ -30,7 +30,7 @@ func (sd *stepDocker) main() common.Executor {
 }
 
 func (sd *stepDocker) post() common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }

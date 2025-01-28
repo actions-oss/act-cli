@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/model"
 	"github.com/rhysd/actionlint"
 )
 
@@ -150,7 +150,6 @@ func (impl *interperterImpl) evaluateNode(exprNode actionlint.ExprNode) (interfa
 	}
 }
 
-//nolint:gocyclo
 func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableNode) (interface{}, error) {
 	switch strings.ToLower(variableNode.Name) {
 	case "github":

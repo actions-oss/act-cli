@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/actions-oss/act-cli/pkg/exprparser"
+	"github.com/actions-oss/act-cli/pkg/model"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/nektos/act/pkg/exprparser"
-	"github.com/nektos/act/pkg/model"
 
 	log "github.com/sirupsen/logrus"
 	assert "github.com/stretchr/testify/assert"
@@ -155,7 +155,6 @@ func TestRunContext_EvalBool(t *testing.T) {
 
 	updateTestIfWorkflow(t, tables, rc)
 	for _, table := range tables {
-		table := table
 		t.Run(table.in, func(t *testing.T) {
 			assertObject := assert.New(t)
 			b, err := EvalBool(context.Background(), rc.ExprEval, table.in, exprparser.DefaultStatusCheckSuccess)
@@ -259,11 +258,7 @@ func TestRunContext_GetBindsAndMounts(t *testing.T) {
 	isWindows := runtime.GOOS == "windows"
 
 	for _, testcase := range tests {
-		// pin for scopelint
-		testcase := testcase
 		for _, bindWorkDir := range []bool{true, false} {
-			// pin for scopelint
-			bindWorkDir := bindWorkDir
 			testBindSuffix := ""
 			if bindWorkDir {
 				testBindSuffix = "Bind"
@@ -418,7 +413,6 @@ func TestGetGithubContextRef(t *testing.T) {
 	}
 
 	for _, data := range table {
-		data := data
 		t.Run(data.event, func(t *testing.T) {
 			rc := &RunContext{
 				EventJSON: data.json,

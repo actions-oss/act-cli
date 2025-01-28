@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/schema"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/schema"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -566,12 +566,12 @@ type ContainerSpec struct {
 
 // Step is the structure of one step in a job
 type Step struct {
-	ID                 string            `yaml:"id"`
-	If                 yaml.Node         `yaml:"if"`
-	Name               string            `yaml:"name"`
-	Uses               string            `yaml:"uses"`
-	Run                string            `yaml:"run"`
-	WorkingDirectory   string            `yaml:"working-directory"`
+	ID               string    `yaml:"id"`
+	If               yaml.Node `yaml:"if"`
+	Name             string    `yaml:"name"`
+	Uses             string    `yaml:"uses"`
+	Run              string    `yaml:"run"`
+	WorkingDirectory string    `yaml:"working-directory"`
 	// WorkflowShell is the shell really configured in the job, directly at step level or higher in defaults.run.shell
 	WorkflowShell      string            `yaml:"-"`
 	Shell              string            `yaml:"shell"`
