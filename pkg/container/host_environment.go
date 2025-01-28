@@ -20,9 +20,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"golang.org/x/term"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/filecollector"
-	"github.com/nektos/act/pkg/lookpath"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/filecollector"
+	"github.com/actions-oss/act-cli/pkg/lookpath"
 )
 
 type HostEnvironment struct {
@@ -36,19 +36,19 @@ type HostEnvironment struct {
 }
 
 func (e *HostEnvironment) Create(_ []string, _ []string) common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }
 
 func (e *HostEnvironment) Close() common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }
 
 func (e *HostEnvironment) Copy(destPath string, files ...*FileEntry) common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		for _, f := range files {
 			if err := os.MkdirAll(filepath.Dir(filepath.Join(destPath, f.Name)), 0o777); err != nil {
 				return err
@@ -62,6 +62,9 @@ func (e *HostEnvironment) Copy(destPath string, files ...*FileEntry) common.Exec
 }
 
 func (e *HostEnvironment) CopyTarStream(ctx context.Context, destPath string, tarStream io.Reader) error {
+	if common.Dryrun(ctx) {
+		return nil
+	}
 	if err := os.RemoveAll(destPath); err != nil {
 		return err
 	}
@@ -169,13 +172,13 @@ func (e *HostEnvironment) GetContainerArchive(ctx context.Context, srcPath strin
 }
 
 func (e *HostEnvironment) Pull(_ bool) common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }
 
 func (e *HostEnvironment) Start(_ bool) common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }
@@ -269,7 +272,7 @@ func copyPtyOutput(writer io.Writer, ppty io.Reader, finishLog context.CancelFun
 }
 
 func (e *HostEnvironment) UpdateFromImageEnv(_ *map[string]string) common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }
@@ -376,7 +379,7 @@ func (e *HostEnvironment) UpdateFromEnv(srcPath string, env *map[string]string) 
 }
 
 func (e *HostEnvironment) Remove() common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		if e.CleanUp != nil {
 			e.CleanUp()
 		}
@@ -423,6 +426,7 @@ func (*HostEnvironment) JoinPathVariable(paths ...string) string {
 // https://docs.github.com/en/actions/learn-github-actions/contexts#runner-context
 func goArchToActionArch(arch string) string {
 	archMapper := map[string]string{
+		"amd64":   "X64",
 		"x86_64":  "X64",
 		"386":     "X86",
 		"aarch64": "ARM64",
@@ -435,9 +439,9 @@ func goArchToActionArch(arch string) string {
 
 func goOsToActionOs(os string) string {
 	osMapper := map[string]string{
-		"linux": "Linux",
+		"linux":   "Linux",
 		"windows": "Windows",
-		"darwin": "macOS",
+		"darwin":  "macOS",
 	}
 	if os, ok := osMapper[os]; ok {
 		return os
@@ -454,8 +458,8 @@ func (e *HostEnvironment) GetRunnerContext(_ context.Context) map[string]interfa
 	}
 }
 
-func (e *HostEnvironment) GetHealth(ctx context.Context) ContainerHealth {
-	return ContainerHealthHealthy
+func (e *HostEnvironment) GetHealth(_ context.Context) Health {
+	return HealthHealthy
 }
 
 func (e *HostEnvironment) ReplaceLogWriter(stdout io.Writer, _ io.Writer) (io.Writer, io.Writer) {

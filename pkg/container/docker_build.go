@@ -12,10 +12,11 @@ import (
 	"github.com/docker/docker/pkg/archive"
 
 	// github.com/docker/docker/builder/dockerignore is deprecated
-	"github.com/moby/buildkit/frontend/dockerfile/dockerignore"
-	"github.com/moby/patternmatcher"
 
-	"github.com/nektos/act/pkg/common"
+	"github.com/moby/patternmatcher"
+	"github.com/moby/patternmatcher/ignorefile"
+
+	"github.com/actions-oss/act-cli/pkg/common"
 )
 
 // NewDockerBuildExecutor function to create a run executor for the container
@@ -73,7 +74,7 @@ func createBuildContext(ctx context.Context, contextDir string, relDockerfile st
 	common.Logger(ctx).Debugf("Creating archive for build context dir '%s' with relative dockerfile '%s'", contextDir, relDockerfile)
 
 	// And canonicalize dockerfile name to a platform-independent one
-	relDockerfile = archive.CanonicalTarNameForPath(relDockerfile)
+	relDockerfile = filepath.ToSlash(relDockerfile)
 
 	f, err := os.Open(filepath.Join(contextDir, ".dockerignore"))
 	if err != nil && !os.IsNotExist(err) {
@@ -83,7 +84,7 @@ func createBuildContext(ctx context.Context, contextDir string, relDockerfile st
 
 	var excludes []string
 	if err == nil {
-		excludes, err = dockerignore.ReadAll(f)
+		excludes, err = ignorefile.ReadAll(f)
 		if err != nil {
 			return nil, err
 		}

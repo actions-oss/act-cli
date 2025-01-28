@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/container"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/container"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -72,4 +72,13 @@ func (cm *containerMock) GetContainerArchive(ctx context.Context, srcPath string
 		err = nil
 	}
 	return args.Get(0).(io.ReadCloser), err
+}
+
+func (cm *containerMock) CopyTarStream(ctx context.Context, destPath string, tarStream io.Reader) error {
+	args := cm.Mock.Called(ctx, destPath, tarStream)
+	err, hasErr := args.Get(0).(error)
+	if !hasErr {
+		err = nil
+	}
+	return err
 }
