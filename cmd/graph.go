@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/model"
 )
 
 func drawGraph(plan *model.Plan) error {
