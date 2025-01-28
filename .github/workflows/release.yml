@@ -6,6 +6,7 @@ on:
 
 jobs:
   release:
+    # TODO use environment to scope secrets
     name: release
     runs-on: ubuntu-latest
     steps:
@@ -24,31 +25,38 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GORELEASER_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GORELEASER_GITHUB_TOKEN || github.token }}
       - name: Winget
         uses: vedantmgoyal2009/winget-releaser@v2
         with:
           identifier: nektos.act
           installers-regex: '_Windows_\w+\.zip$'
           token: ${{ secrets.WINGET_TOKEN }}
+        if: env.ENABLED
+        env:
+          ENABLED: ${{ secrets.WINGET_TOKEN && '1' || '' }}
       - name: Chocolatey
         uses: ./.github/actions/choco
         with:
           version: ${{ github.ref }}
           apiKey: ${{ secrets.CHOCO_APIKEY }}
           push: true
+        if: env.ENABLED
+        env:
+          ENABLED: ${{ secrets.CHOCO_APIKEY && '1' || ''  }}
+      # TODO use ssh deployment key
       - name: GitHub CLI extension
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GORELEASER_GITHUB_TOKEN }}
+          github-token: ${{ secrets.CLI_GITHUB_TOKEN || secrets.GORELEASER_GITHUB_TOKEN }}
           script: |
             const mainRef = (await github.rest.git.getRef({
-              owner: 'nektos',
+              owner: context.repo.owner,
               repo: 'gh-act',
               ref: 'heads/main',
             })).data;
@@ -59,3 +67,6 @@ jobs:
               ref: context.ref,
               sha: mainRef.object.sha,
             });
+        if: env.ENABLED
+        env:
+          ENABLED: ${{ (secrets.CLI_GITHUB_TOKEN || secrets.GORELEASER_GITHUB_TOKEN) && '1' || ''  }}

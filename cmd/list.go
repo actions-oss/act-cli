@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/model"
 )
 
 func printList(plan *model.Plan) error {
