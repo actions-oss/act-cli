@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/schema"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/schema"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )

@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/filecollector"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/filecollector"
 )
 
 type LocalRepositoryCache struct {

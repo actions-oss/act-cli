@@ -20,9 +20,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"golang.org/x/term"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/filecollector"
-	"github.com/nektos/act/pkg/lookpath"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/filecollector"
+	"github.com/actions-oss/act-cli/pkg/lookpath"
 )
 
 type HostEnvironment struct {
@@ -62,6 +62,9 @@ func (e *HostEnvironment) Copy(destPath string, files ...*FileEntry) common.Exec
 }
 
 func (e *HostEnvironment) CopyTarStream(ctx context.Context, destPath string, tarStream io.Reader) error {
+	if common.Dryrun(ctx) {
+		return nil
+	}
 	if err := os.RemoveAll(destPath); err != nil {
 		return err
 	}

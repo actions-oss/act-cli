@@ -12,10 +12,10 @@ import (
 
 	_ "embed"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/container"
-	"github.com/nektos/act/pkg/exprparser"
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/container"
+	"github.com/actions-oss/act-cli/pkg/exprparser"
+	"github.com/actions-oss/act-cli/pkg/model"
 	"gopkg.in/yaml.v3"
 )
 
@@ -497,7 +497,7 @@ func getEvaluatorInputs(ctx context.Context, rc *RunContext, step step, ghc *mod
 		}
 	}
 
-	if ghc.EventName == "workflow_dispatch" {
+	if rc.caller == nil && ghc.EventName == "workflow_dispatch" {
 		config := rc.Run.Workflow.WorkflowDispatchConfig()
 		if config != nil && config.Inputs != nil {
 			for k, v := range config.Inputs {
