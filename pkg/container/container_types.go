@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/docker/go-connections/nat"
-	"github.com/nektos/act/pkg/common"
 )
 
 // NewContainerInput the input for the New function
@@ -35,7 +35,7 @@ type NewContainerInput struct {
 // FileEntry is a file to copy to a container
 type FileEntry struct {
 	Name string
-	Mode int64
+	Mode uint32
 	Body string
 }
 
@@ -54,7 +54,7 @@ type Container interface {
 	Remove() common.Executor
 	Close() common.Executor
 	ReplaceLogWriter(io.Writer, io.Writer) (io.Writer, io.Writer)
-	GetHealth(ctx context.Context) ContainerHealth
+	GetHealth(ctx context.Context) Health
 }
 
 // NewDockerBuildExecutorInput the input for the NewDockerBuildExecutor function
@@ -75,10 +75,10 @@ type NewDockerPullExecutorInput struct {
 	Password  string
 }
 
-type ContainerHealth int
+type Health int
 
 const (
-	ContainerHealthStarting ContainerHealth = iota
-	ContainerHealthHealthy
-	ContainerHealthUnHealthy
+	HealthStarting Health = iota
+	HealthHealthy
+	HealthUnHealthy
 )

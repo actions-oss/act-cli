@@ -8,8 +8,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/nektos/act/pkg/exprparser"
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/exprparser"
+	"github.com/actions-oss/act-cli/pkg/model"
 	assert "github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -138,7 +138,6 @@ func TestEvaluateRunContext(t *testing.T) {
 	}
 
 	for _, table := range tables {
-		table := table
 		t.Run(table.in, func(t *testing.T) {
 			assertObject := assert.New(t)
 			out, err := ee.evaluate(context.Background(), table.in, exprparser.DefaultStatusCheckNone)
@@ -178,7 +177,6 @@ func TestEvaluateStep(t *testing.T) {
 	}
 
 	for _, table := range tables {
-		table := table
 		t.Run(table.in, func(t *testing.T) {
 			assertObject := assert.New(t)
 			out, err := ee.evaluate(context.Background(), table.in, exprparser.DefaultStatusCheckNone)
@@ -262,7 +260,6 @@ func TestInterpolate(t *testing.T) {
 
 	updateTestExpressionWorkflow(t, tables, rc)
 	for _, table := range tables {
-		table := table
 		t.Run("interpolate", func(t *testing.T) {
 			assertObject := assert.New(t)
 			out := ee.Interpolate(context.Background(), table.in)

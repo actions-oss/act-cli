@@ -11,8 +11,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/model"
 )
 
 type stepActionLocal struct {
@@ -29,7 +29,7 @@ type stepActionLocal struct {
 func (sal *stepActionLocal) pre() common.Executor {
 	sal.env = map[string]string{}
 
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }

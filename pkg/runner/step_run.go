@@ -8,10 +8,10 @@ import (
 
 	"github.com/kballard/go-shellquote"
 
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/container"
-	"github.com/nektos/act/pkg/lookpath"
-	"github.com/nektos/act/pkg/model"
+	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/actions-oss/act-cli/pkg/container"
+	"github.com/actions-oss/act-cli/pkg/lookpath"
+	"github.com/actions-oss/act-cli/pkg/model"
 )
 
 type stepRun struct {
@@ -24,7 +24,7 @@ type stepRun struct {
 }
 
 func (sr *stepRun) pre() common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }
@@ -44,7 +44,7 @@ func (sr *stepRun) main() common.Executor {
 }
 
 func (sr *stepRun) post() common.Executor {
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		return nil
 	}
 }
