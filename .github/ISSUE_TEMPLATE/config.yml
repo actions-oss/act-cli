@@ -3,7 +3,6 @@ contact_links:
   - name: Start a discussion
     url: https://github.com/actions-oss/act-cli/discussions/new
     about: You can ask for help here!
-    about: If you prefer Matrix over Gitter
   - name: Want to contribute to act?
     url: https://github.com/actions-oss/act-cli/blob/main/CONTRIBUTING.md
     about: Be sure to read contributing guidelines!
