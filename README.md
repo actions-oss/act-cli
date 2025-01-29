@@ -23,7 +23,7 @@ Let's see it in action with a [sample repo](https://github.com/cplee/github-acti
 
 # Act User Guide
 
-Please look at the [act user guide](https://nektosact.com) for more documentation.
+Please look at the [act user guide](https://actions-oss.github.io/act-docs/) for more documentation.
 
 # Support
 
