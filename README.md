@@ -1,6 +1,6 @@
 ![act-logo](https://raw.githubusercontent.com/wiki/nektos/act/img/logo-150.png)
 
-# Overview [![push](https://github.com/nektos/act/workflows/push/badge.svg?branch=master&event=push)](https://github.com/nektos/act/actions) [![Join the chat at https://gitter.im/nektos/act](https://badges.gitter.im/nektos/act.svg)](https://gitter.im/nektos/act?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Go Report Card](https://goreportcard.com/badge/github.com/nektos/act)](https://goreportcard.com/report/github.com/nektos/act) [![awesome-runners](https://img.shields.io/badge/listed%20on-awesome--runners-blue.svg)](https://github.com/jonico/awesome-runners)
+# Overview
 
 > "Think globally, `act` locally"
 
@@ -35,7 +35,7 @@ Want to contribute to act? Awesome! Check out the [contributing guidelines](CONT
 
 ## Manually building from source
 
-- Install Go tools 1.20+ - (<https://golang.org/doc/install>)
+- Install Go tools 1.23+ - (<https://golang.org/doc/install>)
 - Clone this repo `git clone git@github.com:actions-oss/act-cli.git`
 - Run unit tests with `make test`
 - Build and install: `make install`
