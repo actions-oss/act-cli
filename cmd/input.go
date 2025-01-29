@@ -59,6 +59,7 @@ type Input struct {
 	logPrefixJobID                     bool
 	networkName                        string
 	localRepository                    []string
+	listOptions                        bool
 }
 
 func (i *Input) resolve(path string) string {
