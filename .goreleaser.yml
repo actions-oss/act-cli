@@ -21,6 +21,7 @@ builds:
     ignore:
       - goos: windows
         goarm: '6'
+    binary: act
 checksum:
   name_template: 'checksums.txt'
 archives:

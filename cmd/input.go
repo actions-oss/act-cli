@@ -21,8 +21,8 @@ type Input struct {
 	inputs                             []string
 	platforms                          []string
 	dryrun                             bool
-	forcePull                          bool
-	forceRebuild                       bool
+	pullIfNeeded                       bool
+	noRebuild                          bool
 	noOutput                           bool
 	envfile                            string
 	inputfile                          string
@@ -35,7 +35,7 @@ type Input struct {
 	containerArchitecture              string
 	containerDaemonSocket              string
 	containerOptions                   string
-	noWorkflowRecurse                  bool
+	workflowRecurse                    bool
 	useGitIgnore                       bool
 	githubInstance                     string
 	containerCapAdd                    []string
@@ -59,6 +59,7 @@ type Input struct {
 	logPrefixJobID                     bool
 	networkName                        string
 	localRepository                    []string
+	listOptions                        bool
 }
 
 func (i *Input) resolve(path string) string {

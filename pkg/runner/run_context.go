@@ -663,6 +663,9 @@ func (rc *RunContext) startContainer() common.Executor {
 		if rc.IsHostEnv(ctx) {
 			return rc.startHostEnvironment()(ctx)
 		}
+		if rc.IsTartEnv(ctx) {
+			return rc.startTartEnvironment()(ctx)
+		}
 		return rc.startJobContainer()(ctx)
 	}
 }
@@ -671,6 +674,12 @@ func (rc *RunContext) IsHostEnv(ctx context.Context) bool {
 	platform := rc.runsOnImage(ctx)
 	image := rc.containerImage(ctx)
 	return image == "" && strings.EqualFold(platform, "-self-hosted")
+}
+
+func (rc *RunContext) IsTartEnv(ctx context.Context) bool {
+	platform := rc.runsOnImage(ctx)
+	image := rc.containerImage(ctx)
+	return image == "" && strings.HasPrefix(platform, "tart://")
 }
 
 func (rc *RunContext) stopContainer() common.Executor {
