@@ -11,11 +11,11 @@ Help wanted! We'd love your contributions to Act. Please review the following gu
 
 Please don't open a GitHub issue for questions about how to use `act`, as the goal is to use issues for managing bugs and feature requests. Issues that are related to general support will be closed and redirected to our gitter room.
 
-For all support related questions, please ask the question in our gitter room: [nektos/act](https://gitter.im/nektos/act).
+For all support related questions, please ask the question in discussions: [actions-oss/act-cli](https://github.com/actions-oss/act-cli/discussions).
 
 ## <a id="bugs"></a> Found a Bug?
 
-If you've identified a bug in `act`, please [submit an issue](#issue) to our GitHub repo: [nektos/act](https://github.com/nektos/act/issues/new). Please also feel free to submit a [Pull Request](#pr) with a fix for the bug!
+If you've identified a bug in `act`, please [submit an issue](#issue) to our GitHub repo: [actions-oss/act-cli](https://github.com/actions-oss/act-cli/issues/new). Please also feel free to submit a [Pull Request](#pr) with a fix for the bug!
 
 ## <a id="features"></a> Have a Feature Request?
 
@@ -31,11 +31,11 @@ Assuming no existing issues exist, please ensure you include required informatio
 
 We may have additional questions and will communicate through the GitHub issue, so please respond back to our questions to help reproduce and resolve the issue as quickly as possible.
 
-New issues can be created with in our [GitHub repo](https://github.com/nektos/act/issues/new).
+New issues can be created with in our [GitHub repo](https://github.com/actions-oss/act-cli/issues/new).
 
 ### <a id="pr"></a>Pull Requests
 
-Pull requests should target the `master` branch. Please also reference the issue from the description of the pull request using [special keyword syntax](https://help.github.com/articles/closing-issues-via-commit-messages/) to auto close the issue when the PR is merged. For example, include the phrase `fixes #14` in the PR description to have issue #14 auto close. Please send documentation updates for the [act user guide](https://nektosact.com) to [nektos/act-docs](https://github.com/nektos/act-docs).
+Pull requests should target the `master` branch. Please also reference the issue from the description of the pull request using [special keyword syntax](https://help.github.com/articles/closing-issues-via-commit-messages/) to auto close the issue when the PR is merged. For example, include the phrase `fixes #14` in the PR description to have issue #14 auto close. Please send documentation updates for the [act user guide](https://actions-oss.github.io/act-docs/) to [actions-oss/act-docs](https://github.com/actions-oss/act-docs).
 
 ### <a id="style"></a> Styleguide
 
