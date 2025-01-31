@@ -29,6 +29,7 @@ import (
 	"github.com/actions-oss/act-cli/pkg/artifacts"
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/container"
+	"github.com/actions-oss/act-cli/pkg/gh"
 	"github.com/actions-oss/act-cli/pkg/model"
 	"github.com/actions-oss/act-cli/pkg/runner"
 )
@@ -411,6 +412,15 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 		log.Debugf("Loading secrets from %s", input.Secretfile())
 		secrets := newSecrets(input.secrets)
 		_ = readEnvs(input.Secretfile(), secrets)
+		hasGitHubToken := false
+		for k := range secrets {
+			if strings.EqualFold(k, "GITHUB_TOKEN") {
+				hasGitHubToken = true
+			}
+		}
+		if !hasGitHubToken {
+			secrets["GITHUB_TOKEN"], _ = gh.GetToken(ctx, "")
+		}
 
 		log.Debugf("Loading vars from %s", input.Varfile())
 		vars := newSecrets(input.vars)
