@@ -536,19 +536,8 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 		}
 
 		// build the plan for this run
-		if jobID != "" {
-			log.Debugf("Planning job: %s", jobID)
-			plan, plannerErr = planner.PlanJob(jobID)
-		} else {
-			log.Debugf("Planning jobs for event: %s", eventName)
-			plan, plannerErr = planner.PlanEvent(eventName)
-		}
-		if plan != nil {
-			if len(plan.Stages) == 0 {
-				plannerErr = fmt.Errorf("Could not find any stages to run. View the valid jobs with `act --list`. Use `act --help` to find how to filter by Job ID/Workflow/Event Name")
-			}
-		}
-		if plan == nil && plannerErr != nil {
+		plan, plannerErr = createPlan(planner, jobID, eventName)
+		if plannerErr != nil {
 			return plannerErr
 		}
 
@@ -693,6 +682,22 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 		}
 		return plannerErr
 	}
+}
+
+func createPlan(planner model.WorkflowPlanner, jobID string, eventName string) (*model.Plan, error) {
+	var plan *model.Plan
+	var err error
+	if jobID != "" {
+		log.Debugf("Planning job: %s", jobID)
+		plan, err = planner.PlanJob(jobID)
+	} else {
+		log.Debugf("Planning jobs for event: %s", eventName)
+		plan, err = planner.PlanEvent(eventName)
+	}
+	if plan != nil && err == nil && len(plan.Stages) == 0 {
+		err = fmt.Errorf("Could not find any stages to run. View the valid jobs with `act --list`. Use `act --help` to find how to filter by Job ID/Workflow/Event Name")
+	}
+	return plan, err
 }
 
 func defaultImageSurvey(actrc string) error {
