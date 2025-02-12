@@ -33,6 +33,13 @@ func testMain(args []string) (exitCode int) {
 func TestMainHelp(t *testing.T) {
 	exitCode := testMain([]string{"cmd", "--help"})
 	if exitCode != 0 {
+		t.Errorf("Expected exit code 0, got %d", exitCode)
+	}
+}
+
+func TestMainNoArgsError(t *testing.T) {
+	exitCode := testMain([]string{"cmd"})
+	if exitCode != 1 {
 		t.Errorf("Expected exit code 1, got %d", exitCode)
 	}
 }
