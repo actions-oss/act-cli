@@ -41,13 +41,15 @@ type Flag struct {
 	Description string `json:"description"`
 }
 
+var exitFunc = os.Exit
+
 // Execute is the entry point to running the CLI
 func Execute(ctx context.Context, version string) {
 	input := new(Input)
 	rootCmd := createRootCommand(ctx, input, version)
 
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		exitFunc(1)
 	}
 }
 
