@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"path"
 	"testing"
 
@@ -25,4 +26,22 @@ func TestReadEnv(t *testing.T) {
 line2
 line3
 `, secrets["mysecret"])
+}
+
+func TestListOptions(t *testing.T) {
+	rootCmd := createRootCommand(context.Background(), &Input{}, "")
+	err := newRunCommand(context.Background(), &Input{
+		listOptions: true,
+	})(rootCmd, []string{})
+	assert.NoError(t, err)
+}
+
+func TestRun(t *testing.T) {
+	rootCmd := createRootCommand(context.Background(), &Input{}, "")
+	err := newRunCommand(context.Background(), &Input{
+		platforms:     []string{"ubuntu-latest=node:16-buster-slim"},
+		workdir:       "../pkg/runner/testdata/",
+		workflowsPath: "./basic/push.yml",
+	})(rootCmd, []string{})
+	assert.NoError(t, err)
 }
