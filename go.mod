@@ -29,7 +29,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/timshannon/bolthold v0.0.0-20240314194003-30aac6950928
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/term v0.28.0
+	golang.org/x/term v0.29.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.1
 )
@@ -39,7 +39,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/distribution/reference v0.6.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	golang.org/x/crypto v0.32.0
+	golang.org/x/crypto v0.33.0
 	google.golang.org/protobuf v1.36.4
 )
 
@@ -102,9 +102,9 @@ require (
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/net v0.34.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/grpc v1.66.3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
