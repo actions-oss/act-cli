@@ -40,7 +40,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	golang.org/x/crypto v0.32.0
-	google.golang.org/protobuf v1.36.4
+	google.golang.org/protobuf v1.36.5
 )
 
 require (
