@@ -46,13 +46,6 @@ jobs:
         with:
           go-version-file: go.mod
           check-latest: true
-      - uses: actions/cache@v4
-        if: ${{ !env.ACT }}
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - name: Install gotestfmt
         run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.5.0
       - name: Run Tests
