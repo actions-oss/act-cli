@@ -6,10 +6,12 @@
 version: 2
 updates:
   - package-ecosystem: 'github-actions'
+    patterns: *
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
   - package-ecosystem: 'gomod'
+    patterns: *
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
