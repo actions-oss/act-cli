@@ -6,12 +6,14 @@
 version: 2
 updates:
   - package-ecosystem: 'github-actions'
-    patterns: '*'
     directory: '/'
     schedule:
       interval: 'monthly'
+    groups:
+      patterns: '*'
   - package-ecosystem: 'gomod'
-    patterns: '*'
     directory: '/'
     schedule:
       interval: 'monthly'
+    groups:
+      patterns: '*'
