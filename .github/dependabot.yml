@@ -10,10 +10,12 @@ updates:
     schedule:
       interval: 'monthly'
     groups:
-      patterns: '*'
+      patterns:
+      - '*'
   - package-ecosystem: 'gomod'
     directory: '/'
     schedule:
       interval: 'monthly'
     groups:
-      patterns: '*'
+      patterns:
+      - '*'
