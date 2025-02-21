@@ -22,10 +22,10 @@ jobs:
         with:
           go-version-file: go.mod
           check-latest: true
-      - uses: golangci/golangci-lint-action@v6.2.0
+      - uses: golangci/golangci-lint-action@v6.5.0
         with:
           version: v1.62
-      - uses: megalinter/megalinter/flavors/go@v8.4.1
+      - uses: megalinter/megalinter/flavors/go@v8.4.2
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
