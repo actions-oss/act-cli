@@ -11,11 +11,13 @@ updates:
       interval: 'monthly'
     groups:
       dependencies:
-        patterns: '*'
+        patterns:
+        - '*'
   - package-ecosystem: 'gomod'
     directory: '/'
     schedule:
       interval: 'monthly'
     groups:
       dependencies:
-        patterns: '*'
+        patterns:
+        - '*'
