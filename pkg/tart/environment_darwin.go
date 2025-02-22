@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/kballard/go-shellquote"
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/container"
+	"github.com/kballard/go-shellquote"
 )
 
 type Environment struct {
@@ -24,20 +23,32 @@ type Environment struct {
 
 // "/Volumes/My Shared Files/act/"
 func (e *Environment) ToHostPath(path string) string {
-	actPath := filepath.Clean("/private/tmp/act/")
-	altPath := filepath.Clean(path)
-	if strings.HasPrefix(altPath, actPath) {
-		return e.Miscpath + altPath[len(actPath):]
-	}
-	return altPath
+	return e.translatePath(path, false)
 }
 
 func (e *Environment) ToContainerPath(path string) string {
 	path = e.HostEnvironment.ToContainerPath(path)
-	actPath := filepath.Clean(e.Miscpath)
+	return e.translatePath(path, true)
+}
+
+func (e *Environment) translatePath(path string, reverse bool) string {
+	mounts := map[string]string{
+		"/private/tmp/act":        e.Miscpath,
+		"/private/tmp/tool_cache": e.ToolCache,
+	}
 	altPath := filepath.Clean(path)
-	if strings.HasPrefix(altPath, actPath) {
-		return "/private/tmp/act/" + altPath[len(actPath):]
+	for k, v := range mounts {
+		if reverse {
+			v, k = k, v
+		}
+		actPath := filepath.Clean(k)
+		add := 0
+		if strings.HasPrefix(altPath, actPath+"/") {
+			add = 1
+		}
+		if altPath == actPath || add > 0 {
+			return filepath.Join(v, altPath[len(actPath)+add:])
+		}
 	}
 	return altPath
 }
@@ -71,8 +82,10 @@ func (e *Environment) start(ctx context.Context) error {
 
 	config := e.Config
 
+	config.Writer = e.StdOut
+
 	if config.AlwaysPull {
-		log.Printf("Pulling the latest version of %s...\n", actEnv.JobImage)
+		common.Logger(ctx).Infof("Pulling the latest version of %s...\n", actEnv.JobImage)
 		_, _, err := ExecWithEnv(ctx, nil,
 			"pull", actEnv.JobImage)
 		if err != nil {
@@ -80,26 +93,28 @@ func (e *Environment) start(ctx context.Context) error {
 		}
 	}
 
-	log.Println("Cloning and configuring a new VM...")
+	common.Logger(ctx).Info("Cloning and configuring a new VM...")
 	vm, err := CreateNewVM(ctx, *actEnv, 0, 0)
 	if err != nil {
 		_ = e.Stop(ctx)
 		return err
 	}
 	var customDirectoryMounts []string
-	_ = os.MkdirAll(e.Miscpath, 0666)
+	_ = os.MkdirAll(e.Miscpath, 0777)
+	_ = os.MkdirAll(e.ToolCache, 0777)
 	customDirectoryMounts = append(customDirectoryMounts, "act:"+e.Miscpath)
+	customDirectoryMounts = append(customDirectoryMounts, "tool_cache:"+e.ToolCache)
 	e.vm = vm
-	err = vm.Start(config, actEnv, customDirectoryMounts)
+	err = vm.Start(ctx, config, actEnv, customDirectoryMounts)
 	if err != nil {
 		_ = e.Stop(ctx)
 		return err
 	}
 
-	return e.execRaw(ctx, "ln -sf '/Volumes/My Shared Files/act' /private/tmp/act")
+	return e.execRaw(ctx, "ln -sf '/Volumes/My Shared Files/act' /private/tmp/act && ln -sf '/Volumes/My Shared Files/tool_cache' /private/tmp/tool_cache")
 }
 func (e *Environment) Stop(ctx context.Context) error {
-	log.Println("Stop VM?")
+	common.Logger(ctx).Debug("Preparing stopping VM")
 
 	actEnv := e.Env
 
@@ -110,12 +125,12 @@ func (e *Environment) Stop(ctx context.Context) error {
 		vm = ExistingVM(*actEnv)
 	}
 
-	if err := vm.Stop(); err != nil {
-		log.Printf("Failed to stop VM: %v", err)
+	if err := vm.Stop(ctx); err != nil {
+		common.Logger(ctx).Errorf("Failed to stop VM: %v", err)
 	}
 
-	if err := vm.Delete(); err != nil {
-		log.Printf("Failed to delete VM: %v", err)
+	if err := vm.Delete(ctx); err != nil {
+		common.Logger(ctx).Error("Failed to delete VM: %v", err)
 
 		return err
 	}
@@ -126,7 +141,7 @@ func (e *Environment) Stop(ctx context.Context) error {
 func (e *Environment) Remove() common.Executor {
 	return func(ctx context.Context) error {
 		_ = e.Stop(ctx)
-		log.Println("Remove VM?")
+		common.Logger(ctx).Debug("Stopped VM, removing...")
 		if e.CleanUp != nil {
 			e.CleanUp()
 		}
@@ -162,9 +177,6 @@ func (e *Environment) execRaw(ctx context.Context, script string) error {
 		vm = ExistingVM(*actEnv)
 	}
 
-	// Monitor "tart run" command's output so it's not silenced
-	go vm.MonitorTartRunOutput()
-
 	config := e.Config
 
 	ssh, err := vm.OpenSSH(ctx, config)
@@ -179,7 +191,7 @@ func (e *Environment) execRaw(ctx context.Context, script string) error {
 	}
 	defer session.Close()
 
-	os.Stdout.WriteString(script + "\n")
+	common.Logger(ctx).Debug(script)
 
 	session.Stdin = strings.NewReader(
 		script,
