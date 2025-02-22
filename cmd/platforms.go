@@ -13,7 +13,7 @@ func (i *Input) newPlatforms() map[string]string {
 	}
 
 	for _, p := range i.platforms {
-		pParts := strings.Split(p, "=")
+		pParts := strings.SplitN(p, "=", 2)
 		if len(pParts) == 2 {
 			platforms[strings.ToLower(pParts[0])] = pParts[1]
 		}
