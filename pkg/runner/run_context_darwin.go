@@ -64,13 +64,16 @@ func (rc *RunContext) startTartEnvironment() common.Executor {
 				SSHPassword: "admin",
 				Softnet:     query.Get("softnet") == "1",
 				Headless:    query.Get("headless") != "0",
-				AlwaysPull:  query.Get("pull") != "0",
+				AlwaysPull:  rc.Config.ForcePull,
 			},
 			Env: &tart.Env{
 				JobImage: platURI.Host + platURI.EscapedPath(),
 				JobID:    rc.jobContainerName(),
 			},
 			Miscpath: miscpath,
+		}
+		if query.Has("pull") {
+			tenv.Config.AlwaysPull = query.Get("pull") != "0"
 		}
 		rc.JobContainer = tenv
 		if query.Has("sshusername") {
@@ -85,14 +88,6 @@ func (rc *RunContext) startTartEnvironment() common.Executor {
 				rc.Env[fmt.Sprintf("RUNNER_%s", strings.ToUpper(k))] = v
 			}
 		}
-		// for _, env := range os.Environ() {
-		// 	if k, v, ok := strings.Cut(env, "="); ok {
-		// 		// don't override
-		// 		if _, ok := rc.Env[k]; !ok {
-		// 			rc.Env[k] = v
-		// 		}
-		// 	}
-		// }
 
 		return common.NewPipelineExecutor(
 			// rc.JobContainer.Remove(),

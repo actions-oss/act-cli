@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -14,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
+	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/avast/retry-go"
 	"golang.org/x/crypto/ssh"
 )
@@ -45,7 +43,7 @@ func CreateNewVM(
 	cpuOverride uint64,
 	memoryOverride uint64,
 ) (*VM, error) {
-	log.Print("CreateNewVM")
+	common.Logger(ctx).Debug("CreateNewVM")
 	vm := &VM{
 		id: actEnv.VirtualMachineID(),
 	}
@@ -85,7 +83,7 @@ func (vm *VM) cloneAndConfigure(
 	return nil
 }
 
-func (vm *VM) Start(config Config, _ *Env, customDirectoryMounts []string) error {
+func (vm *VM) Start(ctx context.Context, config Config, _ *Env, customDirectoryMounts []string) error {
 	os.Remove(vm.tartRunOutputPath())
 	var runArgs = []string{"run"}
 
@@ -103,54 +101,23 @@ func (vm *VM) Start(config Config, _ *Env, customDirectoryMounts []string) error
 
 	runArgs = append(runArgs, vm.id)
 
-	cmd := exec.Command(tartCommandName, runArgs...)
+	cmd := exec.CommandContext(ctx, tartCommandName, runArgs...)
 
-	outputFile, err := os.OpenFile(vm.tartRunOutputPath(), os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
-	if err != nil {
-		return err
-	}
-	_, _ = outputFile.WriteString(strings.Join(runArgs, " ") + "\n")
+	common.Logger(ctx).Debug(strings.Join(runArgs, " "))
 
-	cmd.Stdout = outputFile
-	cmd.Stderr = outputFile
+	cmd.Stdout = config.Writer
+	cmd.Stderr = config.Writer
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true,
 	}
 
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
 		return err
 	}
 	vm.runcmd = cmd
 	return nil
-}
-
-func (vm *VM) MonitorTartRunOutput() {
-	outputFile, err := os.Open(vm.tartRunOutputPath())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to open VM's output file, "+
-			"looks like the VM wasn't started in \"prepare\" step?\n")
-
-		return
-	}
-	defer func() {
-		_ = outputFile.Close()
-	}()
-
-	for {
-		n, err := io.Copy(os.Stdout, outputFile)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to display VM's output: %v\n", err)
-
-			break
-		}
-		if n == 0 {
-			time.Sleep(100 * time.Millisecond)
-
-			continue
-		}
-	}
 }
 
 func (vm *VM) OpenSSH(ctx context.Context, config Config) (*ssh.Client, error) {
@@ -198,22 +165,22 @@ func (vm *VM) IP(ctx context.Context) (string, error) {
 	return strings.TrimSpace(stdout), nil
 }
 
-func (vm *VM) Stop() error {
-	log.Println("Stop VM REAL?")
+func (vm *VM) Stop(ctx context.Context) error {
+	common.Logger(ctx).Debug("Stop VM REAL?")
 	if vm.runcmd != nil {
-		log.Println("send sigint?")
+		common.Logger(ctx).Debug("send sigint")
 		_ = vm.runcmd.Process.Signal(os.Interrupt)
-		log.Println("wait?")
+		common.Logger(ctx).Debug("wait for cmd")
 		_ = vm.runcmd.Wait()
-		log.Println("wait done?")
+		common.Logger(ctx).Debug("cmd stopped")
 		return nil
 	}
-	_, _, err := Exec(context.Background(), "stop", vm.id)
+	_, _, err := Exec(ctx, "stop", vm.id)
 	return err
 }
 
-func (vm *VM) Delete() error {
-	_, _, err := Exec(context.Background(), "delete", vm.id)
+func (vm *VM) Delete(ctx context.Context) error {
+	_, _, err := Exec(ctx, "delete", vm.id)
 	if err != nil {
 		return fmt.Errorf("%w: failed to delete VM %s: %v", ErrVMFailed, vm.id, err)
 	}
