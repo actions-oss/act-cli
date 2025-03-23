@@ -12,20 +12,23 @@ import (
 )
 
 type EvaluationEnvironment struct {
-	Github    *model.GithubContext
-	Env       map[string]string
-	Job       *model.JobContext
-	Jobs      *map[string]*model.WorkflowCallResult
-	Steps     map[string]*model.StepResult
-	Runner    map[string]interface{}
-	Secrets   map[string]string
-	Vars      map[string]string
-	Strategy  map[string]interface{}
-	Matrix    map[string]interface{}
-	Needs     map[string]Needs
-	Inputs    map[string]interface{}
-	HashFiles func([]reflect.Value) (interface{}, error)
+	Github      *model.GithubContext
+	Env         map[string]string
+	Job         *model.JobContext
+	Jobs        *map[string]*model.WorkflowCallResult
+	Steps       map[string]*model.StepResult
+	Runner      map[string]interface{}
+	Secrets     map[string]string
+	Vars        map[string]string
+	Strategy    map[string]interface{}
+	Matrix      map[string]interface{}
+	Needs       map[string]Needs
+	Inputs      map[string]interface{}
+	HashFiles   func([]reflect.Value) (interface{}, error)
+	EnvCaseSens bool
 }
+
+type CaseSensitiveDict map[string]string
 
 type Needs struct {
 	Outputs map[string]string `json:"outputs"`
@@ -150,11 +153,16 @@ func (impl *interperterImpl) evaluateNode(exprNode actionlint.ExprNode) (interfa
 	}
 }
 
+//nolint:gocyclo
 func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableNode) (interface{}, error) {
-	switch strings.ToLower(variableNode.Name) {
+	lowerName := strings.ToLower(variableNode.Name)
+	switch lowerName {
 	case "github":
 		return impl.env.Github, nil
 	case "env":
+		if impl.env.EnvCaseSens {
+			return CaseSensitiveDict(impl.env.Env), nil
+		}
 		return impl.env.Env, nil
 	case "job":
 		return impl.env.Job, nil
@@ -252,6 +260,11 @@ func (impl *interperterImpl) getPropertyValue(left reflect.Value, property strin
 
 	case reflect.Struct:
 		leftType := left.Type()
+		var cd CaseSensitiveDict
+		if leftType == reflect.TypeOf(cd) {
+			cd = left.Interface().(CaseSensitiveDict)
+			return cd[property], nil
+		}
 		for i := 0; i < leftType.NumField(); i++ {
 			jsonName := leftType.Field(i).Tag.Get("json")
 			if jsonName == property {
