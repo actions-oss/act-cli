@@ -874,6 +874,9 @@ func (rc *RunContext) getJobContext() *model.JobContext {
 			}
 		}
 	}
+	return &model.JobContext{
+		Status: jobStatus,
+	}
 }
 
 func (rc *RunContext) getStepsContext() map[string]*model.StepResult {
