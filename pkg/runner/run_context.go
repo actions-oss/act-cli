@@ -52,6 +52,7 @@ type RunContext struct {
 	cleanUpJobContainer common.Executor
 	caller              *caller // job calling this RunContext (reusable workflows)
 	nodeToolFullPath    string
+	GHContextData       *string
 }
 
 func (rc *RunContext) AddMask(mask string) {
@@ -912,6 +913,22 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 		ghc.Workspace = rc.JobContainer.ToContainerPath(rc.Config.Workdir)
 	}
 
+	if rc.GHContextData != nil {
+		var out map[string]interface{}
+		var nout map[string]interface{}
+		content, _ := json.Marshal(ghc)
+		_ = json.Unmarshal(content, &out)
+		_ = json.Unmarshal([]byte(*rc.GHContextData), &nout)
+		for k, v := range nout {
+			// gitea sends empty string github contextdata, which replaced github.workspace
+			if v != nil && v != "" {
+				out[k] = v
+			}
+		}
+		content, _ = json.Marshal(out)
+		_ = json.Unmarshal(content, &ghc)
+	}
+
 	if ghc.RunAttempt == "" {
 		ghc.RunAttempt = "1"
 	}
@@ -957,16 +974,9 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 
 	ghc.SetRefTypeAndName()
 
-	// defaults
-	ghc.ServerURL = "https://github.com"
-	ghc.APIURL = "https://api.github.com"
-	ghc.GraphQLURL = "https://api.github.com/graphql"
-	// per GHES
-	if rc.Config.GitHubInstance != "github.com" {
-		ghc.ServerURL = fmt.Sprintf("https://%s", rc.Config.GitHubInstance)
-		ghc.APIURL = fmt.Sprintf("https://%s/api/v3", rc.Config.GitHubInstance)
-		ghc.GraphQLURL = fmt.Sprintf("https://%s/api/graphql", rc.Config.GitHubInstance)
-	}
+	ghc.ServerURL = rc.Config.GetGitHubServerUrl()
+	ghc.APIURL = rc.Config.GetGitHubApiServerUrl()
+	ghc.GraphQLURL = rc.Config.GetGitHubGraphQlApiServerUrl()
 	// allow to be overridden by user
 	if rc.Config.Env["GITHUB_SERVER_URL"] != "" {
 		ghc.ServerURL = rc.Config.Env["GITHUB_SERVER_URL"]
