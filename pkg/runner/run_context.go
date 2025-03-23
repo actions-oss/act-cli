@@ -864,14 +864,15 @@ func trimToLen(s string, l int) string {
 
 func (rc *RunContext) getJobContext() *model.JobContext {
 	jobStatus := "success"
-	for _, stepStatus := range rc.StepResults {
-		if stepStatus.Conclusion == model.StepStatusFailure {
-			jobStatus = "failure"
-			break
+	if rc.Cancelled {
+		jobStatus = "cancelled"
+	} else {
+		for _, stepStatus := range rc.StepResults {
+			if stepStatus.Conclusion == model.StepStatusFailure {
+				jobStatus = "failure"
+				break
+			}
 		}
-	}
-	return &model.JobContext{
-		Status: jobStatus,
 	}
 }
 
