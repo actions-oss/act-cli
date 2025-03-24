@@ -12,6 +12,7 @@ import (
 	"github.com/actions-oss/act-cli/pkg/container"
 	"github.com/actions-oss/act-cli/pkg/exprparser"
 	"github.com/actions-oss/act-cli/pkg/model"
+	"github.com/sirupsen/logrus"
 )
 
 type step interface {
@@ -147,21 +148,7 @@ func runStepExecutor(step step, stage stepStage, executor common.Executor) commo
 		var cancelTimeOut context.CancelFunc
 		stepCtx, cancelTimeOut = evaluateStepTimeout(stepCtx, rc.ExprEval, stepModel)
 		defer cancelTimeOut()
-		if !rc.Cancelled && cctx != nil {
-			go func() {
-				select {
-				case <-cctx.Done():
-					rc.Cancelled = true
-					logger.Infof("Reevaluate condition %v due to cancellation", ifExpression)
-					keepStepRunning, err := isStepEnabled(ctx, ifExpression, step, stage)
-					logger.Infof("Result condition keepStepRunning=%v", keepStepRunning)
-					if !keepStepRunning || err != nil {
-						cancelStepCtx()
-					}
-				case <-stepCtx.Done():
-				}
-			}()
-		}
+		monitorJobCancellation(cctx, rc, logger, ifExpression, ctx, step, stage, cancelStepCtx, stepCtx)
 		err = executor(stepCtx)
 
 		if err == nil {
@@ -207,6 +194,24 @@ func runStepExecutor(step step, stage stepStage, executor common.Executor) commo
 			return orgerr
 		}
 		return err
+	}
+}
+
+func monitorJobCancellation(cctx context.Context, rc *RunContext, logger logrus.FieldLogger, ifExpression string, ctx context.Context, step step, stage stepStage, cancelStepCtx context.CancelFunc, stepCtx context.Context) {
+	if !rc.Cancelled && cctx != nil {
+		go func() {
+			select {
+			case <-cctx.Done():
+				rc.Cancelled = true
+				logger.Infof("Reevaluate condition %v due to cancellation", ifExpression)
+				keepStepRunning, err := isStepEnabled(ctx, ifExpression, step, stage)
+				logger.Infof("Result condition keepStepRunning=%v", keepStepRunning)
+				if !keepStepRunning || err != nil {
+					cancelStepCtx()
+				}
+			case <-stepCtx.Done():
+			}
+		}()
 	}
 }
 
