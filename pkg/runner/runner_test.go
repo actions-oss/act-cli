@@ -421,7 +421,6 @@ func TestPullFailureIsJobFailure(t *testing.T) {
 						assert.Equal(t, "failure", val)
 						hasStepResult = true
 					}
-
 				}
 			}
 			assert.True(t, hasStepResult, "stepResult not found")
