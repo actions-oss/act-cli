@@ -398,9 +398,6 @@ func TestPullFailureIsJobFailure(t *testing.T) {
 				path.Clean(path.Join(workdir, "cache")),
 			}
 
-			log.SetOutput(&factory.buffer)
-			log.SetFormatter(&log.JSONFormatter{})
-
 			logger := logrus.New()
 			logger.SetOutput(&factory.buffer)
 			logger.SetLevel(log.TraceLevel)
@@ -429,6 +426,16 @@ func TestPullFailureIsJobFailure(t *testing.T) {
 	}
 }
 
+type mockCache struct {
+}
+
+func (c mockCache) Fetch(ctx context.Context, cacheDir string, url string, ref string, token string) (string, error) {
+	return "", fmt.Errorf("fetch failure")
+}
+func (c mockCache) GetTarArchive(ctx context.Context, cacheDir string, sha string, includePrefix string) (io.ReadCloser, error) {
+	return nil, fmt.Errorf("fetch failure")
+}
+
 func TestFetchFailureIsJobFailure(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
@@ -450,12 +457,7 @@ func TestFetchFailureIsJobFailure(t *testing.T) {
 			if _, err := os.Stat(eventFile); err == nil {
 				config.EventPath = eventFile
 			}
-			config.ActionCache = &GoGitActionCache{
-				path.Clean(path.Join(workdir, "cache")),
-			}
-
-			log.SetOutput(&factory.buffer)
-			log.SetFormatter(&log.JSONFormatter{})
+			config.ActionCache = &mockCache{}
 
 			logger := logrus.New()
 			logger.SetOutput(&factory.buffer)
