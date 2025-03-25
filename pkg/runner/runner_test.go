@@ -407,7 +407,7 @@ func TestPullFailureIsJobFailure(t *testing.T) {
 			scan := bufio.NewScanner(&factory.buffer)
 			var hasJobResult, hasStepResult bool
 			for scan.Scan() {
-				print(scan.Text())
+				t.Log(scan.Text())
 				entry := map[string]interface{}{}
 				if json.Unmarshal(scan.Bytes(), &entry) == nil {
 					if val, ok := entry["jobResult"]; ok {
@@ -477,7 +477,7 @@ func TestFetchFailureIsJobFailure(t *testing.T) {
 			scan := bufio.NewScanner(&factory.buffer)
 			var hasJobResult bool
 			for scan.Scan() {
-				print(scan.Text())
+				t.Log(scan.Text())
 				entry := map[string]interface{}{}
 				if json.Unmarshal(scan.Bytes(), &entry) == nil {
 					if val, ok := entry["jobResult"]; ok {
