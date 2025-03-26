@@ -56,8 +56,7 @@ jobs:
       - name: Install gotestfmt
         run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.5.0
       - name: Run Tests
-      # TODO Figure out why this fails
-        run: go test -json -v -cover -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic -timeout 20m -run '^(TestPullFailureIsJobFailure|TestFetchFailureIsJobFailure)$' ./... | gotestfmt -hide successful-packages,empty-packages 2>&1
+        run: go test -json -v -cover -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic -timeout 20m ./... | gotestfmt -hide successful-packages,empty-packages 2>&1
       - name: Run act from cli
         run: go run main.go -P ubuntu-latest=node:16-buster-slim -C ./pkg/runner/testdata/ -W ./basic/push.yml
       - name: Run act from cli without docker support
