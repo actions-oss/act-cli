@@ -1,8 +1,10 @@
 package runner
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	assert "github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
@@ -52,7 +55,7 @@ func init() {
 }
 
 func TestNoWorkflowsFoundByPlanner(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("res", true)
+	planner, err := model.NewWorkflowPlanner("res", true, false)
 	assert.NoError(t, err)
 
 	out := log.StandardLogger().Out
@@ -72,7 +75,7 @@ func TestNoWorkflowsFoundByPlanner(t *testing.T) {
 }
 
 func TestGraphMissingEvent(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/no-event.yml", true)
+	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/no-event.yml", true, false)
 	assert.NoError(t, err)
 
 	out := log.StandardLogger().Out
@@ -90,7 +93,7 @@ func TestGraphMissingEvent(t *testing.T) {
 }
 
 func TestGraphMissingFirst(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/no-first.yml", true)
+	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/no-first.yml", true, false)
 	assert.NoError(t, err)
 
 	plan, err := planner.PlanEvent("push")
@@ -100,7 +103,7 @@ func TestGraphMissingFirst(t *testing.T) {
 }
 
 func TestGraphWithMissing(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/missing.yml", true)
+	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/missing.yml", true, false)
 	assert.NoError(t, err)
 
 	out := log.StandardLogger().Out
@@ -119,7 +122,7 @@ func TestGraphWithMissing(t *testing.T) {
 func TestGraphWithSomeMissing(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/", true)
+	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/", true, false)
 	assert.NoError(t, err)
 
 	out := log.StandardLogger().Out
@@ -137,7 +140,7 @@ func TestGraphWithSomeMissing(t *testing.T) {
 }
 
 func TestGraphEvent(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("testdata/basic", true)
+	planner, err := model.NewWorkflowPlanner("testdata/basic", true, false)
 	assert.NoError(t, err)
 
 	plan, err := planner.PlanEvent("push")
@@ -195,7 +198,7 @@ func (j *TestJobFileInfo) runTest(ctx context.Context, t *testing.T, cfg *Config
 	runner, err := New(runnerConfig)
 	assert.Nil(t, err, j.workflowPath)
 
-	planner, err := model.NewWorkflowPlanner(fullWorkflowPath, true)
+	planner, err := model.NewWorkflowPlanner(fullWorkflowPath, true, false)
 	if j.errorMessage != "" && err != nil {
 		assert.Error(t, err, j.errorMessage)
 	} else if assert.Nil(t, err, fullWorkflowPath) {
@@ -354,6 +357,136 @@ func TestRunEvent(t *testing.T) {
 			}
 
 			table.runTest(ctx, t, config)
+		})
+	}
+}
+
+type captureJobLoggerFactory struct {
+	buffer bytes.Buffer
+}
+
+func (factory *captureJobLoggerFactory) WithJobLogger() *logrus.Logger {
+	logger := logrus.New()
+	logger.SetOutput(&factory.buffer)
+	logger.SetLevel(log.TraceLevel)
+	logger.SetFormatter(&log.JSONFormatter{})
+	return logger
+}
+
+func TestPullFailureIsJobFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	tables := []TestJobFileInfo{
+		{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets},
+	}
+
+	for _, table := range tables {
+		t.Run(table.workflowPath, func(t *testing.T) {
+			factory := &captureJobLoggerFactory{}
+
+			config := &Config{
+				Secrets: table.secrets,
+			}
+
+			eventFile := filepath.Join(workdir, table.workflowPath, "event.json")
+			if _, err := os.Stat(eventFile); err == nil {
+				config.EventPath = eventFile
+			}
+			config.ActionCache = &GoGitActionCache{
+				path.Clean(path.Join(workdir, "cache")),
+			}
+
+			logger := logrus.New()
+			logger.SetOutput(&factory.buffer)
+			logger.SetLevel(log.TraceLevel)
+			logger.SetFormatter(&log.JSONFormatter{})
+
+			table.runTest(common.WithLogger(WithJobLoggerFactory(t.Context(), factory), logger), t, config)
+			scan := bufio.NewScanner(&factory.buffer)
+			var hasJobResult, hasStepResult bool
+			for scan.Scan() {
+				t.Log(scan.Text())
+				entry := map[string]interface{}{}
+				if json.Unmarshal(scan.Bytes(), &entry) == nil {
+					if val, ok := entry["jobResult"]; ok {
+						assert.Equal(t, "failure", val)
+						hasJobResult = true
+					}
+					if val, ok := entry["stepResult"]; ok && !hasStepResult {
+						assert.Equal(t, "failure", val)
+						hasStepResult = true
+					}
+				}
+			}
+			assert.True(t, hasStepResult, "stepResult not found")
+			assert.True(t, hasJobResult, "jobResult not found")
+		})
+	}
+}
+
+type mockCache struct {
+}
+
+func (c mockCache) Fetch(ctx context.Context, cacheDir string, url string, ref string, token string) (string, error) {
+	_ = ctx
+	_ = cacheDir
+	_ = url
+	_ = ref
+	_ = token
+	return "", fmt.Errorf("fetch failure")
+}
+func (c mockCache) GetTarArchive(ctx context.Context, cacheDir string, sha string, includePrefix string) (io.ReadCloser, error) {
+	_ = ctx
+	_ = cacheDir
+	_ = sha
+	_ = includePrefix
+	return nil, fmt.Errorf("fetch failure")
+}
+
+func TestFetchFailureIsJobFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	tables := []TestJobFileInfo{
+		{workdir, "action-cache-v2-fetch-failure-is-job-error", "push", "fetch failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets},
+	}
+
+	for _, table := range tables {
+		t.Run(table.workflowPath, func(t *testing.T) {
+			factory := &captureJobLoggerFactory{}
+
+			config := &Config{
+				Secrets: table.secrets,
+			}
+
+			eventFile := filepath.Join(workdir, table.workflowPath, "event.json")
+			if _, err := os.Stat(eventFile); err == nil {
+				config.EventPath = eventFile
+			}
+			config.ActionCache = &mockCache{}
+
+			logger := logrus.New()
+			logger.SetOutput(&factory.buffer)
+			logger.SetLevel(log.TraceLevel)
+			logger.SetFormatter(&log.JSONFormatter{})
+
+			table.runTest(common.WithLogger(WithJobLoggerFactory(t.Context(), factory), logger), t, config)
+			scan := bufio.NewScanner(&factory.buffer)
+			var hasJobResult bool
+			for scan.Scan() {
+				t.Log(scan.Text())
+				entry := map[string]interface{}{}
+				if json.Unmarshal(scan.Bytes(), &entry) == nil {
+					if val, ok := entry["jobResult"]; ok {
+						assert.Equal(t, "failure", val)
+						hasJobResult = true
+					}
+				}
+			}
+			assert.True(t, hasJobResult, "jobResult not found")
 		})
 	}
 }
