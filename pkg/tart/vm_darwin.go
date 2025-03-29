@@ -101,7 +101,8 @@ func (vm *VM) Start(ctx context.Context, config Config, _ *Env, customDirectoryM
 
 	runArgs = append(runArgs, vm.id)
 
-	cmd := exec.CommandContext(ctx, tartCommandName, runArgs...)
+	// Use Background context, because we want to keep the VM running
+	cmd := exec.CommandContext(context.Background(), tartCommandName, runArgs...)
 
 	common.Logger(ctx).Debug(strings.Join(runArgs, " "))
 
