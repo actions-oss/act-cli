@@ -27,6 +27,7 @@ type stepActionRemote struct {
 	remoteAction        *remoteAction
 	cacheDir            string
 	resolvedSha         string
+	copyDone            bool
 }
 
 func (sar *stepActionRemote) prepareActionExecutor() common.Executor {
