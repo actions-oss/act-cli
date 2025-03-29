@@ -55,14 +55,13 @@ func Execute(ctx context.Context, version string) {
 
 func createRootCommand(ctx context.Context, input *Input, version string) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:               "act [event name to run] [flags]\n\nIf no event name passed, will default to \"on: push\"\nIf actions handles only one event it will be used as default instead of \"on: push\"",
-		Short:             "Run GitHub actions locally by specifying the event name (e.g. `push`) or an action name directly.",
-		Args:              cobra.MaximumNArgs(1),
-		RunE:              newRunCommand(ctx, input),
-		PersistentPreRun:  setup(input),
-		PersistentPostRun: cleanup(input),
-		Version:           version,
-		SilenceUsage:      true,
+		Use:              "act [event name to run] [flags]\n\nIf no event name passed, will default to \"on: push\"\nIf actions handles only one event it will be used as default instead of \"on: push\"",
+		Short:            "Run GitHub actions locally by specifying the event name (e.g. `push`) or an action name directly.",
+		Args:             cobra.MaximumNArgs(1),
+		RunE:             newRunCommand(ctx, input),
+		PersistentPreRun: setup(input),
+		Version:          version,
+		SilenceUsage:     true,
 	}
 
 	rootCmd.Flags().BoolP("watch", "w", false, "watch the contents of the local repo and run when files change")
@@ -303,13 +302,6 @@ func setup(_ *Input) func(*cobra.Command, []string) {
 		if verbose {
 			log.SetLevel(log.DebugLevel)
 		}
-		loadVersionNotices(cmd.Version)
-	}
-}
-
-func cleanup(inputs *Input) func(*cobra.Command, []string) {
-	return func(_ *cobra.Command, _ []string) {
-		displayNotices(inputs)
 	}
 }
 
