@@ -6,6 +6,7 @@ on:
 
 jobs:
   release:
+    if: vars.ENABLE_PROMOTE || github.event_name != 'schedule'
     name: promote
     runs-on: ubuntu-latest
     steps:
