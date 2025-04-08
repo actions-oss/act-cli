@@ -373,13 +373,14 @@ func (factory *captureJobLoggerFactory) WithJobLogger() *logrus.Logger {
 	return logger
 }
 
-func TestPullFailureIsJobFailure(t *testing.T) {
+func TestPullAndPostStepFailureIsJobFailure(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
 	tables := []TestJobFileInfo{
 		{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets},
+                {workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets},
 	}
 
 	for _, table := range tables {
@@ -452,52 +453,6 @@ func TestFetchFailureIsJobFailure(t *testing.T) {
 
 	tables := []TestJobFileInfo{
 		{workdir, "action-cache-v2-fetch-failure-is-job-error", "push", "fetch failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets},
-	}
-
-	for _, table := range tables {
-		t.Run(table.workflowPath, func(t *testing.T) {
-			factory := &captureJobLoggerFactory{}
-
-			config := &Config{
-				Secrets: table.secrets,
-			}
-
-			eventFile := filepath.Join(workdir, table.workflowPath, "event.json")
-			if _, err := os.Stat(eventFile); err == nil {
-				config.EventPath = eventFile
-			}
-			config.ActionCache = &mockCache{}
-
-			logger := logrus.New()
-			logger.SetOutput(&factory.buffer)
-			logger.SetLevel(log.TraceLevel)
-			logger.SetFormatter(&log.JSONFormatter{})
-
-			table.runTest(common.WithLogger(WithJobLoggerFactory(t.Context(), factory), logger), t, config)
-			scan := bufio.NewScanner(&factory.buffer)
-			var hasJobResult bool
-			for scan.Scan() {
-				t.Log(scan.Text())
-				entry := map[string]interface{}{}
-				if json.Unmarshal(scan.Bytes(), &entry) == nil {
-					if val, ok := entry["jobResult"]; ok {
-						assert.Equal(t, "failure", val)
-						hasJobResult = true
-					}
-				}
-			}
-			assert.True(t, hasJobResult, "jobResult not found")
-		})
-	}
-}
-
-func TestPostStepFailureIsJobFailure(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	tables := []TestJobFileInfo{
-		{workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets},
 	}
 
 	for _, table := range tables {
