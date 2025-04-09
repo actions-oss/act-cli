@@ -380,7 +380,7 @@ func TestPullAndPostStepFailureIsJobFailure(t *testing.T) {
 
 	tables := []TestJobFileInfo{
 		{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets},
-                {workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets},
+		{workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets},
 	}
 
 	for _, table := range tables {
