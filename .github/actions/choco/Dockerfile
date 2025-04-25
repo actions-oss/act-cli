@@ -3,7 +3,7 @@ FROM alpine:3.17
 ARG CHOCOVERSION=1.1.0
 
 RUN apk add --no-cache bash ca-certificates git \
-  && apk --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing add mono mono-dev \
+  && apk --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/community add mono mono-dev \
   && cert-sync /etc/ssl/certs/ca-certificates.crt \
   && wget "https://github.com/chocolatey/choco/archive/${CHOCOVERSION}.tar.gz" -O- | tar -xzf - \
   && cd choco-"${CHOCOVERSION}" \
