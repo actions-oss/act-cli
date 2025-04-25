@@ -422,12 +422,12 @@ func TestPullAndPostStepFailureIsJobFailure(t *testing.T) {
 						hasJobResult = true
 					}
 					if val, ok := entry["stepResult"]; ok && !hasStepResult {
-						assert.Equal(t, "failure", val)
+						assert.Equal(t, table.SetupResult, val)
 						hasStepResult = true
 					}
 				}
 			}
-			assert.Equal(t, table.SetupResult, hasStepResult, "stepResult not found")
+			assert.True(t, hasStepResult, "stepResult not found")
 			assert.True(t, hasJobResult, "jobResult not found")
 		})
 	}
