@@ -203,7 +203,7 @@ func (r artifactV4Routes) buildSignature(endp, expires, artifactName string, tas
 	mac.Write([]byte(endp))
 	mac.Write([]byte(expires))
 	mac.Write([]byte(artifactName))
-	mac.Write([]byte(fmt.Sprint(taskID)))
+	fmt.Fprint(mac, taskID)
 	return mac.Sum(nil)
 }
 
@@ -240,13 +240,13 @@ func (r artifactV4Routes) verifySignature(ctx *ArtifactContext, endp string) (in
 func (r *artifactV4Routes) parseProtbufBody(ctx *ArtifactContext, req protoreflect.ProtoMessage) bool {
 	body, err := io.ReadAll(ctx.Req.Body)
 	if err != nil {
-		log.Errorf("Error decode request body: %v", err)
+		log.Errorf("error decode request body: %v", err)
 		ctx.Error(http.StatusInternalServerError, "Error decode request body")
 		return false
 	}
 	err = protojson.Unmarshal(body, req)
 	if err != nil {
-		log.Errorf("Error decode request body: %v", err)
+		log.Errorf("error decode request body: %v", err)
 		ctx.Error(http.StatusInternalServerError, "Error decode request body")
 		return false
 	}
@@ -256,7 +256,7 @@ func (r *artifactV4Routes) parseProtbufBody(ctx *ArtifactContext, req protorefle
 func (r *artifactV4Routes) sendProtbufBody(ctx *ArtifactContext, req protoreflect.ProtoMessage) {
 	resp, err := protojson.Marshal(req)
 	if err != nil {
-		log.Errorf("Error encode response body: %v", err)
+		log.Errorf("error encode response body: %v", err)
 		ctx.Error(http.StatusInternalServerError, "Error encode response body")
 		return
 	}
@@ -318,11 +318,11 @@ func (r *artifactV4Routes) uploadArtifact(ctx *ArtifactContext) {
 
 		writer, ok := file.(io.Writer)
 		if !ok {
-			panic(errors.New("File is not writable"))
+			panic(errors.New("file is not writable"))
 		}
 
 		if ctx.Req.Body == nil {
-			panic(errors.New("No body given"))
+			panic(errors.New("no body given"))
 		}
 
 		_, err = io.Copy(writer, ctx.Req.Body)

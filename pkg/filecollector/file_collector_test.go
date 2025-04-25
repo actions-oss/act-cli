@@ -57,7 +57,7 @@ func (mfs *memoryFs) Walk(root string, fn filepath.WalkFunc) error {
 }
 
 func (mfs *memoryFs) OpenGitIndex(path string) (*index.Index, error) {
-	f, _ := mfs.Filesystem.Chroot(filepath.Join(path, ".git"))
+	f, _ := mfs.Chroot(filepath.Join(path, ".git"))
 	storage := filesystem.NewStorage(f, cache.NewObjectLRUDefault())
 	i, err := storage.Index()
 	if err != nil {

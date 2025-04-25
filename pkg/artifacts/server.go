@@ -135,11 +135,11 @@ func uploads(router *httprouter.Router, baseDir string, fsys WriteFS) {
 
 		writer, ok := file.(io.Writer)
 		if !ok {
-			panic(errors.New("File is not writable"))
+			panic(errors.New("file is not writable"))
 		}
 
 		if req.Body == nil {
-			panic(errors.New("No body given"))
+			panic(errors.New("no body given"))
 		}
 
 		_, err = io.Copy(writer, req.Body)
@@ -310,7 +310,7 @@ func Serve(ctx context.Context, artifactPath string, addr string, port string) c
 		<-serverContext.Done()
 
 		if err := server.Shutdown(ctx); err != nil {
-			logger.Errorf("Failed shutdown gracefully - force shutdown: %v", err)
+			logger.Errorf("failed shutdown gracefully - force shutdown: %v", err)
 			server.Close()
 		}
 	}()
