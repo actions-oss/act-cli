@@ -376,9 +376,18 @@ func TestPullAndPostStepFailureIsJobFailure(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	tables := []TestJobFileInfo{
-		{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets},
-		{workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets},
+	defCache := &GoGitActionCache{
+		path.Clean(path.Join(workdir, "cache")),
+	}
+
+	mockCache := &mockCache{}
+
+	tables := []struct {
+		TestJobFileInfo
+		ActionCache ActionCache
+	}{
+		{TestJobFileInfo{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets}, defCache},
+		{TestJobFileInfo{workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets}, mockCache},
 	}
 
 	for _, table := range tables {
@@ -393,9 +402,7 @@ func TestPullAndPostStepFailureIsJobFailure(t *testing.T) {
 			if _, err := os.Stat(eventFile); err == nil {
 				config.EventPath = eventFile
 			}
-			config.ActionCache = &GoGitActionCache{
-				path.Clean(path.Join(workdir, "cache")),
-			}
+			config.ActionCache = table.ActionCache
 
 			logger := log.New()
 			logger.SetOutput(&factory.buffer)
