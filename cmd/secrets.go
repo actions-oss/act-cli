@@ -17,7 +17,7 @@ func newSecrets(secretList []string) secrets {
 		secretPairParts := strings.SplitN(secretPair, "=", 2)
 		secretPairParts[0] = strings.ToUpper(secretPairParts[0])
 		if strings.ToUpper(s[secretPairParts[0]]) == secretPairParts[0] {
-			log.Errorf("Secret %s is already defined (secrets are case insensitive)", secretPairParts[0])
+			log.Errorf("secret %s is already defined (secrets are case insensitive)", secretPairParts[0])
 		}
 		if len(secretPairParts) == 2 {
 			s[secretPairParts[0]] = secretPairParts[1]

@@ -74,7 +74,7 @@ func (w *Workflow) UnmarshalYAML(node *yaml.Node) error {
 		Definition: "workflow-root",
 		Schema:     schema.GetWorkflowSchema(),
 	}).UnmarshalYAML(node); err != nil {
-		return errors.Join(err, fmt.Errorf("Actions YAML Schema Validation Error detected:\nFor more information, see: https://actions-oss.github.io/act-docs/usage/schema.html"))
+		return errors.Join(err, fmt.Errorf("actions YAML Schema Validation Error detected:\nFor more information, see: https://actions-oss.github.io/act-docs/usage/schema.html"))
 	}
 	type WorkflowDefault Workflow
 	return node.Decode((*WorkflowDefault)(w))
@@ -88,7 +88,7 @@ func (w *WorkflowStrict) UnmarshalYAML(node *yaml.Node) error {
 		Definition: "workflow-root-strict",
 		Schema:     schema.GetWorkflowSchema(),
 	}).UnmarshalYAML(node); err != nil {
-		return errors.Join(err, fmt.Errorf("Actions YAML Strict Schema Validation Error detected:\nFor more information, see: https://nektosact.com/usage/schema.html"))
+		return errors.Join(err, fmt.Errorf("actions YAML Strict Schema Validation Error detected:\nFor more information, see: https://nektosact.com/usage/schema.html"))
 	}
 	type WorkflowDefault Workflow
 	return node.Decode((*WorkflowDefault)(w))
@@ -235,7 +235,7 @@ func (s Strategy) GetMaxParallel() int {
 	if s.MaxParallelString != "" {
 		var err error
 		if maxParallel, err = strconv.Atoi(s.MaxParallelString); err != nil {
-			log.Errorf("Failed to parse 'max-parallel' option: %v", err)
+			log.Errorf("failed to parse 'max-parallel' option: %v", err)
 		}
 	}
 	return maxParallel
@@ -249,7 +249,7 @@ func (s Strategy) GetFailFast() bool {
 	if s.FailFastString != "" {
 		var err error
 		if failFast, err = strconv.ParseBool(s.FailFastString); err != nil {
-			log.Errorf("Failed to parse 'fail-fast' option: %v", err)
+			log.Errorf("failed to parse 'fail-fast' option: %v", err)
 		}
 	}
 	return failFast

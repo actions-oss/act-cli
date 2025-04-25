@@ -227,7 +227,7 @@ func (e Executor) Finally(finally Executor) Executor {
 		defer func() {
 			err2 := finally(ctx)
 			if err2 != nil {
-				err = fmt.Errorf("Error occurred running finally: %v (original error: %v)", err2, err)
+				err = fmt.Errorf("error occurred running finally: %v (original error: %v)", err2, err)
 			}
 		}()
 		err = e(ctx)

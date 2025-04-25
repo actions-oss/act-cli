@@ -356,7 +356,7 @@ func (rc *RunContext) startJobContainer() common.Executor {
 						if len(rc.ServiceContainers) > 0 {
 							logger.Infof("Cleaning up services for job %s", rc.JobName)
 							if err := rc.stopServiceContainers()(ctx); err != nil {
-								logger.Errorf("Error while cleaning services: %v", err)
+								logger.Errorf("error while cleaning services: %v", err)
 							}
 							if createAndDeleteNetwork {
 								// clean network if it has been created by act
@@ -365,7 +365,7 @@ func (rc *RunContext) startJobContainer() common.Executor {
 								// so, we should remove the network at last.
 								logger.Infof("Cleaning up network for job %s, and network name is: %s", rc.JobName, networkName)
 								if err := container.NewDockerNetworkRemoveExecutor(networkName)(ctx); err != nil {
-									logger.Errorf("Error while cleaning network: %v", err)
+									logger.Errorf("error while cleaning network: %v", err)
 								}
 							}
 						}
@@ -403,7 +403,7 @@ func (rc *RunContext) startJobContainer() common.Executor {
 			Options:        rc.options(ctx),
 		})
 		if rc.JobContainer == nil {
-			return errors.New("Failed to create job container")
+			return errors.New("failed to create job container")
 		}
 
 		return common.NewPipelineExecutor(
@@ -774,7 +774,7 @@ func (rc *RunContext) runsOnPlatformNames(ctx context.Context) []string {
 	}
 
 	if err := rc.ExprEval.EvaluateYamlNode(ctx, &job.RawRunsOn); err != nil {
-		common.Logger(ctx).Errorf("Error while evaluating runs-on: %v", err)
+		common.Logger(ctx).Errorf("error while evaluating runs-on: %v", err)
 		return []string{}
 	}
 
@@ -950,7 +950,7 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 	if rc.EventJSON != "" {
 		err := json.Unmarshal([]byte(rc.EventJSON), &ghc.Event)
 		if err != nil {
-			logger.Errorf("Unable to Unmarshal event '%s': %v", rc.EventJSON, err)
+			logger.Errorf("unable to Unmarshal event '%s': %v", rc.EventJSON, err)
 		}
 	}
 

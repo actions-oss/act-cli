@@ -10,6 +10,10 @@ on:
         description: an input with default
         required: false
         default: default
+      with_default2:
+        description: an input with default
+        required: false
+        default: ${{ github.event_name }}
       boolean:
         description: an input of type boolean
         required: false
@@ -27,6 +31,10 @@ jobs:
         run: |
           echo input.with_default=${{ inputs.with_default }}
           [[ "${{ inputs.with_default }}" = "default" ]] || exit 1
+      - name: test input with default2
+        run: |
+          echo input.with_default2=${{ inputs.with_default2 }}
+          [[ "${{ inputs.with_default2 }}" = "workflow_call" ]] || exit 1
       - id: boolean-test
         name: run on boolean input
         if: ${{ inputs.boolean == true }}

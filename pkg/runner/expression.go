@@ -186,7 +186,7 @@ func getHashFilesFunction(ctx context.Context, rc *RunContext) func(v []reflect.
 							followSymlink = true
 							continue
 						}
-						return "", fmt.Errorf("Invalid glob option %s, available option: '--follow-symbolic-links'", s)
+						return "", fmt.Errorf("invalid glob option %s, available option: '--follow-symbolic-links'", s)
 					}
 				}
 				patterns = append(patterns, s)
@@ -385,7 +385,7 @@ func (ee expressionEvaluator) Interpolate(ctx context.Context, in string) string
 	expr, _ := rewriteSubExpression(ctx, in, true)
 	evaluated, err := ee.evaluate(ctx, expr, exprparser.DefaultStatusCheckNone)
 	if err != nil {
-		common.Logger(ctx).Errorf("Unable to interpolate expression '%s': %s", expr, err)
+		common.Logger(ctx).Errorf("unable to interpolate expression '%s': %s", expr, err)
 		return ""
 	}
 
@@ -514,24 +514,6 @@ func getEvaluatorInputs(ctx context.Context, rc *RunContext, step step, ghc *mod
 		}
 	}
 
-	if ghc.EventName == "workflow_call" {
-		config := rc.Run.Workflow.WorkflowCallConfig()
-		if config != nil && config.Inputs != nil {
-			for k, v := range config.Inputs {
-				value := nestedMapLookup(ghc.Event, "inputs", k)
-				if value == nil {
-					if err := v.Default.Decode(&value); err != nil {
-						common.Logger(ctx).Debugf("error decoding default value for %s: %v", k, err)
-					}
-				}
-				if v.Type == "boolean" {
-					inputs[k] = value == "true"
-				} else {
-					inputs[k] = value
-				}
-			}
-		}
-	}
 	return inputs
 }
 

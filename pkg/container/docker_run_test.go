@@ -200,7 +200,7 @@ func TestDockerCopyTarStreamErrorInCopyFiles(t *testing.T) {
 
 	conn := &mockConn{}
 
-	merr := fmt.Errorf("Failure")
+	merr := fmt.Errorf("failure")
 
 	client := &mockDockerClient{}
 	client.On("CopyToContainer", ctx, "123", "/", mock.Anything, mock.AnythingOfType("container.CopyToContainerOptions")).Return(merr)
@@ -225,7 +225,7 @@ func TestDockerCopyTarStreamErrorInMkdir(t *testing.T) {
 
 	conn := &mockConn{}
 
-	merr := fmt.Errorf("Failure")
+	merr := fmt.Errorf("failure")
 
 	client := &mockDockerClient{}
 	client.On("CopyToContainer", ctx, "123", "/", mock.Anything, mock.AnythingOfType("container.CopyToContainerOptions")).Return(nil)

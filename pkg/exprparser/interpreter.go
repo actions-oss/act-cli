@@ -86,7 +86,7 @@ func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultSt
 	parser := actionlint.NewExprParser()
 	exprNode, err := parser.Parse(actionlint.NewExprLexer(input + "}}"))
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse: %s", err.Message)
+		return nil, fmt.Errorf("failed to parse: %s", err.Message)
 	}
 
 	if defaultStatusCheck != DefaultStatusCheckNone {
@@ -146,7 +146,7 @@ func (impl *interperterImpl) evaluateNode(exprNode actionlint.ExprNode) (interfa
 	case *actionlint.FuncCallNode:
 		return impl.evaluateFuncCall(node)
 	default:
-		return nil, fmt.Errorf("Fatal error! Unknown node type: %s node: %+v", reflect.TypeOf(exprNode), exprNode)
+		return nil, fmt.Errorf("fatal error! Unknown node type: %s node: %+v", reflect.TypeOf(exprNode), exprNode)
 	}
 }
 
@@ -160,7 +160,7 @@ func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableN
 		return impl.env.Job, nil
 	case "jobs":
 		if impl.env.Jobs == nil {
-			return nil, fmt.Errorf("Unavailable context: jobs")
+			return nil, fmt.Errorf("unavailable context: jobs")
 		}
 		return impl.env.Jobs, nil
 	case "steps":
@@ -184,7 +184,7 @@ func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableN
 	case "nan":
 		return math.NaN(), nil
 	default:
-		return nil, fmt.Errorf("Unavailable context: %s", variableNode.Name)
+		return nil, fmt.Errorf("unavailable context: %s", variableNode.Name)
 	}
 }
 
@@ -414,10 +414,10 @@ func (impl *interperterImpl) compareValues(leftValue reflect.Value, rightValue r
 		}
 
 		// not possible situation - params are converted to the same type in code above
-		return nil, fmt.Errorf("Compare params of Invalid type: left: %+v, right: %+v", leftValue.Kind(), rightValue.Kind())
+		return nil, fmt.Errorf("compare params of Invalid type: left: %+v, right: %+v", leftValue.Kind(), rightValue.Kind())
 
 	default:
-		return nil, fmt.Errorf("Compare not implemented for types: left: %+v, right: %+v", leftValue.Kind(), rightValue.Kind())
+		return nil, fmt.Errorf("compare not implemented for types: left: %+v, right: %+v", leftValue.Kind(), rightValue.Kind())
 	}
 }
 
@@ -505,7 +505,7 @@ func (impl *interperterImpl) compareString(left string, right string, kind actio
 	case actionlint.CompareOpNodeKindNotEq:
 		return left != right, nil
 	default:
-		return false, fmt.Errorf("TODO: not implemented to compare '%+v'", kind)
+		return false, fmt.Errorf("todo: not implemented to compare '%+v'", kind)
 	}
 }
 
@@ -524,7 +524,7 @@ func (impl *interperterImpl) compareNumber(left float64, right float64, kind act
 	case actionlint.CompareOpNodeKindNotEq:
 		return left != right, nil
 	default:
-		return false, fmt.Errorf("TODO: not implemented to compare '%+v'", kind)
+		return false, fmt.Errorf("todo: not implemented to compare '%+v'", kind)
 	}
 }
 
@@ -604,7 +604,7 @@ func (impl *interperterImpl) evaluateLogicalCompare(compareNode *actionlint.Logi
 		return impl.getSafeValue(rightValue), nil
 	}
 
-	return nil, fmt.Errorf("Unable to compare incompatibles types '%s' and '%s'", leftValue.Kind(), rightValue.Kind())
+	return nil, fmt.Errorf("unable to compare incompatibles types '%s' and '%s'", leftValue.Kind(), rightValue.Kind())
 }
 
 //nolint:gocyclo
@@ -652,7 +652,7 @@ func (impl *interperterImpl) evaluateFuncCall(funcCallNode *actionlint.FuncCallN
 		if impl.config.Context == "step" {
 			return impl.stepSuccess()
 		}
-		return nil, fmt.Errorf("Context '%s' must be one of 'job' or 'step'", impl.config.Context)
+		return nil, fmt.Errorf("context '%s' must be one of 'job' or 'step'", impl.config.Context)
 	case "failure":
 		if impl.config.Context == "job" {
 			return impl.jobFailure()
@@ -660,10 +660,10 @@ func (impl *interperterImpl) evaluateFuncCall(funcCallNode *actionlint.FuncCallN
 		if impl.config.Context == "step" {
 			return impl.stepFailure()
 		}
-		return nil, fmt.Errorf("Context '%s' must be one of 'job' or 'step'", impl.config.Context)
+		return nil, fmt.Errorf("context '%s' must be one of 'job' or 'step'", impl.config.Context)
 	case "cancelled":
 		return impl.cancelled()
 	default:
-		return nil, fmt.Errorf("TODO: '%s' not implemented", funcCallNode.Callee)
+		return nil, fmt.Errorf("todo: '%s' not implemented", funcCallNode.Callee)
 	}
 }

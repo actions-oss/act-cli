@@ -24,7 +24,7 @@ func (a *ActionRunsUsing) UnmarshalYAML(unmarshal func(interface{}) error) error
 	case ActionRunsUsingNode20, ActionRunsUsingNode16, ActionRunsUsingNode12, ActionRunsUsingDocker, ActionRunsUsingComposite:
 		*a = format
 	default:
-		return fmt.Errorf("The runs.using key in action.yml must be one of: %v, got %s", []string{
+		return fmt.Errorf("the runs.using key in action.yml must be one of: %v, got %s", []string{
 			ActionRunsUsingComposite,
 			ActionRunsUsingDocker,
 			ActionRunsUsingNode12,
