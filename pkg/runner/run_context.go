@@ -403,7 +403,7 @@ func (rc *RunContext) startJobContainer() common.Executor {
 			Options:        rc.options(ctx),
 		})
 		if rc.JobContainer == nil {
-			return errors.New("Failed to create job container")
+			return errors.New("failed to create job container")
 		}
 
 		return common.NewPipelineExecutor(

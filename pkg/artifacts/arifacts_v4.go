@@ -203,7 +203,7 @@ func (r artifactV4Routes) buildSignature(endp, expires, artifactName string, tas
 	mac.Write([]byte(endp))
 	mac.Write([]byte(expires))
 	mac.Write([]byte(artifactName))
-	mac.Write([]byte(fmt.Sprint(taskID)))
+	fmt.Fprint(mac, taskID)
 	return mac.Sum(nil)
 }
 
@@ -318,11 +318,11 @@ func (r *artifactV4Routes) uploadArtifact(ctx *ArtifactContext) {
 
 		writer, ok := file.(io.Writer)
 		if !ok {
-			panic(errors.New("File is not writable"))
+			panic(errors.New("file is not writable"))
 		}
 
 		if ctx.Req.Body == nil {
-			panic(errors.New("No body given"))
+			panic(errors.New("no body given"))
 		}
 
 		_, err = io.Copy(writer, ctx.Req.Body)
