@@ -514,24 +514,6 @@ func getEvaluatorInputs(ctx context.Context, rc *RunContext, step step, ghc *mod
 		}
 	}
 
-	if ghc.EventName == "workflow_call" {
-		config := rc.Run.Workflow.WorkflowCallConfig()
-		if config != nil && config.Inputs != nil {
-			for k, v := range config.Inputs {
-				value := nestedMapLookup(ghc.Event, "inputs", k)
-				if value == nil {
-					if err := v.Default.Decode(&value); err != nil {
-						common.Logger(ctx).Debugf("error decoding default value for %s: %v", k, err)
-					}
-				}
-				if v.Type == "boolean" {
-					inputs[k] = value == "true"
-				} else {
-					inputs[k] = value
-				}
-			}
-		}
-	}
 	return inputs
 }
 
