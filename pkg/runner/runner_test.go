@@ -385,9 +385,10 @@ func TestPullAndPostStepFailureIsJobFailure(t *testing.T) {
 	tables := []struct {
 		TestJobFileInfo
 		ActionCache ActionCache
+		SetupResult string
 	}{
-		{TestJobFileInfo{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets}, defCache},
-		{TestJobFileInfo{workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets}, mockCache},
+		{TestJobFileInfo{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets}, defCache, "failure"},
+		{TestJobFileInfo{workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets}, mockCache, "success"},
 	}
 
 	for _, table := range tables {
@@ -426,7 +427,7 @@ func TestPullAndPostStepFailureIsJobFailure(t *testing.T) {
 					}
 				}
 			}
-			assert.True(t, hasStepResult, "stepResult not found")
+			assert.Equal(t, table.SetupResult, hasStepResult, "stepResult not found")
 			assert.True(t, hasJobResult, "jobResult not found")
 		})
 	}
