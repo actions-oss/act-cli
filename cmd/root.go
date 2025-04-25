@@ -663,7 +663,36 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 			}
 		}
 
-		r, err := runner.New(config)
+		var r runner.Runner
+		if eventName == "workflow_call" {
+			// Do not use the totally broken code and instead craft a fake caller
+			convertedInputs := make(map[string]interface{})
+			for k, v := range inputs {
+				var raw interface{}
+				if err := yaml.Unmarshal([]byte(v), &raw); err != nil {
+					return fmt.Errorf("failed to unmarshal input %s: %w", k, err)
+				}
+				convertedInputs[k] = raw
+			}
+			r, err = runner.NewReusableWorkflowRunner(&runner.RunContext{
+				Config:  config,
+				Name:    "_",
+				JobName: "_",
+				Run: &model.Run{
+					JobID: "_",
+					Workflow: &model.Workflow{
+						Jobs: map[string]*model.Job{
+							"_": {
+								Name: "_",
+								With: convertedInputs,
+							},
+						},
+					},
+				},
+			})
+		} else {
+			r, err = runner.New(config)
+		}
 		if err != nil {
 			return err
 		}
