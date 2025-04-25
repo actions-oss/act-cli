@@ -186,7 +186,7 @@ func getHashFilesFunction(ctx context.Context, rc *RunContext) func(v []reflect.
 							followSymlink = true
 							continue
 						}
-						return "", fmt.Errorf("Invalid glob option %s, available option: '--follow-symbolic-links'", s)
+						return "", fmt.Errorf("invalid glob option %s, available option: '--follow-symbolic-links'", s)
 					}
 				}
 				patterns = append(patterns, s)
@@ -385,7 +385,7 @@ func (ee expressionEvaluator) Interpolate(ctx context.Context, in string) string
 	expr, _ := rewriteSubExpression(ctx, in, true)
 	evaluated, err := ee.evaluate(ctx, expr, exprparser.DefaultStatusCheckNone)
 	if err != nil {
-		common.Logger(ctx).Errorf("Unable to interpolate expression '%s': %s", expr, err)
+		common.Logger(ctx).Errorf("unable to interpolate expression '%s': %s", expr, err)
 		return ""
 	}
 

@@ -11,6 +11,6 @@ import (
 
 func (rc *RunContext) startTartEnvironment() common.Executor {
 	return func(_ context.Context) error {
-		return fmt.Errorf("You need macOS for tart")
+		return fmt.Errorf("you need macOS for tart")
 	}
 }

@@ -94,13 +94,13 @@ func (impl *interperterImpl) format(str reflect.Value, replaceValue ...reflect.V
 			case '}':
 				index, err := strconv.ParseInt(replacementIndex, 10, 32)
 				if err != nil {
-					return "", fmt.Errorf("The following format string is invalid: '%s'", input)
+					return "", fmt.Errorf("the following format string is invalid: '%s'", input)
 				}
 
 				replacementIndex = ""
 
 				if len(replaceValue) <= int(index) {
-					return "", fmt.Errorf("The following format string references more arguments than were supplied: '%s'", input)
+					return "", fmt.Errorf("the following format string references more arguments than were supplied: '%s'", input)
 				}
 
 				output += impl.coerceToString(replaceValue[index]).String()
@@ -127,10 +127,10 @@ func (impl *interperterImpl) format(str reflect.Value, replaceValue ...reflect.V
 	if state != passThrough {
 		switch state {
 		case bracketOpen:
-			return "", fmt.Errorf("Unclosed brackets. The following format string is invalid: '%s'", input)
+			return "", fmt.Errorf("unclosed brackets. The following format string is invalid: '%s'", input)
 
 		case bracketClose:
-			return "", fmt.Errorf("Closing bracket without opening one. The following format string is invalid: '%s'", input)
+			return "", fmt.Errorf("closing bracket without opening one. The following format string is invalid: '%s'", input)
 		}
 	}
 
@@ -159,7 +159,7 @@ func (impl *interperterImpl) toJSON(value reflect.Value) (string, error) {
 
 	json, err := json.MarshalIndent(value.Interface(), "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("Cannot convert value to JSON. Cause: %v", err)
+		return "", fmt.Errorf("cannot convert value to JSON. Cause: %v", err)
 	}
 
 	return string(json), nil
@@ -167,14 +167,14 @@ func (impl *interperterImpl) toJSON(value reflect.Value) (string, error) {
 
 func (impl *interperterImpl) fromJSON(value reflect.Value) (interface{}, error) {
 	if value.Kind() != reflect.String {
-		return nil, fmt.Errorf("Cannot parse non-string type %v as JSON", value.Kind())
+		return nil, fmt.Errorf("cannot parse non-string type %v as JSON", value.Kind())
 	}
 
 	var data interface{}
 
 	err := json.Unmarshal([]byte(value.String()), &data)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid JSON: %v", err)
+		return nil, fmt.Errorf("invalid JSON: %v", err)
 	}
 
 	return data, nil
@@ -195,7 +195,7 @@ func (impl *interperterImpl) hashFiles(paths ...reflect.Value) (string, error) {
 			}
 			ps = append(ps, gitignore.ParsePattern(cleanPath, nil))
 		} else {
-			return "", fmt.Errorf("Non-string path passed to hashFiles")
+			return "", fmt.Errorf("non-string path passed to hashFiles")
 		}
 	}
 
@@ -214,7 +214,7 @@ func (impl *interperterImpl) hashFiles(paths ...reflect.Value) (string, error) {
 		files = append(files, path)
 		return nil
 	}); err != nil {
-		return "", fmt.Errorf("Unable to filepath.Walk: %v", err)
+		return "", fmt.Errorf("unable to filepath.Walk: %v", err)
 	}
 
 	if len(files) == 0 {
@@ -226,15 +226,15 @@ func (impl *interperterImpl) hashFiles(paths ...reflect.Value) (string, error) {
 	for _, file := range files {
 		f, err := os.Open(file)
 		if err != nil {
-			return "", fmt.Errorf("Unable to os.Open: %v", err)
+			return "", fmt.Errorf("unable to os.Open: %v", err)
 		}
 
 		if _, err := io.Copy(hasher, f); err != nil {
-			return "", fmt.Errorf("Unable to io.Copy: %v", err)
+			return "", fmt.Errorf("unable to io.Copy: %v", err)
 		}
 
 		if err := f.Close(); err != nil {
-			return "", fmt.Errorf("Unable to Close file: %v", err)
+			return "", fmt.Errorf("unable to Close file: %v", err)
 		}
 	}
 

@@ -15,7 +15,7 @@ type stepFactoryImpl struct{}
 func (sf *stepFactoryImpl) newStep(stepModel *model.Step, rc *RunContext) (step, error) {
 	switch stepModel.Type() {
 	case model.StepTypeInvalid:
-		return nil, fmt.Errorf("Invalid run/uses syntax for job:%s step:%+v", rc.Run, stepModel)
+		return nil, fmt.Errorf("invalid run/uses syntax for job:%s step:%+v", rc.Run, stepModel)
 	case model.StepTypeRun:
 		return &stepRun{
 			Step:       stepModel,
@@ -42,5 +42,5 @@ func (sf *stepFactoryImpl) newStep(stepModel *model.Step, rc *RunContext) (step,
 		}, nil
 	}
 
-	return nil, fmt.Errorf("Unable to determine how to run job:%s step:%+v", rc.Run, stepModel)
+	return nil, fmt.Errorf("unable to determine how to run job:%s step:%+v", rc.Run, stepModel)
 }

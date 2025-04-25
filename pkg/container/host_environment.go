@@ -83,7 +83,7 @@ func (e *HostEnvironment) CopyTarStream(ctx context.Context, destPath string, ta
 			continue
 		}
 		if ctx.Err() != nil {
-			return fmt.Errorf("CopyTarStream has been cancelled")
+			return fmt.Errorf("copyTarStream has been cancelled")
 		}
 		if err := cp.WriteFile(ti.Name, ti.FileInfo(), ti.Linkname, tr); err != nil {
 			return err
@@ -405,12 +405,14 @@ func (e *HostEnvironment) GetActPath() string {
 }
 
 func (*HostEnvironment) GetPathVariableName() string {
-	if runtime.GOOS == "plan9" {
+	switch runtime.GOOS {
+	case "plan9":
 		return "path"
-	} else if runtime.GOOS == "windows" {
+	case "windows":
 		return "Path" // Actually we need a case insensitive map
+	default:
+		return "PATH"
 	}
-	return "PATH"
 }
 
 func (e *HostEnvironment) DefaultPathVariable() string {

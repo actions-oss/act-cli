@@ -280,7 +280,7 @@ func readArgsFile(file string, split bool) []string {
 	defer func() {
 		err := f.Close()
 		if err != nil {
-			log.Errorf("Failed to close args file: %v", err)
+			log.Errorf("failed to close args file: %v", err)
 		}
 	}()
 	scanner := bufio.NewScanner(f)
@@ -555,7 +555,7 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 		}
 		if plan != nil {
 			if len(plan.Stages) == 0 {
-				plannerErr = fmt.Errorf("Could not find any stages to run. View the valid jobs with `act --list`. Use `act --help` to find how to filter by Job ID/Workflow/Event Name")
+				plannerErr = fmt.Errorf("could not find any stages to run. View the valid jobs with `act --list`. Use `act --help` to find how to filter by Job ID/Workflow/Event Name")
 			}
 		}
 		if plan == nil && plannerErr != nil {

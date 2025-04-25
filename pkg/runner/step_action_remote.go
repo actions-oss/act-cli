@@ -38,7 +38,7 @@ func (sar *stepActionRemote) prepareActionExecutor() common.Executor {
 
 		sar.remoteAction = newRemoteAction(sar.Step.Uses)
 		if sar.remoteAction == nil {
-			return fmt.Errorf("Expected format {org}/{repo}[/path]@ref. Actual '%s' Input string was not in a correct format", sar.Step.Uses)
+			return fmt.Errorf("expected format {org}/{repo}[/path]@ref. Actual '%s' Input string was not in a correct format", sar.Step.Uses)
 		}
 
 		github := sar.getGithubContext(ctx)
