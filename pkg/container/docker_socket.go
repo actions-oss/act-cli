@@ -90,7 +90,7 @@ func GetSocketAndHost(containerSocket string) (SocketAndHost, error) {
 	if !hasDockerHost && socketHost.Socket != "" && !isDockerHostURI(socketHost.Socket) {
 		// Cases: 1B, 2B
 		// Should we early-exit here, since there is no host nor socket to talk to?
-		return SocketAndHost{}, fmt.Errorf("DOCKER_HOST was not set, couldn't be found in the usual locations, and the container daemon socket ('%s') is invalid", socketHost.Socket)
+		return SocketAndHost{}, fmt.Errorf("docker host aka DOCKER_HOST was not set, couldn't be found in the usual locations, and the container daemon socket ('%s') is invalid", socketHost.Socket)
 	}
 
 	// Default to DOCKER_HOST if set

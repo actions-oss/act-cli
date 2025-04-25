@@ -241,7 +241,7 @@ func gitCmd(args ...string) error {
 	err := cmd.Run()
 	if exitError, ok := err.(*exec.ExitError); ok {
 		if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
-			return fmt.Errorf("Exit error %d", waitStatus.ExitStatus())
+			return fmt.Errorf("exit error %d", waitStatus.ExitStatus())
 		}
 		return exitError
 	}

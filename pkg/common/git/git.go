@@ -74,7 +74,7 @@ func FindGitRevision(ctx context.Context, file string) (shortSha string, sha str
 	}
 
 	if head.Hash().IsZero() {
-		return "", "", fmt.Errorf("HEAD sha1 could not be resolved")
+		return "", "", fmt.Errorf("head sha1 could not be resolved")
 	}
 
 	hash := head.Hash().String()
@@ -261,7 +261,7 @@ func CloneIfRequired(ctx context.Context, refName plumbing.ReferenceName, input 
 			} else if lgr, ok := logger.(*log.Logger); ok {
 				progressWriter = lgr.WriterLevel(log.DebugLevel)
 			} else {
-				log.Errorf("Unable to get writer from logger (type=%T)", logger)
+				log.Errorf("unable to get writer from logger (type=%T)", logger)
 				progressWriter = os.Stdout
 			}
 		}
@@ -279,7 +279,7 @@ func CloneIfRequired(ctx context.Context, refName plumbing.ReferenceName, input 
 
 		r, err = git.PlainCloneContext(ctx, input.Dir, false, &cloneOptions)
 		if err != nil {
-			logger.Errorf("Unable to clone %v %s: %v", input.URL, refName, err)
+			logger.Errorf("unable to clone %v %s: %v", input.URL, refName, err)
 			return nil, err
 		}
 
@@ -340,7 +340,7 @@ func NewGitCloneExecutor(input NewGitCloneExecutorInput) common.Executor {
 		var hash *plumbing.Hash
 		rev := plumbing.Revision(input.Ref)
 		if hash, err = r.ResolveRevision(rev); err != nil {
-			logger.Errorf("Unable to resolve %s: %v", input.Ref, err)
+			logger.Errorf("unable to resolve %s: %v", input.Ref, err)
 		}
 
 		if hash.String() != input.Ref && len(input.Ref) >= 4 && strings.HasPrefix(hash.String(), input.Ref) {
@@ -369,7 +369,7 @@ func NewGitCloneExecutor(input NewGitCloneExecutorInput) common.Executor {
 		}
 
 		if hash, err = r.ResolveRevision(rev); err != nil {
-			logger.Errorf("Unable to resolve %s: %v", input.Ref, err)
+			logger.Errorf("unable to resolve %s: %v", input.Ref, err)
 			return err
 		}
 
@@ -390,7 +390,7 @@ func NewGitCloneExecutor(input NewGitCloneExecutorInput) common.Executor {
 				Branch: sourceRef,
 				Force:  true,
 			}); err != nil {
-				logger.Errorf("Unable to checkout %s: %v", sourceRef, err)
+				logger.Errorf("unable to checkout %s: %v", sourceRef, err)
 				return err
 			}
 		}
@@ -404,7 +404,7 @@ func NewGitCloneExecutor(input NewGitCloneExecutorInput) common.Executor {
 		if hash.String() != input.Ref && refType == "branch" {
 			logger.Debugf("Provided ref is not a sha. Updating branch ref after pull")
 			if hash, err = r.ResolveRevision(rev); err != nil {
-				logger.Errorf("Unable to resolve %s: %v", input.Ref, err)
+				logger.Errorf("unable to resolve %s: %v", input.Ref, err)
 				return err
 			}
 		}
@@ -412,7 +412,7 @@ func NewGitCloneExecutor(input NewGitCloneExecutorInput) common.Executor {
 			Hash:  *hash,
 			Force: true,
 		}); err != nil {
-			logger.Errorf("Unable to checkout %s: %v", *hash, err)
+			logger.Errorf("unable to checkout %s: %v", *hash, err)
 			return err
 		}
 
@@ -420,7 +420,7 @@ func NewGitCloneExecutor(input NewGitCloneExecutorInput) common.Executor {
 			Mode:   git.HardReset,
 			Commit: *hash,
 		}); err != nil {
-			logger.Errorf("Unable to reset to %s: %v", hash.String(), err)
+			logger.Errorf("unable to reset to %s: %v", hash.String(), err)
 			return err
 		}
 

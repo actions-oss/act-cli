@@ -310,7 +310,7 @@ func Serve(ctx context.Context, artifactPath string, addr string, port string) c
 		<-serverContext.Done()
 
 		if err := server.Shutdown(ctx); err != nil {
-			logger.Errorf("Failed shutdown gracefully - force shutdown: %v", err)
+			logger.Errorf("failed shutdown gracefully - force shutdown: %v", err)
 			server.Close()
 		}
 	}()
