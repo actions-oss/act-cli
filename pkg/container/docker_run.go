@@ -617,7 +617,7 @@ func (cr *containerReference) execExt(cmd []string, env map[string]string, user,
 		done := make(chan error)
 		go func() {
 			defer func() {
-				done <- errors.New("unvalid Operation")
+				done <- errors.New("invalid Operation")
 			}()
 			done <- cr.exec(ctx, cmd, env, user, workdir)
 		}()
