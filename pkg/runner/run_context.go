@@ -141,7 +141,8 @@ func (rc *RunContext) GetBindsAndMounts() ([]string, map[string]string) {
 
 	if hostEnv, ok := rc.JobContainer.(*container.HostEnvironment); ok {
 		mounts := map[string]string{}
-		binds = append(binds, hostEnv.ToolCache+":/opt/hostedtoolcache")
+		// Permission issues?
+		// binds = append(binds, hostEnv.ToolCache+":/opt/hostedtoolcache")
 		binds = append(binds, hostEnv.GetActPath()+":"+ext.GetActPath())
 		binds = append(binds, hostEnv.ToContainerPath(rc.Config.Workdir)+":"+ext.ToContainerPath(rc.Config.Workdir))
 		return binds, mounts
