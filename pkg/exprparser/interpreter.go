@@ -2,6 +2,7 @@ package exprparser
 
 import (
 	"encoding"
+	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
@@ -25,7 +26,11 @@ type EvaluationEnvironment struct {
 	Needs     map[string]Needs
 	Inputs    map[string]interface{}
 	HashFiles func([]reflect.Value) (interface{}, error)
+	EnvCS     bool
+	CtxData   map[string]interface{}
 }
+
+type CaseSensitiveDict map[string]string
 
 type Needs struct {
 	Outputs map[string]string `json:"outputs"`
@@ -150,11 +155,34 @@ func (impl *interperterImpl) evaluateNode(exprNode actionlint.ExprNode) (interfa
 	}
 }
 
+//nolint:gocyclo
 func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableNode) (interface{}, error) {
-	switch strings.ToLower(variableNode.Name) {
+	lowerName := strings.ToLower(variableNode.Name)
+	if cd, ok := impl.env.CtxData[lowerName]; ok {
+		if serverPayload, ok := cd.(map[string]interface{}); ok {
+			switch lowerName {
+			case "github":
+				var out map[string]interface{}
+				content, _ := json.Marshal(impl.env.Github)
+				_ = json.Unmarshal(content, &out)
+				for k, v := range serverPayload {
+					// skip empty values, because github.workspace was set by Gitea Actions to an empty string
+					if _, ok := out[k]; !ok || v != "" && v != nil {
+						out[k] = v
+					}
+				}
+				return out, nil
+			}
+		}
+		return cd, nil
+	}
+	switch lowerName {
 	case "github":
 		return impl.env.Github, nil
 	case "env":
+		if impl.env.EnvCS {
+			return CaseSensitiveDict(impl.env.Env), nil
+		}
 		return impl.env.Env, nil
 	case "job":
 		return impl.env.Job, nil
@@ -252,6 +280,11 @@ func (impl *interperterImpl) getPropertyValue(left reflect.Value, property strin
 
 	case reflect.Struct:
 		leftType := left.Type()
+		var cd CaseSensitiveDict
+		if leftType == reflect.TypeOf(cd) {
+			cd = left.Interface().(CaseSensitiveDict)
+			return cd[property], nil
+		}
 		for i := 0; i < leftType.NumField(); i++ {
 			jsonName := leftType.Field(i).Tag.Get("json")
 			if jsonName == property {
