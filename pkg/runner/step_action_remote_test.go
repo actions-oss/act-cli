@@ -35,12 +35,12 @@ type TestRepositoryCache struct {
 }
 
 func (l *TestRepositoryCache) Fetch(ctx context.Context, cacheDir, url, ref, token string) (string, error) {
-	args := l.Mock.Called(ctx, cacheDir, url, ref, token)
+	args := l.Called(ctx, cacheDir, url, ref, token)
 	return args.Get(0).(string), nil
 }
 
 func (l *TestRepositoryCache) GetTarArchive(ctx context.Context, cacheDir, sha, includePrefix string) (io.ReadCloser, error) {
-	args := l.Mock.Called(ctx, cacheDir, sha, includePrefix)
+	args := l.Called(ctx, cacheDir, sha, includePrefix)
 	return args.Get(0).(io.ReadCloser), nil
 }
 
@@ -204,7 +204,7 @@ func TestStepActionRemote(t *testing.T) {
 
 			sarm.AssertExpectations(t)
 			cm.AssertExpectations(t)
-			cacheMock.Mock.AssertExpectations(t)
+			cacheMock.AssertExpectations(t)
 		})
 	}
 }
@@ -256,7 +256,7 @@ func TestStepActionRemotePre(t *testing.T) {
 			assert.Nil(t, err)
 
 			sarm.AssertExpectations(t)
-			cacheMock.Mock.AssertExpectations(t)
+			cacheMock.AssertExpectations(t)
 		})
 	}
 }
@@ -309,7 +309,7 @@ func TestStepActionRemotePreThroughAction(t *testing.T) {
 			assert.Nil(t, err)
 
 			sarm.AssertExpectations(t)
-			cacheMock.Mock.AssertExpectations(t)
+			cacheMock.AssertExpectations(t)
 		})
 	}
 }
@@ -363,7 +363,7 @@ func TestStepActionRemotePreThroughActionToken(t *testing.T) {
 			assert.Nil(t, err)
 
 			sarm.AssertExpectations(t)
-			cacheMock.Mock.AssertExpectations(t)
+			cacheMock.AssertExpectations(t)
 		})
 	}
 }

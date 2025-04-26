@@ -126,11 +126,11 @@ func (e *Environment) Stop(ctx context.Context) error {
 	}
 
 	if err := vm.Stop(ctx); err != nil {
-		common.Logger(ctx).Errorf("Failed to stop VM: %v", err)
+		common.Logger(ctx).Errorf("failed to stop VM: %v", err)
 	}
 
 	if err := vm.Delete(ctx); err != nil {
-		common.Logger(ctx).Error("Failed to delete VM: %v", err)
+		common.Logger(ctx).Error("failed to delete VM: %v", err)
 
 		return err
 	}

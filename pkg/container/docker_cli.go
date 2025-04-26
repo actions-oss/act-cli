@@ -679,7 +679,7 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 	}
 
 	if copts.autoRemove && !hostConfig.RestartPolicy.IsNone() {
-		return nil, errors.Errorf("Conflicting options: --restart and --rm")
+		return nil, errors.Errorf("conflicting options: --restart and --rm")
 	}
 
 	// only set this value if the user provided the flag, else it should default to nil
@@ -868,7 +868,7 @@ func parseSecurityOpts(securityOpts []string) ([]string, error) {
 			if strings.Contains(opt, ":") {
 				con = strings.SplitN(opt, ":", 2)
 			} else {
-				return securityOpts, errors.Errorf("Invalid --security-opt: %q", opt)
+				return securityOpts, errors.Errorf("invalid --security-opt: %q", opt)
 			}
 		}
 		if con[0] == "seccomp" && con[1] != "unconfined" {

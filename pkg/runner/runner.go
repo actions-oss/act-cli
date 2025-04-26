@@ -150,13 +150,13 @@ func (runner *runnerImpl) NewPlanExecutor(plan *model.Plan) common.Executor {
 
 					strategyRc := runner.newRunContext(ctx, run, nil)
 					if err := strategyRc.NewExpressionEvaluator(ctx).EvaluateYamlNode(ctx, &job.Strategy.RawMatrix); err != nil {
-						log.Errorf("Error while evaluating matrix: %v", err)
+						log.Errorf("error while evaluating matrix: %v", err)
 					}
 				}
 
 				var matrixes []map[string]interface{}
 				if m, err := job.GetMatrixes(); err != nil {
-					log.Errorf("Error while get job's matrix: %v", err)
+					log.Errorf("error while get job's matrix: %v", err)
 				} else {
 					log.Debugf("Job Matrices: %v", m)
 					log.Debugf("Runner Matrices: %v", runner.config.Matrix)
@@ -212,7 +212,7 @@ func handleFailure(plan *model.Plan) common.Executor {
 		for _, stage := range plan.Stages {
 			for _, run := range stage.Runs {
 				if run.Job().Result == "failure" {
-					return fmt.Errorf("Job '%s' failed", run.String())
+					return fmt.Errorf("job '%s' failed", run.String())
 				}
 			}
 		}

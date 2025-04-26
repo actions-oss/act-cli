@@ -142,15 +142,15 @@ func (s *Node) checkSingleExpression(exprNode actionlint.ExprNode) error {
 			for _, v := range *funcs {
 				if strings.EqualFold(funcCallNode.Callee, v.name) {
 					if v.min > len(funcCallNode.Args) {
-						err = errors.Join(err, fmt.Errorf("Missing parameters for %s expected >= %v got %v", funcCallNode.Callee, v.min, len(funcCallNode.Args)))
+						err = errors.Join(err, fmt.Errorf("missing parameters for %s expected >= %v got %v", funcCallNode.Callee, v.min, len(funcCallNode.Args)))
 					}
 					if v.max < len(funcCallNode.Args) {
-						err = errors.Join(err, fmt.Errorf("Too many parameters for %s expected <= %v got %v", funcCallNode.Callee, v.max, len(funcCallNode.Args)))
+						err = errors.Join(err, fmt.Errorf("too many parameters for %s expected <= %v got %v", funcCallNode.Callee, v.max, len(funcCallNode.Args)))
 					}
 					return
 				}
 			}
-			err = errors.Join(err, fmt.Errorf("Unknown Function Call %s", funcCallNode.Callee))
+			err = errors.Join(err, fmt.Errorf("unknown Function Call %s", funcCallNode.Callee))
 		}
 		if varNode, ok := node.(*actionlint.VariableNode); entering && ok {
 			for _, v := range s.Context {
@@ -158,7 +158,7 @@ func (s *Node) checkSingleExpression(exprNode actionlint.ExprNode) error {
 					return
 				}
 			}
-			err = errors.Join(err, fmt.Errorf("Unknown Variable Access %s", varNode.Name))
+			err = errors.Join(err, fmt.Errorf("unknown Variable Access %s", varNode.Name))
 		}
 	})
 	return err

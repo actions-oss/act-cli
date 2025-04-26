@@ -82,3 +82,14 @@ func TestFlags(t *testing.T) {
 		})
 	}
 }
+
+func TestWorkflowCall(t *testing.T) {
+	rootCmd := createRootCommand(context.Background(), &Input{}, "")
+	err := newRunCommand(context.Background(), &Input{
+		platforms:     []string{"ubuntu-latest=node:16-buster-slim"},
+		workdir:       "../pkg/runner/testdata/",
+		workflowsPath: "./workflow_call_inputs/workflow_call_inputs.yml",
+		inputs:        []string{"required=required input", "boolean=true"},
+	})(rootCmd, []string{"workflow_call"})
+	assert.NoError(t, err)
+}

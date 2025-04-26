@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/joho/godotenv"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	assert "github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
@@ -303,7 +302,6 @@ func TestRunEvent(t *testing.T) {
 		{workdir, "docker-action-custom-path", "push", "", platforms, secrets},
 		{workdir, "GITHUB_ENV-use-in-env-ctx", "push", "", platforms, secrets},
 		{workdir, "ensure-post-steps", "push", "Job 'second-post-step-should-fail' failed", platforms, secrets},
-		{workdir, "workflow_call_inputs", "workflow_call", "", platforms, secrets},
 		{workdir, "workflow_dispatch", "workflow_dispatch", "", platforms, secrets},
 		{workdir, "workflow_dispatch_no_inputs_mapping", "workflow_dispatch", "", platforms, secrets},
 		{workdir, "workflow_dispatch-scalar", "workflow_dispatch", "", platforms, secrets},
@@ -365,21 +363,32 @@ type captureJobLoggerFactory struct {
 	buffer bytes.Buffer
 }
 
-func (factory *captureJobLoggerFactory) WithJobLogger() *logrus.Logger {
-	logger := logrus.New()
+func (factory *captureJobLoggerFactory) WithJobLogger() *log.Logger {
+	logger := log.New()
 	logger.SetOutput(&factory.buffer)
 	logger.SetLevel(log.TraceLevel)
 	logger.SetFormatter(&log.JSONFormatter{})
 	return logger
 }
 
-func TestPullFailureIsJobFailure(t *testing.T) {
+func TestPullAndPostStepFailureIsJobFailure(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
-	tables := []TestJobFileInfo{
-		{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets},
+	defCache := &GoGitActionCache{
+		path.Clean(path.Join(workdir, "cache")),
+	}
+
+	mockCache := &mockCache{}
+
+	tables := []struct {
+		TestJobFileInfo
+		ActionCache ActionCache
+		SetupResult string
+	}{
+		{TestJobFileInfo{workdir, "checkout", "push", "pull failure", map[string]string{"ubuntu-latest": "localhost:0000/missing:latest"}, secrets}, defCache, "failure"},
+		{TestJobFileInfo{workdir, "post-step-failure-is-job-failure", "push", "post failure", map[string]string{"ubuntu-latest": "-self-hosted"}, secrets}, mockCache, "success"},
 	}
 
 	for _, table := range tables {
@@ -394,11 +403,9 @@ func TestPullFailureIsJobFailure(t *testing.T) {
 			if _, err := os.Stat(eventFile); err == nil {
 				config.EventPath = eventFile
 			}
-			config.ActionCache = &GoGitActionCache{
-				path.Clean(path.Join(workdir, "cache")),
-			}
+			config.ActionCache = table.ActionCache
 
-			logger := logrus.New()
+			logger := log.New()
 			logger.SetOutput(&factory.buffer)
 			logger.SetLevel(log.TraceLevel)
 			logger.SetFormatter(&log.JSONFormatter{})
@@ -415,7 +422,7 @@ func TestPullFailureIsJobFailure(t *testing.T) {
 						hasJobResult = true
 					}
 					if val, ok := entry["stepResult"]; ok && !hasStepResult {
-						assert.Equal(t, "failure", val)
+						assert.Equal(t, table.SetupResult, val)
 						hasStepResult = true
 					}
 				}
@@ -468,7 +475,7 @@ func TestFetchFailureIsJobFailure(t *testing.T) {
 			}
 			config.ActionCache = &mockCache{}
 
-			logger := logrus.New()
+			logger := log.New()
 			logger.SetOutput(&factory.buffer)
 			logger.SetLevel(log.TraceLevel)
 			logger.SetFormatter(&log.JSONFormatter{})
