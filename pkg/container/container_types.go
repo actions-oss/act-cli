@@ -3,9 +3,11 @@ package container
 import (
 	"context"
 	"io"
+	"os"
 
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/docker/go-connections/nat"
+	"golang.org/x/term"
 )
 
 // NewContainerInput the input for the New function
@@ -82,3 +84,13 @@ const (
 	HealthHealthy
 	HealthUnHealthy
 )
+
+var containerAllocateTerminal bool
+
+func init() {
+	containerAllocateTerminal = term.IsTerminal(int(os.Stdout.Fd()))
+}
+
+func SetContainerAllocateTerminal(val bool) {
+	containerAllocateTerminal = val
+}
