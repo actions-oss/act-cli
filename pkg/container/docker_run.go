@@ -610,6 +610,7 @@ func (cr *containerReference) exec(ctx context.Context, cmd []string, env map[st
 	}
 }
 
+//nolint:contextcheck
 func (cr *containerReference) execExt(cmd []string, env map[string]string, user, workdir string) common.Executor {
 	return func(ctx context.Context) error {
 		logger := common.Logger(ctx)
