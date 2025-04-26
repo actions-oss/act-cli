@@ -129,7 +129,7 @@ func TestDockerExecAbort(t *testing.T) {
 	channel := make(chan error)
 
 	go func() {
-		channel <- cr.exec([]string{""}, map[string]string{}, "user", "workdir")(ctx)
+		channel <- cr.execExt([]string{""}, map[string]string{}, "user", "workdir")(ctx)
 	}()
 
 	time.Sleep(500 * time.Millisecond)
@@ -166,7 +166,7 @@ func TestDockerExecFailure(t *testing.T) {
 		},
 	}
 
-	err := cr.exec([]string{""}, map[string]string{}, "user", "workdir")(ctx)
+	err := cr.execExt([]string{""}, map[string]string{}, "user", "workdir")(ctx)
 	assert.Error(t, err, "exit with `FAILURE`: 1")
 
 	conn.AssertExpectations(t)
