@@ -38,7 +38,8 @@ type Handler struct {
 	gcing atomic.Bool
 	gcAt  time.Time
 
-	outboundIP string
+	outboundIP      string
+	externalAddress string
 }
 
 func StartHandler(dir, outboundIP string, port uint16, logger logrus.FieldLogger) (*Handler, error) {
@@ -110,7 +111,63 @@ func StartHandler(dir, outboundIP string, port uint16, logger logrus.FieldLogger
 	return h, nil
 }
 
+func CreateHandler(dir, externalAddress string, logger logrus.FieldLogger) (*Handler, http.Handler, error) {
+	h := &Handler{}
+
+	if logger == nil {
+		discard := logrus.New()
+		discard.Out = io.Discard
+		logger = discard
+	}
+	logger = logger.WithField("module", "artifactcache")
+	h.logger = logger
+
+	if dir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, nil, err
+		}
+		dir = filepath.Join(home, ".cache", "actcache")
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return nil, nil, err
+	}
+
+	h.dir = dir
+
+	storage, err := NewStorage(filepath.Join(dir, "cache"))
+	if err != nil {
+		return nil, nil, err
+	}
+	h.storage = storage
+
+	if externalAddress != "" {
+		h.externalAddress = externalAddress
+	} else if ip := common.GetOutboundIP(); ip == nil {
+		return nil, nil, fmt.Errorf("unable to determine outbound IP address")
+	} else {
+		h.outboundIP = ip.String()
+	}
+
+	router := httprouter.New()
+	router.GET(urlBase+"/cache", h.middleware(h.find))
+	router.POST(urlBase+"/caches", h.middleware(h.reserve))
+	router.PATCH(urlBase+"/caches/:id", h.middleware(h.upload))
+	router.POST(urlBase+"/caches/:id", h.middleware(h.commit))
+	router.GET(urlBase+"/artifacts/:id", h.middleware(h.get))
+	router.POST(urlBase+"/clean", h.middleware(h.clean))
+
+	h.router = router
+
+	h.gcCache()
+
+	return h, router, nil
+}
+
 func (h *Handler) ExternalURL() string {
+	if h.externalAddress != "" {
+		return h.externalAddress
+	}
 	// TODO: make the external url configurable if necessary
 	return fmt.Sprintf("http://%s:%d",
 		h.outboundIP,
