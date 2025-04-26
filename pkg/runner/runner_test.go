@@ -329,6 +329,8 @@ func TestRunEvent(t *testing.T) {
 
 		// docker action on host executor
 		{workdir, "docker-action-host-env", "push", "", platforms, secrets},
+		// docker service on host executor
+		{workdir, "nginx-service-container-host-mode", "push", "", platforms, secrets},
 	}
 
 	for _, table := range tables {
