@@ -695,3 +695,13 @@ func TestHandler_gcCache(t *testing.T) {
 	}
 	require.NoError(t, db.Close())
 }
+
+func TestCreateHandler(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "artifactcache")
+	handler, router, err := CreateHandler(dir, "http://localhost:8080", nil)
+	require.NoError(t, err)
+	require.NotNil(t, handler)
+	require.NotNil(t, router)
+
+	require.Equal(t, "http://localhost:8080", handler.ExternalURL())
+}

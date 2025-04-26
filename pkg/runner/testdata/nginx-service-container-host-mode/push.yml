@@ -1,0 +1,24 @@
+name: Self-Hosted Runner with NGINX Service
+
+on: [push]
+
+jobs:
+  nginx_service_job:
+    runs-on: self-hosted
+    services:
+      nginx:
+        image: nginx:latest
+        ports:
+          - 8084:80
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Wait for NGINX to be ready
+        run: |
+          for i in {1..10}; do
+            curl -I http://localhost:8084 && break || sleep 3
+          done
+
+      - name: Verify NGINX is running
+        run: curl -I http://localhost:8084

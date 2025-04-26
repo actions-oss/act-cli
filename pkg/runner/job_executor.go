@@ -103,19 +103,19 @@ func newJobExecutor(info jobInfo, sf stepFactory, rc *RunContext) common.Executo
 
 	var stopContainerExecutor common.Executor = func(ctx context.Context) error {
 		jobError := common.JobError(ctx)
-		var err error
 		if rc.Config.AutoRemove || jobError == nil {
-			// always allow 1 min for stopping and removing the runner, even if we were cancelled
-			ctx, cancel := context.WithTimeout(common.WithLogger(context.Background(), common.Logger(ctx)), time.Minute)
-			defer cancel()
-
+			timeout := time.Minute
 			logger := common.Logger(ctx)
-			logger.Infof("Cleaning up container for job %s", rc.JobName)
-			if err = info.stopContainer()(ctx); err != nil {
-				logger.Errorf("error while stop job container: %v", err)
+			logger.Infof("Stopping and removing Container... (waiting for %s)", timeout.String())
+			// always allow 1 min for stopping and removing the runner, even if we were cancelled
+			ctx, cancel := context.WithTimeout(common.WithLogger(context.Background(), common.Logger(ctx)), timeout)
+			defer cancel()
+			warn := info.stopContainer()(ctx)
+			if warn != nil {
+				logger.Warnf("Stopping and removing Container failed after %s with error: ", timeout.String(), warn.Error())
 			}
 		}
-		return err
+		return nil
 	}
 
 	var setJobResultExecutor common.Executor = func(ctx context.Context) error {
