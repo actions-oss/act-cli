@@ -15,6 +15,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"dario.cat/mergo"
 	"github.com/Masterminds/semver"
@@ -33,7 +34,6 @@ import (
 	"github.com/kballard/go-shellquote"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/pflag"
-	"golang.org/x/term"
 
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/filecollector"
@@ -156,7 +156,7 @@ func (cr *containerReference) Exec(command []string, env map[string]string, user
 		common.NewInfoExecutor("%sdocker exec cmd=[%s] user=%s workdir=%s", logPrefix, strings.Join(command, " "), user, workdir),
 		cr.connect(),
 		cr.find(),
-		cr.exec(command, env, user, workdir),
+		cr.execExt(command, env, user, workdir),
 	).IfNot(common.Dryrun)
 }
 
@@ -413,7 +413,7 @@ func (cr *containerReference) create(capAdd []string, capDrop []string) common.E
 			return nil
 		}
 		logger := common.Logger(ctx)
-		isTerminal := term.IsTerminal(int(os.Stdout.Fd()))
+		isTerminal := containerAllocateTerminal
 		input := cr.input
 
 		config := &container.Config{
@@ -539,75 +539,101 @@ func (cr *containerReference) extractFromImageEnv(env *map[string]string) common
 	}
 }
 
-func (cr *containerReference) exec(cmd []string, env map[string]string, user, workdir string) common.Executor {
+func (cr *containerReference) exec(ctx context.Context, cmd []string, env map[string]string, user, workdir string) error {
+	logger := common.Logger(ctx)
+	// Fix slashes when running on Windows
+	if runtime.GOOS == "windows" {
+		var newCmd []string
+		for _, v := range cmd {
+			newCmd = append(newCmd, strings.ReplaceAll(v, `\`, `/`))
+		}
+		cmd = newCmd
+	}
+
+	logger.Debugf("Exec command '%s'", cmd)
+	isTerminal := containerAllocateTerminal
+	envList := make([]string, 0)
+	for k, v := range env {
+		envList = append(envList, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	var wd string
+	if workdir != "" {
+		if strings.HasPrefix(workdir, "/") {
+			wd = workdir
+		} else {
+			wd = fmt.Sprintf("%s/%s", cr.input.WorkingDir, workdir)
+		}
+	} else {
+		wd = cr.input.WorkingDir
+	}
+	logger.Debugf("Working directory '%s'", wd)
+
+	idResp, err := cr.cli.ContainerExecCreate(ctx, cr.id, container.ExecOptions{
+		User:         user,
+		Cmd:          cmd,
+		WorkingDir:   wd,
+		Env:          envList,
+		Tty:          isTerminal,
+		AttachStderr: true,
+		AttachStdout: true,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create exec: %w", err)
+	}
+
+	resp, err := cr.cli.ContainerExecAttach(ctx, idResp.ID, container.ExecStartOptions{
+		Tty: isTerminal,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to attach to exec: %w", err)
+	}
+	defer resp.Close()
+
+	err = cr.waitForCommand(ctx, isTerminal, resp)
+	if err != nil {
+		return err
+	}
+
+	inspectResp, err := cr.cli.ContainerExecInspect(ctx, idResp.ID)
+	if err != nil {
+		return fmt.Errorf("failed to inspect exec: %w", err)
+	}
+
+	switch inspectResp.ExitCode {
+	case 0:
+		return nil
+	case 127:
+		return fmt.Errorf("exitcode '%d': command not found, please refer to https://github.com/nektos/act/issues/107 for more information", inspectResp.ExitCode)
+	default:
+		return fmt.Errorf("exitcode '%d': failure", inspectResp.ExitCode)
+	}
+}
+
+//nolint:contextcheck
+func (cr *containerReference) execExt(cmd []string, env map[string]string, user, workdir string) common.Executor {
 	return func(ctx context.Context) error {
 		logger := common.Logger(ctx)
-		// Fix slashes when running on Windows
-		if runtime.GOOS == "windows" {
-			var newCmd []string
-			for _, v := range cmd {
-				newCmd = append(newCmd, strings.ReplaceAll(v, `\`, `/`))
+		done := make(chan error)
+		go func() {
+			defer func() {
+				done <- errors.New("invalid Operation")
+			}()
+			done <- cr.exec(ctx, cmd, env, user, workdir)
+		}()
+		select {
+		case <-ctx.Done():
+			timed, cancelTimed := context.WithTimeout(context.Background(), 2*time.Minute)
+			defer cancelTimed()
+			err := cr.cli.ContainerKill(timed, cr.id, "kill")
+			if err != nil {
+				logger.Error(err)
 			}
-			cmd = newCmd
-		}
-
-		logger.Debugf("Exec command '%s'", cmd)
-		isTerminal := term.IsTerminal(int(os.Stdout.Fd()))
-		envList := make([]string, 0)
-		for k, v := range env {
-			envList = append(envList, fmt.Sprintf("%s=%s", k, v))
-		}
-
-		var wd string
-		if workdir != "" {
-			if strings.HasPrefix(workdir, "/") {
-				wd = workdir
-			} else {
-				wd = fmt.Sprintf("%s/%s", cr.input.WorkingDir, workdir)
-			}
-		} else {
-			wd = cr.input.WorkingDir
-		}
-		logger.Debugf("Working directory '%s'", wd)
-
-		idResp, err := cr.cli.ContainerExecCreate(ctx, cr.id, container.ExecOptions{
-			User:         user,
-			Cmd:          cmd,
-			WorkingDir:   wd,
-			Env:          envList,
-			Tty:          isTerminal,
-			AttachStderr: true,
-			AttachStdout: true,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create exec: %w", err)
-		}
-
-		resp, err := cr.cli.ContainerExecAttach(ctx, idResp.ID, container.ExecStartOptions{
-			Tty: isTerminal,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to attach to exec: %w", err)
-		}
-		defer resp.Close()
-
-		err = cr.waitForCommand(ctx, isTerminal, resp)
-		if err != nil {
-			return err
-		}
-
-		inspectResp, err := cr.cli.ContainerExecInspect(ctx, idResp.ID)
-		if err != nil {
-			return fmt.Errorf("failed to inspect exec: %w", err)
-		}
-
-		switch inspectResp.ExitCode {
-		case 0:
-			return nil
-		case 127:
-			return fmt.Errorf("exitcode '%d': command not found, please refer to https://github.com/actions-oss/act-cli/issues/107 for more information", inspectResp.ExitCode)
-		default:
-			return fmt.Errorf("exitcode '%d': failure", inspectResp.ExitCode)
+			_ = cr.start()(timed)
+			logger.Info("This step was cancelled")
+			return fmt.Errorf("this step was cancelled: %w", ctx.Err())
+		case ret := <-done:
+			return ret
 		}
 	}
 }
@@ -842,7 +868,7 @@ func (cr *containerReference) attach() common.Executor {
 		if err != nil {
 			return fmt.Errorf("failed to attach to container: %w", err)
 		}
-		isTerminal := term.IsTerminal(int(os.Stdout.Fd()))
+		isTerminal := containerAllocateTerminal
 
 		var outWriter io.Writer
 		outWriter = cr.input.Stdout
