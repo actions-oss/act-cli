@@ -61,6 +61,7 @@ type Config struct {
 	Matrix                             map[string]map[string]bool   // Matrix config to run
 	ContainerNetworkMode               docker_container.NetworkMode // the network mode of job containers (the value of --network)
 	ActionCache                        ActionCache                  // Use a custom ActionCache Implementation
+	HostEnvironmentDir                 string                       // Custom folder for host environment, parallel jobs must be 1
 }
 
 type caller struct {
