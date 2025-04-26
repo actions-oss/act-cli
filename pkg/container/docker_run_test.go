@@ -83,6 +83,16 @@ func (m *mockDockerClient) CopyToContainer(ctx context.Context, id string, path 
 	return args.Error(0)
 }
 
+func (m *mockDockerClient) ContainerKill(ctx context.Context, containerID string, signal string) error {
+	args := m.Called(ctx, containerID, signal)
+	return args.Error(0)
+}
+
+func (m *mockDockerClient) ContainerStart(ctx context.Context, containerID string, options container.StartOptions) error {
+	args := m.Called(ctx, containerID, options)
+	return args.Error(0)
+}
+
 type endlessReader struct {
 	io.Reader
 }
@@ -117,6 +127,8 @@ func TestDockerExecAbort(t *testing.T) {
 		Conn:   conn,
 		Reader: bufio.NewReader(endlessReader{}),
 	}, nil)
+	client.On("ContainerKill", mock.Anything, "123", "kill").Return(nil)
+	client.On("ContainerStart", mock.Anything, "123", mock.AnythingOfType("container.StartOptions")).Return(nil)
 
 	cr := &containerReference{
 		id:  "123",

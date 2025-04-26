@@ -630,7 +630,7 @@ func (cr *containerReference) execExt(cmd []string, env map[string]string, user,
 			}
 			_ = cr.start()(timed)
 			logger.Info("This step was cancelled")
-			return errors.New("this step was cancelled")
+			return fmt.Errorf("this step was cancelled: %w", ctx.Err())
 		case ret := <-done:
 			return ret
 		}
