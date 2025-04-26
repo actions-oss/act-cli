@@ -616,7 +616,7 @@ func (cr *containerReference) execExt(cmd []string, env map[string]string, user,
 		done := make(chan error)
 		go func() {
 			defer func() {
-				done <- errors.New("Invalid Operation")
+				done <- errors.New("unvalid Operation")
 			}()
 			done <- cr.exec(ctx, cmd, env, user, workdir)
 		}()
@@ -628,9 +628,9 @@ func (cr *containerReference) execExt(cmd []string, env map[string]string, user,
 			if err != nil {
 				logger.Error(err)
 			}
-			cr.start()(timed)
+			_ = cr.start()(timed)
 			logger.Info("This step was cancelled")
-			return errors.New("This step was cancelled")
+			return errors.New("this step was cancelled")
 		case ret := <-done:
 			return ret
 		}
