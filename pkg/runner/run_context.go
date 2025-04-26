@@ -388,7 +388,6 @@ func (rc *RunContext) cleanupServiceContainer(ctx context.Context, logger logrus
 			logger.Errorf("error while cleaning services: %v", err)
 		}
 		if createAndDeleteNetwork {
-
 			logger.Infof("Cleaning up network for job %s, and network name is: %s", rc.JobName, networkName)
 			if err := container.NewDockerNetworkRemoveExecutor(networkName)(ctx); err != nil {
 				logger.Errorf("error while cleaning network: %v", err)
