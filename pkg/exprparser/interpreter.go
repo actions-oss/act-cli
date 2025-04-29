@@ -160,8 +160,7 @@ func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableN
 	lowerName := strings.ToLower(variableNode.Name)
 	if cd, ok := impl.env.CtxData[lowerName]; ok {
 		if serverPayload, ok := cd.(map[string]interface{}); ok {
-			switch lowerName {
-			case "github":
+			if lowerName == "github" {
 				var out map[string]interface{}
 				content, _ := json.Marshal(impl.env.Github)
 				_ = json.Unmarshal(content, &out)
