@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/archive"
-
-	// github.com/docker/docker/builder/dockerignore is deprecated
+	"github.com/moby/go-archive"
 
 	"github.com/moby/patternmatcher"
 	"github.com/moby/patternmatcher/ignorefile"

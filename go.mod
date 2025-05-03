@@ -39,6 +39,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/distribution/reference v0.6.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/moby/go-archive v0.1.0
 	golang.org/x/crypto v0.37.0
 	google.golang.org/protobuf v1.36.6
 )
@@ -74,7 +75,6 @@ require (
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/go-archive v0.1.0 // indirect
 	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/moby/sys/user v0.4.0 // indirect
