@@ -42,11 +42,12 @@ func (rc *RunContext) commandHandler(ctx context.Context) common.LineHandler {
 		}
 
 		if resumeCommand != "" && command != resumeCommand {
-			logger.Infof("  \U00002699  %s", line)
+			logger.WithField("disabledCommand", line).Infof("  \U00002699  %s", line)
 			return false
 		}
 		arg = unescapeCommandData(arg)
 		kvPairs = unescapeKvPairs(kvPairs)
+		defCommandLogger := logger.WithFields(logrus.Fields{"command": command, "kvPairs": kvPairs, "arg": arg})
 		switch command {
 		case "set-env":
 			rc.setEnv(ctx, kvPairs, arg)
@@ -55,27 +56,27 @@ func (rc *RunContext) commandHandler(ctx context.Context) common.LineHandler {
 		case "add-path":
 			rc.addPath(ctx, arg)
 		case "debug":
-			logger.Debugf("  \U0001F4AC  %s", line)
+			defCommandLogger.Debugf("  \U0001F4AC  %s", line)
 		case "warning":
-			logger.Warnf("  \U0001F6A7  %s", line)
+			defCommandLogger.Warnf("  \U0001F6A7  %s", line)
 		case "error":
-			logger.Errorf("  \U00002757  %s", line)
+			defCommandLogger.Errorf("  \U00002757  %s", line)
 		case "add-mask":
 			rc.AddMask(arg)
-			logger.Infof("  \U00002699  %s", "***")
+			defCommandLogger.Infof("  \U00002699  %s", "***")
 		case "stop-commands":
 			resumeCommand = arg
-			logger.Infof("  \U00002699  %s", line)
+			defCommandLogger.Infof("  \U00002699  %s", line)
 		case resumeCommand:
 			resumeCommand = ""
-			logger.Infof("  \U00002699  %s", line)
+			defCommandLogger.Infof("  \U00002699  %s", line)
 		case "save-state":
-			logger.Infof("  \U0001f4be  %s", line)
+			defCommandLogger.Infof("  \U0001f4be  %s", line)
 			rc.saveState(ctx, kvPairs, arg)
 		case "add-matcher":
-			logger.Infof("  \U00002753 add-matcher %s", arg)
+			defCommandLogger.Infof("  \U00002753 add-matcher %s", arg)
 		default:
-			logger.Infof("  \U00002753  %s", line)
+			defCommandLogger.Infof("  \U00002753  %s", line)
 		}
 
 		return false
