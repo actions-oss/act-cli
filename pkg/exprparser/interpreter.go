@@ -279,10 +279,6 @@ func (impl *interperterImpl) getPropertyValue(left reflect.Value, property strin
 
 	case reflect.Struct:
 		leftType := left.Type()
-		cd, ok := left.Interface().(CaseSensitiveDict)
-		if ok {
-			return cd[property], nil
-		}
 		for i := 0; i < leftType.NumField(); i++ {
 			jsonName := leftType.Field(i).Tag.Get("json")
 			if jsonName == property {
