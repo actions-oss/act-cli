@@ -158,22 +158,8 @@ func (impl *interperterImpl) evaluateNode(exprNode actionlint.ExprNode) (interfa
 //nolint:gocyclo
 func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableNode) (interface{}, error) {
 	lowerName := strings.ToLower(variableNode.Name)
-	if cd, ok := impl.env.CtxData[lowerName]; ok {
-		if serverPayload, ok := cd.(map[string]interface{}); ok {
-			if lowerName == "github" {
-				var out map[string]interface{}
-				content, _ := json.Marshal(impl.env.Github)
-				_ = json.Unmarshal(content, &out)
-				for k, v := range serverPayload {
-					// skip empty values, because github.workspace was set by Gitea Actions to an empty string
-					if _, ok := out[k]; !ok || v != "" && v != nil {
-						out[k] = v
-					}
-				}
-				return out, nil
-			}
-		}
-		return cd, nil
+	if result, err := impl.evaluateOverriddenVariable(lowerName); result != nil || err != nil {
+		return result, err
 	}
 	switch lowerName {
 	case "github":
@@ -213,6 +199,33 @@ func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableN
 	default:
 		return nil, fmt.Errorf("unavailable context: %s", variableNode.Name)
 	}
+}
+
+func (impl *interperterImpl) evaluateOverriddenVariable(lowerName string) (interface{}, error) {
+	if cd, ok := impl.env.CtxData[lowerName]; ok {
+		if serverPayload, ok := cd.(map[string]interface{}); ok {
+			if lowerName == "github" {
+				var out map[string]interface{}
+				content, err := json.Marshal(impl.env.Github)
+				if err != nil {
+					return nil, err
+				}
+				err = json.Unmarshal(content, &out)
+				if err != nil {
+					return nil, err
+				}
+				for k, v := range serverPayload {
+					// skip empty values, because github.workspace was set by Gitea Actions to an empty string
+					if _, ok := out[k]; !ok || v != "" && v != nil {
+						out[k] = v
+					}
+				}
+				return out, nil
+			}
+		}
+		return cd, nil
+	}
+	return nil, nil
 }
 
 func (impl *interperterImpl) evaluateIndexAccess(indexAccessNode *actionlint.IndexAccessNode) (interface{}, error) {

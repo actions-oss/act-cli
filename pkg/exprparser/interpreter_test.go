@@ -532,8 +532,11 @@ func TestContexts(t *testing.T) {
 		expected         interface{}
 		name             string
 		caseSensitiveEnv bool
+		ctxdata          map[string]interface{}
 	}{
 		{input: "github.action", expected: "push", name: "github-context"},
+		{input: "github.action", expected: "push", name: "github-context", ctxdata: map[string]interface{}{"github": map[string]interface{}{"ref": "refs/heads/test-data"}}},
+		{input: "github.ref", expected: "refs/heads/test-data", name: "github-context", ctxdata: map[string]interface{}{"github": map[string]interface{}{"ref": "refs/heads/test-data"}}},
 		{input: "github.event.commits[0].message", expected: nil, name: "github-context-noexist-prop"},
 		{input: "fromjson('{\"commits\":[]}').commits[0].message", expected: nil, name: "github-context-noexist-prop"},
 		{input: "github.event.pull_request.labels.*.name", expected: nil, name: "github-context-noexist-prop"},
@@ -571,6 +574,8 @@ func TestContexts(t *testing.T) {
 		{input: "contains(needs.*.result, 'success')", expected: true, name: "needs-wildcard-context-contains-success"},
 		{input: "contains(needs.*.result, 'failure')", expected: false, name: "needs-wildcard-context-contains-failure"},
 		{input: "inputs.name", expected: "value", name: "inputs-context"},
+		{input: "vars.MY_VAR", expected: "refs/heads/test-data", name: "vars-context", ctxdata: map[string]interface{}{"vars": map[string]interface{}{"MY_VAR": "refs/heads/test-data"}}},
+		{input: "vars.MY_VAR", expected: "refs/heads/test-data", name: "vars-context", ctxdata: map[string]interface{}{"vars": map[string]interface{}{"my_var": "refs/heads/test-data"}}},
 	}
 
 	env := EvaluationEnvironment{
@@ -634,6 +639,7 @@ func TestContexts(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tenv := env
 			tenv.EnvCS = tt.caseSensitiveEnv
+			tenv.CtxData = tt.ctxdata
 			output, err := NewInterpeter(&tenv, Config{}).Evaluate(tt.input, DefaultStatusCheckNone)
 			assert.Nil(t, err)
 
