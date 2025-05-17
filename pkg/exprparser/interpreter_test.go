@@ -537,6 +537,7 @@ func TestContexts(t *testing.T) {
 		{input: "github.action", expected: "push", name: "github-context"},
 		{input: "github.action", expected: "push", name: "github-context", ctxdata: map[string]interface{}{"github": map[string]interface{}{"ref": "refs/heads/test-data"}}},
 		{input: "github.ref", expected: "refs/heads/test-data", name: "github-context", ctxdata: map[string]interface{}{"github": map[string]interface{}{"ref": "refs/heads/test-data"}}},
+		{input: "github.custom-field", expected: "custom-value", name: "github-context", ctxdata: map[string]interface{}{"github": map[string]interface{}{"custom-field": "custom-value"}}},
 		{input: "github.event.commits[0].message", expected: nil, name: "github-context-noexist-prop"},
 		{input: "fromjson('{\"commits\":[]}').commits[0].message", expected: nil, name: "github-context-noexist-prop"},
 		{input: "github.event.pull_request.labels.*.name", expected: nil, name: "github-context-noexist-prop"},
