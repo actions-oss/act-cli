@@ -109,3 +109,5 @@ require (
 	google.golang.org/grpc v1.66.3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
+
+replace github.com/rhysd/actionlint => github.com/actions-oss/act-cli-actionlint v0.0.0-20250517100532-8f847f29ba36

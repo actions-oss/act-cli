@@ -279,9 +279,8 @@ func (impl *interperterImpl) getPropertyValue(left reflect.Value, property strin
 
 	case reflect.Struct:
 		leftType := left.Type()
-		var cd CaseSensitiveDict
-		if leftType == reflect.TypeOf(cd) {
-			cd = left.Interface().(CaseSensitiveDict)
+		cd, ok := left.Interface().(CaseSensitiveDict)
+		if ok {
 			return cd[property], nil
 		}
 		for i := 0; i < leftType.NumField(); i++ {
@@ -312,6 +311,11 @@ func (impl *interperterImpl) getPropertyValue(left reflect.Value, property strin
 		return i, nil
 
 	case reflect.Map:
+		cd, ok := left.Interface().(CaseSensitiveDict)
+		if ok {
+			return cd[property], nil
+		}
+
 		iter := left.MapRange()
 
 		for iter.Next() {
