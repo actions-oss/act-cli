@@ -42,12 +42,12 @@ func (rc *RunContext) commandHandler(ctx context.Context) common.LineHandler {
 		}
 
 		if resumeCommand != "" && command != resumeCommand {
-			logger.WithField("disabledCommand", line).Infof("  \U00002699  %s", line)
+			logger.WithFields(logrus.Fields{"command": "ignored", "raw": line}).Infof("  \U00002699  %s", line)
 			return false
 		}
 		arg = unescapeCommandData(arg)
 		kvPairs = unescapeKvPairs(kvPairs)
-		defCommandLogger := logger.WithFields(logrus.Fields{"command": command, "kvPairs": kvPairs, "arg": arg})
+		defCommandLogger := logger.WithFields(logrus.Fields{"command": command, "kvPairs": kvPairs, "arg": arg, "raw": line})
 		switch command {
 		case "set-env":
 			rc.setEnv(ctx, kvPairs, arg)
