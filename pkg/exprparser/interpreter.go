@@ -155,7 +155,6 @@ func (impl *interperterImpl) evaluateNode(exprNode actionlint.ExprNode) (interfa
 	}
 }
 
-//nolint:gocyclo
 func (impl *interperterImpl) evaluateVariable(variableNode *actionlint.VariableNode) (interface{}, error) {
 	lowerName := strings.ToLower(variableNode.Name)
 	if result, err := impl.evaluateOverriddenVariable(lowerName); result != nil || err != nil {
