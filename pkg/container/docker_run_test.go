@@ -125,13 +125,13 @@ func TestDockerExecAbort(t *testing.T) {
 	client := &mockDockerClient{}
 	client.On("ContainerExecCreate", ctx, "123", mock.AnythingOfType("container.ExecOptions")).Return(container.ExecCreateResponse{ID: "id"}, nil)
 	attached := make(chan struct{})
-	client.On("ContainerExecAttach", ctx, "id", mock.AnythingOfType("container.ExecStartOptions")).Run(func(args mock.Arguments) {
+	client.On("ContainerExecAttach", ctx, "id", mock.AnythingOfType("container.ExecStartOptions")).Run(func(_ mock.Arguments) {
 		close(attached)
 	}).Return(types.HijackedResponse{
 		Conn:   conn,
 		Reader: bufio.NewReader(endlessReader{}),
 	}, nil)
-	client.On("ContainerKill", mock.Anything, "123", "kill").Run(func(args mock.Arguments) {
+	client.On("ContainerKill", mock.Anything, "123", "kill").Run(func(_ mock.Arguments) {
 		<-attached
 	}).Return(nil)
 	client.On("ContainerStart", mock.Anything, "123", mock.AnythingOfType("container.StartOptions")).Return(nil)
