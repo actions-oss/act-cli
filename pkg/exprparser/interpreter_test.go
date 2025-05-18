@@ -528,46 +528,58 @@ func TestOperatorsBooleanEvaluation(t *testing.T) {
 
 func TestContexts(t *testing.T) {
 	table := []struct {
-		input    string
-		expected interface{}
-		name     string
+		input            string
+		expected         interface{}
+		name             string
+		caseSensitiveEnv bool
+		ctxdata          map[string]interface{}
 	}{
-		{"github.action", "push", "github-context"},
-		{"github.event.commits[0].message", nil, "github-context-noexist-prop"},
-		{"fromjson('{\"commits\":[]}').commits[0].message", nil, "github-context-noexist-prop"},
-		{"github.event.pull_request.labels.*.name", nil, "github-context-noexist-prop"},
-		{"env.TEST", "value", "env-context"},
-		{"job.status", "success", "job-context"},
-		{"steps.step-id.outputs.name", "value", "steps-context"},
-		{"steps.step-id.conclusion", "success", "steps-context-conclusion"},
-		{"steps.step-id.conclusion && true", true, "steps-context-conclusion"},
-		{"steps.step-id2.conclusion", "skipped", "steps-context-conclusion"},
-		{"steps.step-id2.conclusion && true", true, "steps-context-conclusion"},
-		{"steps.step-id.outcome", "success", "steps-context-outcome"},
-		{"steps.step-id['outcome']", "success", "steps-context-outcome"},
-		{"steps.step-id.outcome == 'success'", true, "steps-context-outcome"},
-		{"steps.step-id['outcome'] == 'success'", true, "steps-context-outcome"},
-		{"steps.step-id.outcome && true", true, "steps-context-outcome"},
-		{"steps['step-id']['outcome'] && true", true, "steps-context-outcome"},
-		{"steps.step-id2.outcome", "failure", "steps-context-outcome"},
-		{"steps.step-id2.outcome && true", true, "steps-context-outcome"},
+		{input: "github.action", expected: "push", name: "github-context"},
+		{input: "github.action", expected: "push", name: "github-context", ctxdata: map[string]interface{}{"github": map[string]interface{}{"ref": "refs/heads/test-data"}}},
+		{input: "github.ref", expected: "refs/heads/test-data", name: "github-context", ctxdata: map[string]interface{}{"github": map[string]interface{}{"ref": "refs/heads/test-data"}}},
+		{input: "github.custom-field", expected: "custom-value", name: "github-context", ctxdata: map[string]interface{}{"github": map[string]interface{}{"custom-field": "custom-value"}}},
+		{input: "github.event.commits[0].message", expected: nil, name: "github-context-noexist-prop"},
+		{input: "fromjson('{\"commits\":[]}').commits[0].message", expected: nil, name: "github-context-noexist-prop"},
+		{input: "github.event.pull_request.labels.*.name", expected: nil, name: "github-context-noexist-prop"},
+		{input: "env.TEST", expected: "value", name: "env-context"},
+		{input: "env.TEST", expected: "value", name: "env-context", caseSensitiveEnv: true},
+		{input: "env.test", expected: "", name: "env-context", caseSensitiveEnv: true},
+		{input: "env['TEST']", expected: "value", name: "env-context", caseSensitiveEnv: true},
+		{input: "env['test']", expected: "", name: "env-context", caseSensitiveEnv: true},
+		{input: "env.test", expected: "value", name: "env-context"},
+		{input: "job.status", expected: "success", name: "job-context"},
+		{input: "steps.step-id.outputs.name", expected: "value", name: "steps-context"},
+		{input: "steps.step-id.conclusion", expected: "success", name: "steps-context-conclusion"},
+		{input: "steps.step-id.conclusion && true", expected: true, name: "steps-context-conclusion"},
+		{input: "steps.step-id2.conclusion", expected: "skipped", name: "steps-context-conclusion"},
+		{input: "steps.step-id2.conclusion && true", expected: true, name: "steps-context-conclusion"},
+		{input: "steps.step-id.outcome", expected: "success", name: "steps-context-outcome"},
+		{input: "steps.step-id['outcome']", expected: "success", name: "steps-context-outcome"},
+		{input: "steps.step-id.outcome == 'success'", expected: true, name: "steps-context-outcome"},
+		{input: "steps.step-id['outcome'] == 'success'", expected: true, name: "steps-context-outcome"},
+		{input: "steps.step-id.outcome && true", expected: true, name: "steps-context-outcome"},
+		{input: "steps['step-id']['outcome'] && true", expected: true, name: "steps-context-outcome"},
+		{input: "steps.step-id2.outcome", expected: "failure", name: "steps-context-outcome"},
+		{input: "steps.step-id2.outcome && true", expected: true, name: "steps-context-outcome"},
 		// Disabled, since the interpreter is still too broken
 		// {"contains(steps.*.outcome, 'success')", true, "steps-context-array-outcome"},
 		// {"contains(steps.*.outcome, 'failure')", true, "steps-context-array-outcome"},
 		// {"contains(steps.*.outputs.name, 'value')", true, "steps-context-array-outputs"},
-		{"runner.os", "Linux", "runner-context"},
-		{"secrets.name", "value", "secrets-context"},
-		{"vars.name", "value", "vars-context"},
-		{"strategy.fail-fast", true, "strategy-context"},
-		{"matrix.os", "Linux", "matrix-context"},
-		{"needs.job-id.outputs.output-name", "value", "needs-context"},
-		{"needs.job-id.result", "success", "needs-context"},
-		{"contains(needs.*.result, 'success')", true, "needs-wildcard-context-contains-success"},
-		{"contains(needs.*.result, 'failure')", false, "needs-wildcard-context-contains-failure"},
-		{"inputs.name", "value", "inputs-context"},
+		{input: "runner.os", expected: "Linux", name: "runner-context"},
+		{input: "secrets.name", expected: "value", name: "secrets-context"},
+		{input: "vars.name", expected: "value", name: "vars-context"},
+		{input: "strategy.fail-fast", expected: true, name: "strategy-context"},
+		{input: "matrix.os", expected: "Linux", name: "matrix-context"},
+		{input: "needs.job-id.outputs.output-name", expected: "value", name: "needs-context"},
+		{input: "needs.job-id.result", expected: "success", name: "needs-context"},
+		{input: "contains(needs.*.result, 'success')", expected: true, name: "needs-wildcard-context-contains-success"},
+		{input: "contains(needs.*.result, 'failure')", expected: false, name: "needs-wildcard-context-contains-failure"},
+		{input: "inputs.name", expected: "value", name: "inputs-context"},
+		{input: "vars.MY_VAR", expected: "refs/heads/test-data", name: "vars-context", ctxdata: map[string]interface{}{"vars": map[string]interface{}{"MY_VAR": "refs/heads/test-data"}}},
+		{input: "vars.MY_VAR", expected: "refs/heads/test-data", name: "vars-context", ctxdata: map[string]interface{}{"vars": map[string]interface{}{"my_var": "refs/heads/test-data"}}},
 	}
 
-	env := &EvaluationEnvironment{
+	env := EvaluationEnvironment{
 		Github: &model.GithubContext{
 			Action: "push",
 		},
@@ -626,7 +638,10 @@ func TestContexts(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := NewInterpeter(env, Config{}).Evaluate(tt.input, DefaultStatusCheckNone)
+			tenv := env
+			tenv.EnvCS = tt.caseSensitiveEnv
+			tenv.CtxData = tt.ctxdata
+			output, err := NewInterpeter(&tenv, Config{}).Evaluate(tt.input, DefaultStatusCheckNone)
 			assert.Nil(t, err)
 
 			assert.Equal(t, tt.expected, output)
