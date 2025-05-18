@@ -83,7 +83,7 @@ func (runnerConfig *Config) GetGitHubAPIServerURL() string {
 	}
 	return fmt.Sprintf("https://%s/api/v3", runnerConfig.GitHubInstance)
 }
-func (runnerConfig *Config) GetGitHubGraphQlApiServerURL() string {
+func (runnerConfig *Config) GetGitHubGraphQlAPIServerURL() string {
 	if len(runnerConfig.GitHubGraphQlAPIServerURL) > 0 {
 		return runnerConfig.GitHubGraphQlAPIServerURL
 	}

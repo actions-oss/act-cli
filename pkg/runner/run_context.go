@@ -960,22 +960,7 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 		ghc.Workspace = rc.JobContainer.ToContainerPath(rc.Config.Workdir)
 	}
 
-	if rnout, ok := rc.ContextData["github"]; ok {
-		nout, ok := rnout.(map[string]interface{})
-		if ok {
-			var out map[string]interface{}
-			content, _ := json.Marshal(ghc)
-			_ = json.Unmarshal(content, &out)
-			for k, v := range nout {
-				// gitea sends empty string github contextdata, which replaced github.workspace
-				if v != nil && v != "" {
-					out[k] = v
-				}
-			}
-			content, _ = json.Marshal(out)
-			_ = json.Unmarshal(content, &ghc)
-		}
-	}
+	rc.mergeGitHubContextWithContextData(ghc)
 
 	if ghc.RunAttempt == "" {
 		ghc.RunAttempt = "1"
@@ -1029,7 +1014,7 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 		ghc.APIURL = rc.Config.GetGitHubAPIServerURL()
 	}
 	if ghc.GraphQLURL == "" {
-		ghc.GraphQLURL = rc.Config.GetGitHubGraphQlApiServerURL()
+		ghc.GraphQLURL = rc.Config.GetGitHubGraphQlAPIServerURL()
 	}
 
 	// allow to be overridden by user
@@ -1044,6 +1029,25 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 	}
 
 	return ghc
+}
+
+func (rc *RunContext) mergeGitHubContextWithContextData(ghc *model.GithubContext) {
+	if rnout, ok := rc.ContextData["github"]; ok {
+		nout, ok := rnout.(map[string]interface{})
+		if ok {
+			var out map[string]interface{}
+			content, _ := json.Marshal(ghc)
+			_ = json.Unmarshal(content, &out)
+			for k, v := range nout {
+				// gitea sends empty string github contextdata, which replaced github.workspace
+				if v != nil && v != "" {
+					out[k] = v
+				}
+			}
+			content, _ = json.Marshal(out)
+			_ = json.Unmarshal(content, &ghc)
+		}
+	}
 }
 
 func isLocalCheckout(ghc *model.GithubContext, step *model.Step) bool {
