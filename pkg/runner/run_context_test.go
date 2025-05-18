@@ -393,6 +393,54 @@ func TestGetGitHubContext(t *testing.T) {
 	assert.Equal(t, "job1", ghc.Job)
 }
 
+func TestGetGitHubContextOverlay(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+
+	rc := &RunContext{
+		Config: &Config{
+			EventName: "push",
+			Workdir:   cwd,
+		},
+		Run: &model.Run{
+			Workflow: &model.Workflow{
+				Name: "GitHubContextTest",
+			},
+		},
+		Name:           "GitHubContextTest",
+		CurrentStep:    "step",
+		Matrix:         map[string]interface{}{},
+		Env:            map[string]string{},
+		ExtraPath:      []string{},
+		StepResults:    map[string]*model.StepResult{},
+		OutputMappings: map[MappableOutput]MappableOutput{},
+		ContextData: map[string]interface{}{
+			"github": map[string]interface{}{
+				"actor":            "me",
+				"repository":       "myowner/myrepo",
+				"repository_owner": "myowner",
+			},
+		},
+	}
+	rc.Run.JobID = "job1"
+
+	ghc := rc.getGithubContext(context.Background())
+
+	log.Debugf("%v", ghc)
+
+	assert.Equal(t, "1", ghc.RunID)
+	assert.Equal(t, "1", ghc.RunNumber)
+	assert.Equal(t, "0", ghc.RetentionDays)
+	assert.Equal(t, "me", ghc.Actor)
+	assert.Equal(t, "myowner/myrepo", ghc.Repository)
+	assert.Equal(t, "myowner", ghc.RepositoryOwner)
+	assert.Equal(t, "/dev/null", ghc.RunnerPerflog)
+	assert.Equal(t, rc.Config.Secrets["GITHUB_TOKEN"], ghc.Token)
+	assert.Equal(t, "job1", ghc.Job)
+}
+
 func TestGetGithubContextRef(t *testing.T) {
 	table := []struct {
 		event string
