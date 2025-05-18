@@ -98,6 +98,7 @@ type endlessReader struct {
 }
 
 func (r endlessReader) Read(_ []byte) (n int, err error) {
+	time.Sleep(100 * time.Millisecond)
 	return 1, nil
 }
 
@@ -123,11 +124,16 @@ func TestDockerExecAbort(t *testing.T) {
 
 	client := &mockDockerClient{}
 	client.On("ContainerExecCreate", ctx, "123", mock.AnythingOfType("container.ExecOptions")).Return(container.ExecCreateResponse{ID: "id"}, nil)
-	client.On("ContainerExecAttach", ctx, "id", mock.AnythingOfType("container.ExecStartOptions")).Return(types.HijackedResponse{
+	attached := make(chan struct{})
+	client.On("ContainerExecAttach", ctx, "id", mock.AnythingOfType("container.ExecStartOptions")).Run(func(args mock.Arguments) {
+		close(attached)
+	}).Return(types.HijackedResponse{
 		Conn:   conn,
 		Reader: bufio.NewReader(endlessReader{}),
 	}, nil)
-	client.On("ContainerKill", mock.Anything, "123", "kill").Return(nil)
+	client.On("ContainerKill", mock.Anything, "123", "kill").Run(func(args mock.Arguments) {
+		<-attached
+	}).Return(nil)
 	client.On("ContainerStart", mock.Anything, "123", mock.AnythingOfType("container.StartOptions")).Return(nil)
 
 	cr := &containerReference{
@@ -143,8 +149,6 @@ func TestDockerExecAbort(t *testing.T) {
 	go func() {
 		channel <- cr.execExt([]string{""}, map[string]string{}, "user", "workdir")(ctx)
 	}()
-
-	time.Sleep(500 * time.Millisecond)
 
 	cancel()
 
