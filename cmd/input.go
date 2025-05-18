@@ -38,6 +38,9 @@ type Input struct {
 	workflowRecurse                    bool
 	useGitIgnore                       bool
 	githubInstance                     string
+	gitHubServerURL                    string
+	gitHubAPIServerURL                 string
+	gitHubGraphQlAPIServerURL          string
 	containerCapAdd                    []string
 	containerCapDrop                   []string
 	autoRemove                         bool

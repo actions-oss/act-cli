@@ -90,6 +90,7 @@ func (rc *RunContext) NewExpressionEvaluatorWithEnv(ctx context.Context, env map
 		Needs:     using,
 		Inputs:    inputs,
 		HashFiles: getHashFilesFunction(ctx, rc),
+		CtxData:   rc.ContextData,
 	}
 	if rc.JobContainer != nil {
 		ee.Runner = rc.JobContainer.GetRunnerContext(ctx)
@@ -155,9 +156,11 @@ func (rc *RunContext) newStepExpressionEvaluator(ctx context.Context, step step,
 		// but required to interpolate/evaluate the inputs in actions/composite
 		Inputs:    inputs,
 		HashFiles: getHashFilesFunction(ctx, rc),
+		CtxData:   rc.ContextData,
 	}
 	if rc.JobContainer != nil {
 		ee.Runner = rc.JobContainer.GetRunnerContext(ctx)
+		ee.EnvCS = !rc.JobContainer.IsEnvironmentCaseInsensitive()
 	}
 	return expressionEvaluator{
 		interpreter: exprparser.NewInterpeter(ee, exprparser.Config{

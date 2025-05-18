@@ -53,6 +53,7 @@ type RunContext struct {
 	cleanUpJobContainer common.Executor
 	caller              *caller // job calling this RunContext (reusable workflows)
 	Cancelled           bool
+	ContextData         map[string]interface{}
 	nodeToolFullPath    string
 }
 
@@ -959,6 +960,23 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 		ghc.Workspace = rc.JobContainer.ToContainerPath(rc.Config.Workdir)
 	}
 
+	if rnout, ok := rc.ContextData["github"]; ok {
+		nout, ok := rnout.(map[string]interface{})
+		if ok {
+			var out map[string]interface{}
+			content, _ := json.Marshal(ghc)
+			_ = json.Unmarshal(content, &out)
+			for k, v := range nout {
+				// gitea sends empty string github contextdata, which replaced github.workspace
+				if v != nil && v != "" {
+					out[k] = v
+				}
+			}
+			content, _ = json.Marshal(out)
+			_ = json.Unmarshal(content, &ghc)
+		}
+	}
+
 	if ghc.RunAttempt == "" {
 		ghc.RunAttempt = "1"
 	}
@@ -994,7 +1012,7 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 
 	ghc.SetBaseAndHeadRef()
 	repoPath := rc.Config.Workdir
-	ghc.SetRepositoryAndOwner(ctx, rc.Config.GitHubInstance, rc.Config.RemoteName, repoPath)
+	ghc.SetRepositoryAndOwner(ctx, rc.Config.GetGitHubInstance(), rc.Config.RemoteName, repoPath)
 	if ghc.Ref == "" {
 		ghc.SetRef(ctx, rc.Config.DefaultBranch, repoPath)
 	}
@@ -1004,16 +1022,16 @@ func (rc *RunContext) getGithubContext(ctx context.Context) *model.GithubContext
 
 	ghc.SetRefTypeAndName()
 
-	// defaults
-	ghc.ServerURL = "https://github.com"
-	ghc.APIURL = "https://api.github.com"
-	ghc.GraphQLURL = "https://api.github.com/graphql"
-	// per GHES
-	if rc.Config.GitHubInstance != "github.com" {
-		ghc.ServerURL = fmt.Sprintf("https://%s", rc.Config.GitHubInstance)
-		ghc.APIURL = fmt.Sprintf("https://%s/api/v3", rc.Config.GitHubInstance)
-		ghc.GraphQLURL = fmt.Sprintf("https://%s/api/graphql", rc.Config.GitHubInstance)
+	if ghc.ServerURL == "" {
+		ghc.ServerURL = rc.Config.GetGitHubServerURL()
 	}
+	if ghc.APIURL == "" {
+		ghc.APIURL = rc.Config.GetGitHubAPIServerURL()
+	}
+	if ghc.GraphQLURL == "" {
+		ghc.GraphQLURL = rc.Config.GetGitHubGraphQlApiServerURL()
+	}
+
 	// allow to be overridden by user
 	if rc.Config.Env["GITHUB_SERVER_URL"] != "" {
 		ghc.ServerURL = rc.Config.Env["GITHUB_SERVER_URL"]

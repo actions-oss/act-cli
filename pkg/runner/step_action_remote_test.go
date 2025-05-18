@@ -55,7 +55,10 @@ func TestStepActionRemote(t *testing.T) {
 			read   bool
 			run    bool
 		}
-		runError error
+		runError                  error
+		gitHubServerURL           string
+		gitHubAPIServerURL        string
+		gitHubGraphQlAPIServerURL string
 	}{
 		{
 			name: "run-successful",
@@ -79,6 +82,32 @@ func TestStepActionRemote(t *testing.T) {
 				read:   true,
 				run:    true,
 			},
+		},
+		{
+			name: "run-successful",
+			stepModel: &model.Step{
+				ID:   "step",
+				Uses: "remote/action@v1",
+			},
+			result: &model.StepResult{
+				Conclusion: model.StepStatusSuccess,
+				Outcome:    model.StepStatusSuccess,
+				Outputs:    map[string]string{},
+			},
+			mocks: struct {
+				env    bool
+				cloned bool
+				read   bool
+				run    bool
+			}{
+				env:    true,
+				cloned: true,
+				read:   true,
+				run:    true,
+			},
+			gitHubServerURL:           "http://localhost:3000",
+			gitHubAPIServerURL:        "http://localhost:3000/api/v1",
+			gitHubGraphQlAPIServerURL: "http://localhost:3000/api/graphql",
 		},
 		{
 			name: "run-skipped",
@@ -142,8 +171,11 @@ func TestStepActionRemote(t *testing.T) {
 			sar := &stepActionRemote{
 				RunContext: &RunContext{
 					Config: &Config{
-						GitHubInstance: "github.com",
-						ActionCache:    cacheMock,
+						GitHubInstance:            "github.com",
+						ActionCache:               cacheMock,
+						GitHubServerURL:           tt.gitHubServerURL,
+						GitHubAPIServerURL:        tt.gitHubAPIServerURL,
+						GitHubGraphQlAPIServerURL: tt.gitHubGraphQlAPIServerURL,
 					},
 					Run: &model.Run{
 						JobID: "1",
@@ -162,7 +194,12 @@ func TestStepActionRemote(t *testing.T) {
 			}
 			sar.RunContext.ExprEval = sar.RunContext.NewExpressionEvaluator(ctx)
 
-			cacheMock.Mock.On("Fetch", ctx, mock.AnythingOfType("string"), "https://github.com/remote/action", "v1", "").Return("someval")
+			serverURL := "https://github.com"
+			if tt.gitHubServerURL != "" {
+				serverURL = tt.gitHubServerURL
+			}
+
+			cacheMock.Mock.On("Fetch", ctx, mock.AnythingOfType("string"), serverURL+"/remote/action", "v1", "").Return("someval")
 			suffixMatcher := func(suffix string) interface{} {
 				return mock.MatchedBy(func(actionDir string) bool {
 					return strings.HasSuffix(actionDir, suffix)
@@ -173,7 +210,9 @@ func TestStepActionRemote(t *testing.T) {
 				sarm.Mock.On("readAction", sar.Step, "someval", "", mock.Anything, mock.Anything).Return(&model.Action{}, nil)
 			}
 			if tt.mocks.run {
-				sarm.On("runAction", sar, suffixMatcher("act/remote-action@v1"), newRemoteAction(sar.Step.Uses)).Return(func(_ context.Context) error { return tt.runError })
+				remoteAction := newRemoteAction(sar.Step.Uses)
+				remoteAction.URL = serverURL
+				sarm.On("runAction", sar, suffixMatcher("act/remote-action@v1"), remoteAction).Return(func(_ context.Context) error { return tt.runError })
 
 				cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(_ context.Context) error {
 					return nil

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"runtime"
 
 	"github.com/actions-oss/act-cli/pkg/common"
@@ -48,6 +49,9 @@ type Config struct {
 	ContainerOptions                   string                       // Options for the job container
 	UseGitIgnore                       bool                         // controls if paths in .gitignore should not be copied into container, default true
 	GitHubInstance                     string                       // GitHub instance to use, default "github.com"
+	GitHubServerURL                    string                       // GitHub server url to use
+	GitHubAPIServerURL                 string                       // GitHub api server url to use
+	GitHubGraphQlAPIServerURL          string                       // GitHub graphql server url to use
 	ContainerCapAdd                    []string                     // list of kernel capabilities to add to the containers
 	ContainerCapDrop                   []string                     // list of kernel capabilities to remove from the containers
 	AutoRemove                         bool                         // controls if the container is automatically removed upon workflow completion
@@ -62,6 +66,38 @@ type Config struct {
 	ContainerNetworkMode               docker_container.NetworkMode // the network mode of job containers (the value of --network)
 	ActionCache                        ActionCache                  // Use a custom ActionCache Implementation
 	HostEnvironmentDir                 string                       // Custom folder for host environment, parallel jobs must be 1
+}
+
+func (runnerConfig *Config) GetGitHubServerURL() string {
+	if len(runnerConfig.GitHubServerURL) > 0 {
+		return runnerConfig.GitHubServerURL
+	}
+	return fmt.Sprintf("https://%s", runnerConfig.GitHubInstance)
+}
+func (runnerConfig *Config) GetGitHubAPIServerURL() string {
+	if len(runnerConfig.GitHubAPIServerURL) > 0 {
+		return runnerConfig.GitHubAPIServerURL
+	}
+	if runnerConfig.GitHubInstance == "github.com" {
+		return "https://api.github.com"
+	}
+	return fmt.Sprintf("https://%s/api/v3", runnerConfig.GitHubInstance)
+}
+func (runnerConfig *Config) GetGitHubGraphQlApiServerURL() string {
+	if len(runnerConfig.GitHubGraphQlAPIServerURL) > 0 {
+		return runnerConfig.GitHubGraphQlAPIServerURL
+	}
+	if runnerConfig.GitHubInstance == "github.com" {
+		return "https://api.github.com/graphql"
+	}
+	return fmt.Sprintf("https://%s/api/graphql", runnerConfig.GitHubInstance)
+}
+func (runnerConfig *Config) GetGitHubInstance() string {
+	if len(runnerConfig.GitHubServerURL) > 0 {
+		regex := regexp.MustCompile("^https?://(.*)$")
+		return regex.ReplaceAllString(runnerConfig.GitHubServerURL, "$1")
+	}
+	return runnerConfig.GitHubInstance
 }
 
 type caller struct {

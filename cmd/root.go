@@ -113,6 +113,9 @@ func createRootCommand(ctx context.Context, input *Input, version string) *cobra
 	rootCmd.PersistentFlags().StringVarP(&input.containerDaemonSocket, "container-daemon-socket", "", "", "URI to Docker Engine socket (e.g.: unix://~/.docker/run/docker.sock or - to disable bind mounting the socket)")
 	rootCmd.PersistentFlags().StringVarP(&input.containerOptions, "container-options", "", "", "Custom docker container options for the job container without an options property in the job definition")
 	rootCmd.PersistentFlags().StringVarP(&input.githubInstance, "github-instance", "", "github.com", "GitHub instance to use. Only use this when using GitHub Enterprise Server.")
+	rootCmd.PersistentFlags().StringVarP(&input.gitHubServerURL, "github-server-url", "", "", "Fully qualified URL to the GitHub instance to use with http/https protocol. Only use this when using GitHub Enterprise Server or Gitea.")
+	rootCmd.PersistentFlags().StringVarP(&input.gitHubAPIServerURL, "github-api-server-url", "", "", "Fully qualified URL to the GitHub instance api url to use with http/https protocol. Only use this when using GitHub Enterprise Server or Gitea.")
+	rootCmd.PersistentFlags().StringVarP(&input.gitHubGraphQlAPIServerURL, "github-graph-ql-api-server-url", "", "", "Fully qualified URL to the GitHub instance graphql api to use with http/https protocol. Only use this when using GitHub Enterprise Server or Gitea.")
 	rootCmd.PersistentFlags().StringVarP(&input.artifactServerPath, "artifact-server-path", "", "", "Defines the path where the artifact server stores uploads and retrieves downloads from. If not specified the artifact server will not start.")
 	rootCmd.PersistentFlags().StringVarP(&input.artifactServerAddr, "artifact-server-addr", "", common.GetOutboundIP().String(), "Defines the address to which the artifact server binds.")
 	rootCmd.PersistentFlags().StringVarP(&input.artifactServerPort, "artifact-server-port", "", "34567", "Defines the port where the artifact server listens.")
@@ -630,6 +633,9 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 			ContainerOptions:                   input.containerOptions,
 			UseGitIgnore:                       input.useGitIgnore,
 			GitHubInstance:                     input.githubInstance,
+			GitHubServerURL:                    input.gitHubServerURL,
+			GitHubAPIServerURL:                 input.gitHubAPIServerURL,
+			GitHubGraphQlAPIServerURL:          input.gitHubGraphQlAPIServerURL,
 			ContainerCapAdd:                    input.containerCapAdd,
 			ContainerCapDrop:                   input.containerCapDrop,
 			AutoRemove:                         input.autoRemove,
