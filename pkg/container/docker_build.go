@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/build"
 	"github.com/moby/go-archive"
 
 	"github.com/moby/patternmatcher"
@@ -39,7 +39,7 @@ func NewDockerBuildExecutor(input NewDockerBuildExecutorInput) common.Executor {
 		logger.Debugf("Building image from '%v'", input.ContextDir)
 
 		tags := []string{input.ImageTag}
-		options := types.ImageBuildOptions{
+		options := build.ImageBuildOptions{
 			Tags:        tags,
 			Remove:      true,
 			Platform:    input.Platform,
