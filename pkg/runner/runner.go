@@ -66,6 +66,8 @@ type Config struct {
 	ContainerNetworkMode               docker_container.NetworkMode // the network mode of job containers (the value of --network)
 	ActionCache                        ActionCache                  // Use a custom ActionCache Implementation
 	HostEnvironmentDir                 string                       // Custom folder for host environment, parallel jobs must be 1
+
+	CustomExecutor map[model.JobType]func(*RunContext) common.Executor // Custom executor to run jobs
 }
 
 func (runnerConfig *Config) GetGitHubServerURL() string {

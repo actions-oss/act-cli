@@ -757,15 +757,19 @@ func (rc *RunContext) Executor() (common.Executor, error) {
 	var executor common.Executor
 	var jobType, err = rc.Run.Job().Type()
 
-	switch jobType {
-	case model.JobTypeDefault:
-		executor = newJobExecutor(rc, &stepFactoryImpl{}, rc)
-	case model.JobTypeReusableWorkflowLocal:
-		executor = newLocalReusableWorkflowExecutor(rc)
-	case model.JobTypeReusableWorkflowRemote:
-		executor = newRemoteReusableWorkflowExecutor(rc)
-	case model.JobTypeInvalid:
-		return nil, err
+	if exec, ok := rc.Config.CustomExecutor[jobType]; ok {
+		executor = exec(rc)
+	} else {
+		switch jobType {
+		case model.JobTypeDefault:
+			executor = newJobExecutor(rc, &stepFactoryImpl{}, rc)
+		case model.JobTypeReusableWorkflowLocal:
+			executor = newLocalReusableWorkflowExecutor(rc)
+		case model.JobTypeReusableWorkflowRemote:
+			executor = newRemoteReusableWorkflowExecutor(rc)
+		case model.JobTypeInvalid:
+			return nil, err
+		}
 	}
 
 	return func(ctx context.Context) error {
