@@ -824,16 +824,22 @@ func (rc *RunContext) runsOnImage(ctx context.Context) string {
 func (rc *RunContext) runsOnPlatformNames(ctx context.Context) []string {
 	job := rc.Run.Job()
 
-	if job.RunsOn() == nil {
+	if job.RawRunsOn.IsZero() {
 		return []string{}
 	}
 
-	if err := rc.ExprEval.EvaluateYamlNode(ctx, &job.RawRunsOn); err != nil {
+	node := job.RawRunsOn
+
+	if err := rc.ExprEval.EvaluateYamlNode(ctx, &node); err != nil {
 		common.Logger(ctx).Errorf("error while evaluating runs-on: %v", err)
 		return []string{}
 	}
 
-	return job.RunsOn()
+	// Execute this method on a copy of the job to avoid modifying the original job
+	j := *job
+	j.RawRunsOn = node
+
+	return j.RunsOn()
 }
 
 func (rc *RunContext) platformImage(ctx context.Context) string {
