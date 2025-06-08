@@ -239,14 +239,13 @@ func (runner *runnerImpl) NewPlanExecutor(plan *model.Plan) common.Executor {
 			}
 			if runner.config.Parallel != 0 {
 				return common.NewParallelExecutor(len(pipeline), pipeline...)(ctx)
-			} else {
-				ncpu := runtime.NumCPU()
-				if 1 > ncpu {
-					ncpu = 1
-				}
-				log.Debugf("Detected CPUs: %d", ncpu)
-				return common.NewParallelExecutor(ncpu, pipeline...)(ctx)
 			}
+			ncpu := runtime.NumCPU()
+			if 1 > ncpu {
+				ncpu = 1
+			}
+			log.Debugf("Detected CPUs: %d", ncpu)
+			return common.NewParallelExecutor(ncpu, pipeline...)(ctx)
 		})
 	}
 
