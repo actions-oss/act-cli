@@ -783,7 +783,7 @@ func (rc *RunContext) Executor() (common.Executor, error) {
 			return err
 		}
 		if res {
-			if rc.Config != nil && rc.Config.Parallel > 0 && rc.Config.semaphore != nil {
+			if jobType == model.JobTypeDefault && rc.Config != nil && rc.Config.Parallel > 0 && rc.Config.semaphore != nil {
 				if err := rc.Config.semaphore.Acquire(ctx, 1); err != nil {
 					return fmt.Errorf("failed to acquire semaphore: %w", err)
 				}
