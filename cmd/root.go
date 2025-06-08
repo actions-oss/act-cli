@@ -95,6 +95,8 @@ func createRootCommand(ctx context.Context, input *Input, version string) *cobra
 	rootCmd.Flags().StringArrayVarP(&input.replaceGheActionWithGithubCom, "replace-ghe-action-with-github-com", "", []string{}, "If you are using GitHub Enterprise Server and allow specified actions from GitHub (github.com), you can set actions on this. (e.g. --replace-ghe-action-with-github-com =github/super-linter)")
 	rootCmd.Flags().StringVar(&input.replaceGheActionTokenWithGithubCom, "replace-ghe-action-token-with-github-com", "", "If you are using replace-ghe-action-with-github-com  and you want to use private actions on GitHub, you have to set personal access token")
 	rootCmd.Flags().StringArrayVarP(&input.matrix, "matrix", "", []string{}, "specify which matrix configuration to include (e.g. --matrix java:13")
+	rootCmd.Flags().IntVarP(&input.parallel, "parallel", "", 0, "number of jobs to run in parallel")
+	rootCmd.Flags().IntVarP(&input.parallel, "concurrent-jobs", "", 0, "number of jobs to run in parallel")
 	rootCmd.PersistentFlags().StringVarP(&input.actor, "actor", "a", "nektos/act", "user that triggered the event")
 	rootCmd.PersistentFlags().StringVarP(&input.workflowsPath, "workflows", "W", "./.github/workflows/", "path to workflow file(s)")
 	rootCmd.PersistentFlags().BoolVarP(&input.workflowRecurse, "recurse", "", false, "Flag to enable running workflows from subdirectories of specified path in '--workflows'/'-W' flag, this feature doesn't exist on GitHub Actions as of 2024/11")
@@ -649,6 +651,7 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 			ReplaceGheActionTokenWithGithubCom: input.replaceGheActionTokenWithGithubCom,
 			Matrix:                             matrixes,
 			ContainerNetworkMode:               docker_container.NetworkMode(input.networkName),
+			Parallel:                           input.parallel,
 		}
 		if input.actionOfflineMode {
 			config.ActionCache = &runner.GoGitActionCacheOfflineMode{

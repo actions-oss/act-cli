@@ -193,6 +193,7 @@ func (j *TestJobFileInfo) runTest(ctx context.Context, t *testing.T, cfg *Config
 		ContainerArchitecture: cfg.ContainerArchitecture,
 		Matrix:                cfg.Matrix,
 		ActionCache:           cfg.ActionCache,
+		Parallel:              cfg.Parallel,
 	}
 
 	runner, err := New(runnerConfig)
@@ -338,7 +339,8 @@ func TestRunEvent(t *testing.T) {
 	for _, table := range tables {
 		t.Run(table.workflowPath, func(t *testing.T) {
 			config := &Config{
-				Secrets: table.secrets,
+				Secrets:  table.secrets,
+				Parallel: 8,
 			}
 
 			eventFile := filepath.Join(workdir, table.workflowPath, "event.json")
