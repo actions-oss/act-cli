@@ -12,6 +12,7 @@ import (
 	"github.com/actions-oss/act-cli/pkg/model"
 	docker_container "github.com/docker/docker/api/types/container"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/semaphore"
 )
 
 // Runner provides capabilities to run GitHub actions
@@ -68,6 +69,8 @@ type Config struct {
 	HostEnvironmentDir                 string                       // Custom folder for host environment, parallel jobs must be 1
 
 	CustomExecutor map[model.JobType]func(*RunContext) common.Executor // Custom executor to run jobs
+	semaphore      *semaphore.Weighted
+	Parallel       int // Number of parallel jobs to run
 }
 
 func (runnerConfig *Config) GetGitHubServerURL() string {
@@ -233,6 +236,9 @@ func (runner *runnerImpl) NewPlanExecutor(plan *model.Plan) common.Executor {
 					})
 				}
 				pipeline = append(pipeline, common.NewParallelExecutor(maxParallel, stageExecutor...))
+			}
+			if runner.config.Parallel != 0 {
+				return common.NewParallelExecutor(len(pipeline), pipeline...)(ctx)
 			}
 			ncpu := runtime.NumCPU()
 			if 1 > ncpu {

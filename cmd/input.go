@@ -65,6 +65,7 @@ type Input struct {
 	listOptions                        bool
 	validate                           bool
 	strict                             bool
+	parallel                           int
 }
 
 func (i *Input) resolve(path string) string {

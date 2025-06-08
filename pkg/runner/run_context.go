@@ -27,6 +27,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/opencontainers/selinux/go-selinux"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/semaphore"
 )
 
 // RunContext contains info about current job
@@ -772,12 +773,22 @@ func (rc *RunContext) Executor() (common.Executor, error) {
 		}
 	}
 
+	if rc.Config != nil && rc.Config.Parallel > 0 && rc.Config.semaphore == nil {
+		rc.Config.semaphore = semaphore.NewWeighted(int64(rc.Config.Parallel))
+	}
+
 	return func(ctx context.Context) error {
 		res, err := rc.isEnabled(ctx)
 		if err != nil {
 			return err
 		}
 		if res {
+			if jobType == model.JobTypeDefault && rc.Config != nil && rc.Config.Parallel > 0 && rc.Config.semaphore != nil {
+				if err := rc.Config.semaphore.Acquire(ctx, 1); err != nil {
+					return fmt.Errorf("failed to acquire semaphore: %w", err)
+				}
+				defer rc.Config.semaphore.Release(1)
+			}
 			return executor(ctx)
 		}
 		return nil
