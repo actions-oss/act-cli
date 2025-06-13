@@ -329,7 +329,7 @@ jobs:
 }
 
 func TestReadWorkflow_MatrixCoverage(t *testing.T) {
-	w, err := NewWorkflowPlanner("testdata/strategy/matrix/coverage_test.yml", true)
+	w, err := NewWorkflowPlanner("testdata/strategy/matrix/coverage_test.yml", true, false)
 	assert.NoError(t, err)
 
 	p, err := w.PlanJob("test-coverage")
