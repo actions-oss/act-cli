@@ -34,7 +34,7 @@ func (a *ActionRunsUsing) UnmarshalYAML(unmarshal func(interface{}) error) error
 }
 
 func (a ActionRunsUsing) IsNode() {
-	return strings.HasPrefix(string(format), string(ActionRunsUsingNode)
+	return strings.HasPrefix(string(format), string(ActionRunsUsingNode))
 }
 
 func (a ActionRunsUsing) IsDocker() {
