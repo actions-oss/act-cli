@@ -33,15 +33,15 @@ func (a *ActionRunsUsing) UnmarshalYAML(unmarshal func(interface{}) error) error
 	return nil
 }
 
-func (a ActionRunsUsing) IsNode() {
+func (a ActionRunsUsing) IsNode() bool {
 	return strings.HasPrefix(string(format), string(ActionRunsUsingNode))
 }
 
-func (a ActionRunsUsing) IsDocker() {
+func (a ActionRunsUsing) IsDocker() bool {
 	return a == ActionRunsUsingDocker
 }
 
-func (a ActionRunsUsing) IsComposite() {
+func (a ActionRunsUsing) IsComposite() bool {
 	return a == ActionRunsUsingComposite
 }
 
