@@ -3,7 +3,6 @@ package model
 import (
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/actions-oss/act-cli/pkg/schema"
@@ -21,14 +20,8 @@ func (a *ActionRunsUsing) UnmarshalYAML(unmarshal func(interface{}) error) error
 
 	// Force input to lowercase for case insensitive comparison
 	format := ActionRunsUsing(strings.ToLower(using))
-	if strings.HasPrefix(string(format), string(ActionRunsUsingNode)) && len(format) == len(ActionRunsUsingNode)+2 {
-		if ver, err := strconv.Atoi(string(format[len(ActionRunsUsingNode):])); err == nil && ver >= 0 {
-			*a = ActionRunsUsingNode
-		}
-		return nil
-	}
-	switch format {
-	case ActionRunsUsingDocker, ActionRunsUsingComposite:
+	switch {
+	case format.IsNode() || format.IsDocker() || format.IsComposite():
 		*a = format
 	default:
 		return fmt.Errorf("the runs.using key in action.yml must be one of: %v, got %s", []string{

@@ -479,10 +479,10 @@ func shouldRunPreStep(step actionStep) common.Conditional {
 func hasPreStep(step actionStep) common.Conditional {
 	return func(_ context.Context) bool {
 		action := step.getActionModel()
-		return (action.Runs.Using == model.ActionRunsUsingComposite) ||
+		return action.Runs.Using.IsComposite() ||
 			(action.Runs.Using.IsNode() &&
 				action.Runs.Pre != "") ||
-			(action.Runs.Using == model.ActionRunsUsingDocker &&
+			(action.Runs.Using.IsDocker() &&
 				action.Runs.PreEntrypoint != "")
 	}
 }
@@ -586,10 +586,10 @@ func shouldRunPostStep(step actionStep) common.Conditional {
 func hasPostStep(step actionStep) common.Conditional {
 	return func(_ context.Context) bool {
 		action := step.getActionModel()
-		return (action.Runs.Using == model.ActionRunsUsingComposite) ||
+		return action.Runs.Using.IsComposite() ||
 			(action.Runs.Using.IsNode() &&
 				action.Runs.Post != "") ||
-			(action.Runs.Using == model.ActionRunsUsingDocker &&
+			(action.Runs.Using.IsDocker() &&
 				action.Runs.PostEntrypoint != "")
 	}
 }
