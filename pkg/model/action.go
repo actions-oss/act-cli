@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/actions-oss/act-cli/pkg/schema"
@@ -20,28 +21,28 @@ func (a *ActionRunsUsing) UnmarshalYAML(unmarshal func(interface{}) error) error
 
 	// Force input to lowercase for case insensitive comparison
 	format := ActionRunsUsing(strings.ToLower(using))
+	if strings.HasPrefix(string(format), string(ActionRunsUsingNode)) && len(format) == len(ActionRunsUsingNode)+2 {
+		if ver, err := strconv.Atoi(string(format[len(ActionRunsUsingNode):])); err == nil && ver >= 0 {
+			*a = ActionRunsUsingNode
+		}
+		return nil
+	}
 	switch format {
-	case ActionRunsUsingNode20, ActionRunsUsingNode16, ActionRunsUsingNode12, ActionRunsUsingDocker, ActionRunsUsingComposite:
+	case ActionRunsUsingDocker, ActionRunsUsingComposite:
 		*a = format
 	default:
 		return fmt.Errorf("the runs.using key in action.yml must be one of: %v, got %s", []string{
 			ActionRunsUsingComposite,
 			ActionRunsUsingDocker,
-			ActionRunsUsingNode12,
-			ActionRunsUsingNode16,
-			ActionRunsUsingNode20,
+			ActionRunsUsingNode + "<node version like 12, 16, 20, 24 or later>",
 		}, format)
 	}
 	return nil
 }
 
 const (
-	// ActionRunsUsingNode12 for running with node12
-	ActionRunsUsingNode12 = "node12"
-	// ActionRunsUsingNode16 for running with node16
-	ActionRunsUsingNode16 = "node16"
-	// ActionRunsUsingNode20 for running with node20
-	ActionRunsUsingNode20 = "node20"
+	// ActionRunsUsingNode for running with node12, node16, node20, node24 or later
+	ActionRunsUsingNode = "node"
 	// ActionRunsUsingDocker for running with docker
 	ActionRunsUsingDocker = "docker"
 	// ActionRunsUsingComposite for running composite
