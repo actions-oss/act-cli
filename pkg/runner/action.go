@@ -166,9 +166,9 @@ func runActionImpl(step actionStep, actionDir string, remoteAction *remoteAction
 
 		logger.Debugf("type=%v actionDir=%s actionPath=%s workdir=%s actionCacheDir=%s actionName=%s containerActionDir=%s", stepModel.Type(), actionDir, actionPath, rc.Config.Workdir, rc.ActionCacheDir(), actionName, containerActionDir)
 
-		x := action.Runs.Uses
+		x := action.Runs.Using
 		switch {
-		case x.isNode():
+		case x.IsNode():
 			if err := maybeCopyToActionDir(ctx, step, actionPath, containerActionDir); err != nil {
 				return err
 			}
@@ -521,7 +521,7 @@ func runPreStep(step actionStep) common.Executor {
 
 		actionName, containerActionDir := getContainerActionPaths(stepModel, actionLocation, rc)
 
-		x := action.Runs.Uses
+		x := action.Runs.Using
 		switch {
 		case x.IsNode():
 			if err := maybeCopyToActionDir(ctx, step, actionPath, containerActionDir); err != nil {
@@ -625,7 +625,7 @@ func runPostStep(step actionStep) common.Executor {
 
 		actionName, containerActionDir := getContainerActionPaths(stepModel, actionLocation, rc)
 
-		x := action.Runs.Uses
+		x := action.Runs.Using
 		switch {
 		case x.IsNode():
 			populateEnvsFromSavedState(step.getEnv(), step, rc)
