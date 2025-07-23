@@ -252,6 +252,7 @@ func (runner *runnerImpl) NewPlanExecutor(plan *model.Plan) common.Executor {
 	return common.NewPipelineExecutor(stagePipeline...).Then(handleFailure(plan))
 }
 
+// bug: this function uses a parsed workflow plan to check for job failures.
 func handleFailure(plan *model.Plan) common.Executor {
 	return func(_ context.Context) error {
 		for _, stage := range plan.Stages {

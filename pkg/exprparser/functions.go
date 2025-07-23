@@ -256,6 +256,7 @@ func (impl *interperterImpl) always() (bool, error) {
 	return true, nil
 }
 
+// bug: this function uses a parsed workflow plan to check for job failures.
 func (impl *interperterImpl) jobSuccess() (bool, error) {
 	jobs := impl.config.Run.Workflow.Jobs
 	jobNeeds := impl.getNeedsTransitive(impl.config.Run.Job())
@@ -273,6 +274,7 @@ func (impl *interperterImpl) stepSuccess() (bool, error) {
 	return impl.env.Job.Status == "success", nil
 }
 
+// bug: this function uses a parsed workflow plan to check for job failures.
 func (impl *interperterImpl) jobFailure() (bool, error) {
 	jobs := impl.config.Run.Workflow.Jobs
 	jobNeeds := impl.getNeedsTransitive(impl.config.Run.Job())

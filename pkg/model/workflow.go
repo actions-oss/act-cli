@@ -201,13 +201,13 @@ type Job struct {
 	Uses           string                    `yaml:"uses"`
 	With           map[string]interface{}    `yaml:"with"`
 	RawSecrets     yaml.Node                 `yaml:"secrets"`
-	Result         string
+	Result         string                    `yaml:"-"`
 }
 
 // Strategy for the job
 type Strategy struct {
-	FailFast          bool
-	MaxParallel       int
+	FailFast          bool      `yaml:"-"`
+	MaxParallel       int       `yaml:"-"`
 	FailFastString    string    `yaml:"fail-fast"`
 	MaxParallelString string    `yaml:"max-parallel"`
 	RawMatrix         yaml.Node `yaml:"matrix"`

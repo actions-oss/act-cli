@@ -166,7 +166,7 @@ func (sr *stepRun) setupShell(ctx context.Context) {
 	step := sr.Step
 
 	if step.Shell == "" {
-		step.WorkflowShell = rc.Run.Job().Defaults.Run.Shell
+		step.WorkflowShell = rc.Job().Defaults.Run.Shell
 	} else {
 		step.WorkflowShell = step.Shell
 	}
@@ -209,7 +209,7 @@ func (sr *stepRun) setupWorkingDirectory(ctx context.Context) {
 	workingdirectory := ""
 
 	if step.WorkingDirectory == "" {
-		workingdirectory = rc.Run.Job().Defaults.Run.WorkingDirectory
+		workingdirectory = rc.Job().Defaults.Run.WorkingDirectory
 	} else {
 		workingdirectory = step.WorkingDirectory
 	}

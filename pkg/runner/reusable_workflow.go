@@ -12,11 +12,11 @@ import (
 )
 
 func newLocalReusableWorkflowExecutor(rc *RunContext) common.Executor {
-	return newReusableWorkflowExecutor(rc, rc.Config.Workdir, rc.Run.Job().Uses)
+	return newReusableWorkflowExecutor(rc, rc.Config.Workdir, rc.Job().Uses)
 }
 
 func newRemoteReusableWorkflowExecutor(rc *RunContext) common.Executor {
-	uses := rc.Run.Job().Uses
+	uses := rc.Job().Uses
 
 	remoteReusableWorkflow := newRemoteReusableWorkflow(uses)
 	if remoteReusableWorkflow == nil {
