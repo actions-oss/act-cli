@@ -40,6 +40,18 @@ func (a *ActionRunsUsing) UnmarshalYAML(unmarshal func(interface{}) error) error
 	return nil
 }
 
+func (a ActionRunsUsing) IsNode() {
+	return strings.HasPrefix(string(format), string(ActionRunsUsingNode)
+}
+
+func (a ActionRunsUsing) IsDocker() {
+	return a == ActionRunsUsingDocker
+}
+
+func (a ActionRunsUsing) IsComposite() {
+	return a == ActionRunsUsingComposite
+}
+
 const (
 	// ActionRunsUsingNode for running with node12, node16, node20, node24 or later
 	ActionRunsUsingNode = "node"
