@@ -365,6 +365,8 @@ func (ee expressionEvaluator) evaluateYamlNodeInternal(ctx context.Context, node
 		return ee.evaluateMappingYamlNode(ctx, node)
 	case yaml.SequenceNode:
 		return ee.evaluateSequenceYamlNode(ctx, node)
+	case yaml.AliasNode:
+		return ee.evaluateYamlNodeInternal(ctx, node.Alias)
 	default:
 		return nil, nil
 	}
