@@ -127,7 +127,7 @@ func parseWorkflowDispatchConfig(node *yaml.Node) *WorkflowDispatch {
 	switch node.Kind {
 	case yaml.ScalarNode:
 		var val string
-		if !decodeNode(node, &val) {
+		if !decodeNode(*node, &val) {
 			return nil
 		}
 		if val == "workflow_dispatch" {
@@ -135,7 +135,7 @@ func parseWorkflowDispatchConfig(node *yaml.Node) *WorkflowDispatch {
 		}
 	case yaml.SequenceNode:
 		var val []string
-		if !decodeNode(node, &val) {
+		if !decodeNode(*node, &val) {
 			return nil
 		}
 		for _, v := range val {
@@ -145,7 +145,7 @@ func parseWorkflowDispatchConfig(node *yaml.Node) *WorkflowDispatch {
 		}
 	case yaml.MappingNode:
 		var val map[string]yaml.Node
-		if !decodeNode(node, &val) {
+		if !decodeNode(*node, &val) {
 			return nil
 		}
 
@@ -163,7 +163,7 @@ func parseWorkflowDispatchConfig(node *yaml.Node) *WorkflowDispatch {
 }
 
 func (w *Workflow) WorkflowDispatchConfig() *WorkflowDispatch {
-	return parseWorkflowDispatchConfig(w.RawOn)
+	return parseWorkflowDispatchConfig(&w.RawOn)
 }
 
 type WorkflowCallInput struct {
@@ -191,13 +191,13 @@ func parseWorkflowCallConfig(node *yaml.Node) *WorkflowCall {
 	switch node.Kind {
 	case yaml.MappingNode:
 		var val map[string]yaml.Node
-		if !decodeNode(node, &val) {
+		if !decodeNode(*node, &val) {
 			return &WorkflowCall{}
 		}
 
 		var config WorkflowCall
 		node := val["workflow_call"]
-		if !decodeNode(node, &config) {
+		if !decodeNode(*node, &config) {
 			return &WorkflowCall{}
 		}
 
@@ -212,7 +212,7 @@ func parseWorkflowCallConfig(node *yaml.Node) *WorkflowCall {
 
 
 func (w *Workflow) WorkflowCallConfig() *WorkflowCall {
-	return parseWorkflowCallConfig(w.RawOn)
+	return parseWorkflowCallConfig(&w.RawOn)
 }
 
 // Job is the structure of one job in a workflow
@@ -286,7 +286,7 @@ func (s Strategy) GetFailFast() bool {
 	return failFast
 }
 
-func resolveAnchor(node *yaml.Node) *yaml.Node{
+func resolveAnchor(node *yaml.Node) *yaml.Node {
 	if node.Kind == yaml.AliasNode {
 		return node.Alias
 	}
@@ -307,12 +307,12 @@ func (j *Job) InheritSecrets() bool {
 }
 
 func (j *Job) Secrets() map[string]string {
-	if resolveAnchor(j.RawSecrets).Kind != yaml.MappingNode {
+	if resolveAnchor(&j.RawSecrets).Kind != yaml.MappingNode {
 		return nil
 	}
 
 	var val map[string]string
-	if !decodeNode(j.RawSecrets, &val) {
+	if !decodeNode(&j.RawSecrets, &val) {
 		return nil
 	}
 
@@ -322,7 +322,7 @@ func (j *Job) Secrets() map[string]string {
 // Container details for the job
 func (j *Job) Container() *ContainerSpec {
 	var val *ContainerSpec
-	switch resolveAnchor(j.RawContainer).Kind {
+	switch resolveAnchor(&j.RawContainer).Kind {
 	case yaml.ScalarNode:
 		val = new(ContainerSpec)
 		if !decodeNode(j.RawContainer, &val.Image) {
@@ -341,13 +341,13 @@ func parseNeeds(node *yaml.Node) []string {
 	switch node.Kind {
 	case yaml.ScalarNode:
 		var val string
-		if !decodeNode(node, &val) {
+		if !decodeNode(*node, &val) {
 			return nil
 		}
 		return []string{val}
 	case yaml.SequenceNode:
 		var val []string
-		if !decodeNode(node, &val) {
+		if !decodeNode(*node, &val) {
 			return nil
 		}
 		return val
@@ -359,7 +359,7 @@ func parseNeeds(node *yaml.Node) []string {
 
 // Needs list for Job
 func (j *Job) Needs() []string {
-	return parseNeeds(j.RawNeeds)
+	return parseNeeds(&j.RawNeeds)
 }
 
 // RunsOn list for Job
