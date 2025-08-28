@@ -18,14 +18,14 @@ func resolveAliasesExt(node *yaml.Node, path map[*yaml.Node]bool) error {
         }
         path[aliasTarget] = true
         *node = *aliasTarget
-        if err := resolveAliases(node, path); err != nil {
+        if err := resolveAliasesExt(node, path); err != nil {
             return err
         }
         delete(path, aliasTarget)
 
     case yaml.MappingNode, yaml.SequenceNode:
         for _, child := range node.Content {
-            if err := resolveAliases(child, path); err != nil {
+            if err := resolveAliasesExt(child, path); err != nil {
                 return err
             }
         }
