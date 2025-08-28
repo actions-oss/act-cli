@@ -33,7 +33,7 @@ func parseSimpleOn(node *yaml.Node) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		return []string{val}
+		return []string{val}, nil
 	case yaml.SequenceNode:
 		var val []string
 		err := node.Decode(&val)
