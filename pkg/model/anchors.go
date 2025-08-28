@@ -1,6 +1,8 @@
 package model
 
 import (
+	"errors"
+
 	"gopkg.in/yaml.v3"
 )
 
