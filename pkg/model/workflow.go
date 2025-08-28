@@ -188,10 +188,10 @@ type WorkflowCallResult struct {
 }
 
 func parseWorkflowCallConfig(node *yaml.Node) *WorkflowCall {
-	switch w.RawOn.Kind {
+	switch node.Kind {
 	case yaml.MappingNode:
 		var val map[string]yaml.Node
-		if !decodeNode(w.RawOn, &val) {
+		if !decodeNode(node, &val) {
 			return &WorkflowCall{}
 		}
 
@@ -203,7 +203,7 @@ func parseWorkflowCallConfig(node *yaml.Node) *WorkflowCall {
 
 		return &config
 	case yaml.AliasNode:
-		return parseWorkflowCallConfig(node)
+		return parseWorkflowCallConfig(node.Alias)
 	default:
 		// The callers expect for "on: workflow_call" and "on: [ workflow_call ]" a non nil return value
 		return &WorkflowCall{}
@@ -354,6 +354,7 @@ func parseNeeds(node *yaml.Node) []string {
 	case yaml.AliasNode:
 		return parseNeeds(node.Alias)
 	}
+	return nil
 }
 
 // Needs list for Job
@@ -401,7 +402,7 @@ func nodeAsStringSlice(node yaml.Node) []string {
 		}
 		return val
 	case yaml.AliasNode:
-		return nodeAsStringSlice(node.Alias)
+		return nodeAsStringSlice(*node.Alias)
 	}
 	return nil
 }
