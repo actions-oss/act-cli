@@ -60,7 +60,7 @@ func parseSimpleOn(node *yaml.Node) ([]string, error) {
 
 // On events for the workflow
 func (w *Workflow) On() []string {
-	on, err := parseSimpleOn(w.RawOn)
+	on, err := parseSimpleOn(&w.RawOn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func (w *Workflow) On() []string {
 func parseOnEvent(node *yaml.Node, event string) interface{} {
 	if node.Kind == yaml.MappingNode {
 		var val map[string]interface{}
-		if !decodeNode(node, &val) {
+		if !decodeNode(*node, &val) {
 			return nil
 		}
 		return val[event]
@@ -82,7 +82,7 @@ func parseOnEvent(node *yaml.Node, event string) interface{} {
 }
 
 func (w *Workflow) OnEvent(event string) interface{} {
-	return parseOnEvent(w.RawOn, event)
+	return parseOnEvent(&w.RawOn, event)
 }
 
 func (w *Workflow) UnmarshalYAML(node *yaml.Node) error {
