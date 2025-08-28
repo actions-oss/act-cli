@@ -210,7 +210,6 @@ func parseWorkflowCallConfig(node *yaml.Node) *WorkflowCall {
 	}
 }
 
-
 func (w *Workflow) WorkflowCallConfig() *WorkflowCall {
 	return parseWorkflowCallConfig(&w.RawOn)
 }
