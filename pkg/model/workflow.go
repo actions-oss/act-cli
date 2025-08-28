@@ -40,7 +40,7 @@ func parseSimpleOn(node *yaml.Node) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		return val
+		return val, nil
 	case yaml.MappingNode:
 		var val map[string]interface{}
 		err := node.Decode(&val)
@@ -51,11 +51,11 @@ func parseSimpleOn(node *yaml.Node) ([]string, error) {
 		for k := range val {
 			keys = append(keys, k)
 		}
-		return keys
+		return keys, nil
 	case yaml.AliasNode:
 		return parseSimpleOn(node.Alias)
 	}
-	return nil
+	return nil, nil
 }
 
 // On events for the workflow
