@@ -197,7 +197,7 @@ func parseWorkflowCallConfig(node *yaml.Node) *WorkflowCall {
 
 		var config WorkflowCall
 		node := val["workflow_call"]
-		if !decodeNode(*node, &config) {
+		if !decodeNode(node, &config) {
 			return &WorkflowCall{}
 		}
 
@@ -294,7 +294,7 @@ func resolveAnchor(node *yaml.Node) *yaml.Node {
 }
 
 func (j *Job) InheritSecrets() bool {
-	if resolveAnchor(j.RawSecrets).Kind != yaml.ScalarNode {
+	if resolveAnchor(&j.RawSecrets).Kind != yaml.ScalarNode {
 		return false
 	}
 
@@ -312,7 +312,7 @@ func (j *Job) Secrets() map[string]string {
 	}
 
 	var val map[string]string
-	if !decodeNode(&j.RawSecrets, &val) {
+	if !decodeNode(j.RawSecrets, &val) {
 		return nil
 	}
 
@@ -409,7 +409,7 @@ func nodeAsStringSlice(node yaml.Node) []string {
 
 func environment(yml yaml.Node) map[string]string {
 	env := make(map[string]string)
-	if resolveAnchor(yml).Kind == yaml.MappingNode {
+	if resolveAnchor(&yml).Kind == yaml.MappingNode {
 		if !decodeNode(yml, &env) {
 			return nil
 		}
@@ -424,7 +424,7 @@ func (j *Job) Environment() map[string]string {
 
 // Matrix decodes RawMatrix YAML node
 func (j *Job) Matrix() map[string][]interface{} {
-	if resolveAnchor(j.Strategy.RawMatrix).Kind == yaml.MappingNode {
+	if resolveAnchor(&j.Strategy.RawMatrix).Kind == yaml.MappingNode {
 		var val map[string][]interface{}
 		if !decodeNode(j.Strategy.RawMatrix, &val) {
 			return nil
