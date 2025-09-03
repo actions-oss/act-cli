@@ -15,7 +15,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/setup-go@v5
@@ -37,7 +37,7 @@ jobs:
     name: test-linux
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 2
       - name: Set up QEMU
@@ -77,7 +77,7 @@ jobs:
     name: test-host-${{matrix.os}}
     runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 2
       - uses: actions/setup-go@v5
@@ -95,7 +95,7 @@ jobs:
     name: snapshot
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
