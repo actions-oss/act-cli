@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"archive/tar"
 	"context"
 	"embed"
 	"errors"
@@ -133,7 +134,22 @@ func maybeCopyToActionDir(ctx context.Context, step actionStep, actionPath strin
 		containerActionDirCopy += `/`
 	}
 
+	content, err := rc.JobContainer.GetContainerArchive(ctx, containerActionDirCopy)
+	if err == nil {
+		defer content.Close()
+		if _, err := tar.NewReader(content).Next(); err == nil {
+			logger.Debugf("Skipping copy because actiondir has been already copied")
+			return nil
+		}
+	}
+
 	raction := step.(*stepActionRemote)
+	defer func() {
+		raction.copyDone = true
+	}()
+	if raction.copyDone {
+		return nil
+	}
 	ta, err := rc.getActionCache().GetTarArchive(ctx, raction.cacheDir, raction.resolvedSha, "")
 	if err != nil {
 		return err
