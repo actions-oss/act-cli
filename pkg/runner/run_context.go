@@ -56,6 +56,16 @@ type RunContext struct {
 	Cancelled           bool
 	ContextData         map[string]interface{}
 	nodeToolFullPath    string
+	job                 *model.Job // the job that is currently being executed with evaluated fields
+}
+
+func (rc *RunContext) Job() *model.Job {
+	if rc.job == nil {
+		// create a copy of the job to avoid modifying the original job
+		j := *rc.Run.Job()
+		rc.job = &j
+	}
+	return rc.job
 }
 
 func (rc *RunContext) AddMask(mask string) {
@@ -82,7 +92,7 @@ func (rc *RunContext) GetEnv() map[string]string {
 	if rc.Env == nil {
 		rc.Env = map[string]string{}
 		if rc.Run != nil && rc.Run.Workflow != nil && rc.Config != nil {
-			job := rc.Run.Job()
+			job := rc.Job()
 			if job != nil {
 				rc.Env = mergeMaps(rc.Run.Workflow.Env, job.Environment(), rc.Config.Env)
 			}
@@ -99,7 +109,7 @@ func (rc *RunContext) jobContainerName() string {
 // networkName return the name of the network which will be created by `act` automatically for job,
 // only create network if using a service container
 func (rc *RunContext) networkName() (string, bool) {
-	if len(rc.Run.Job().Services) > 0 {
+	if len(rc.Job().Services) > 0 {
 		return fmt.Sprintf("%s-%s-network", rc.jobContainerName(), rc.Run.JobID), true
 	}
 	if rc.Config.ContainerNetworkMode == "" {
@@ -155,7 +165,7 @@ func (rc *RunContext) GetBindsAndMounts() ([]string, map[string]string) {
 		name + "-env":   ext.GetActPath(),
 	}
 
-	if job := rc.Run.Job(); job != nil {
+	if job := rc.Job(); job != nil {
 		if container := job.Container(); container != nil {
 			for _, v := range container.Volumes {
 				if !strings.Contains(v, ":") || filepath.IsAbs(v) {
@@ -406,7 +416,7 @@ func (rc *RunContext) prepareServiceContainers(ctx context.Context, logger logru
 	networkName, createAndDeleteNetwork := rc.networkName()
 
 	// add service containers
-	for serviceID, spec := range rc.Run.Job().Services {
+	for serviceID, spec := range rc.Job().Services {
 		// interpolate env
 		interpolatedEnvs := make(map[string]string, len(spec.Env))
 		for k, v := range spec.Env {
@@ -746,17 +756,17 @@ func (rc *RunContext) matrix() map[string]interface{} {
 }
 
 func (rc *RunContext) result(result string) {
-	rc.Run.Job().Result = result
+	rc.Job().Result = result
 }
 
 func (rc *RunContext) steps() []*model.Step {
-	return rc.Run.Job().Steps
+	return rc.Job().Steps
 }
 
 // Executor returns a pipeline executor for all the steps in the job
 func (rc *RunContext) Executor() (common.Executor, error) {
 	var executor common.Executor
-	var jobType, err = rc.Run.Job().Type()
+	var jobType, err = rc.Job().Type()
 
 	if exec, ok := rc.Config.CustomExecutor[jobType]; ok {
 		executor = exec(rc)
@@ -796,7 +806,7 @@ func (rc *RunContext) Executor() (common.Executor, error) {
 }
 
 func (rc *RunContext) containerImage(ctx context.Context) string {
-	job := rc.Run.Job()
+	job := rc.Job()
 
 	c := job.Container()
 	if c != nil {
@@ -807,7 +817,7 @@ func (rc *RunContext) containerImage(ctx context.Context) string {
 }
 
 func (rc *RunContext) runsOnImage(ctx context.Context) string {
-	if rc.Run.Job().RunsOn() == nil {
+	if rc.Job().RunsOn() == nil {
 		common.Logger(ctx).Errorf("'runs-on' key not defined in %s", rc.String())
 	}
 
@@ -822,18 +832,24 @@ func (rc *RunContext) runsOnImage(ctx context.Context) string {
 }
 
 func (rc *RunContext) runsOnPlatformNames(ctx context.Context) []string {
-	job := rc.Run.Job()
+	job := rc.Job()
 
-	if job.RunsOn() == nil {
+	if job.RawRunsOn.IsZero() {
 		return []string{}
 	}
 
-	if err := rc.ExprEval.EvaluateYamlNode(ctx, &job.RawRunsOn); err != nil {
+	node := job.RawRunsOn
+
+	if err := rc.ExprEval.EvaluateYamlNode(ctx, &node); err != nil {
 		common.Logger(ctx).Errorf("error while evaluating runs-on: %v", err)
 		return []string{}
 	}
 
-	return job.RunsOn()
+	// Execute this method on a copy of the job to avoid modifying the original job
+	j := *job
+	j.RawRunsOn = node
+
+	return j.RunsOn()
 }
 
 func (rc *RunContext) platformImage(ctx context.Context) string {
@@ -845,7 +861,7 @@ func (rc *RunContext) platformImage(ctx context.Context) string {
 }
 
 func (rc *RunContext) options(ctx context.Context) string {
-	job := rc.Run.Job()
+	job := rc.Job()
 	c := job.Container()
 	if c != nil {
 		return rc.ExprEval.Interpolate(ctx, c.Options)
@@ -855,7 +871,7 @@ func (rc *RunContext) options(ctx context.Context) string {
 }
 
 func (rc *RunContext) isEnabled(ctx context.Context) (bool, error) {
-	job := rc.Run.Job()
+	job := rc.Job()
 	l := common.Logger(ctx)
 	runJob, runJobErr := EvalBool(ctx, rc.ExprEval, job.If.Value, exprparser.DefaultStatusCheckSuccess)
 	jobType, jobTypeErr := job.Type()
@@ -1183,7 +1199,7 @@ func (rc *RunContext) handleCredentials(ctx context.Context) (string, string, er
 	username := rc.Config.Secrets["DOCKER_USERNAME"]
 	password := rc.Config.Secrets["DOCKER_PASSWORD"]
 
-	container := rc.Run.Job().Container()
+	container := rc.Job().Container()
 	if container == nil || container.Credentials == nil {
 		return username, password, nil
 	}

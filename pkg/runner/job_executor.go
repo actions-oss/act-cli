@@ -160,8 +160,8 @@ func setJobResult(ctx context.Context, info jobInfo, rc *RunContext, success boo
 	jobResult := "success"
 	// we have only one result for a whole matrix build, so we need
 	// to keep an existing result state if we run a matrix
-	if len(info.matrix()) > 0 && rc.Run.Job().Result != "" {
-		jobResult = rc.Run.Job().Result
+	if len(info.matrix()) > 0 && rc.Job().Result != "" {
+		jobResult = rc.Job().Result
 	}
 
 	if !success {

@@ -38,14 +38,14 @@ func (rc *RunContext) NewExpressionEvaluatorWithEnv(ctx context.Context, env map
 	using := make(map[string]exprparser.Needs)
 	strategy := make(map[string]interface{})
 	if rc.Run != nil {
-		job := rc.Run.Job()
+		job := rc.Job()
 		if job != nil && job.Strategy != nil {
 			strategy["fail-fast"] = job.Strategy.FailFast
 			strategy["max-parallel"] = job.Strategy.MaxParallel
 		}
 
 		jobs := rc.Run.Workflow.Jobs
-		jobNeeds := rc.Run.Job().Needs()
+		jobNeeds := rc.Job().Needs()
 
 		for _, needs := range jobNeeds {
 			using[needs] = exprparser.Needs{
@@ -124,7 +124,7 @@ func (rc *RunContext) NewStepExpressionEvaluatorExt(ctx context.Context, step st
 
 func (rc *RunContext) newStepExpressionEvaluator(ctx context.Context, step step, _ *model.GithubContext, inputs map[string]interface{}) ExpressionEvaluator {
 	// todo: cleanup EvaluationEnvironment creation
-	job := rc.Run.Job()
+	job := rc.Job()
 	strategy := make(map[string]interface{})
 	if job.Strategy != nil {
 		strategy["fail-fast"] = job.Strategy.FailFast
@@ -132,7 +132,7 @@ func (rc *RunContext) newStepExpressionEvaluator(ctx context.Context, step step,
 	}
 
 	jobs := rc.Run.Workflow.Jobs
-	jobNeeds := rc.Run.Job().Needs()
+	jobNeeds := rc.Job().Needs()
 
 	using := make(map[string]exprparser.Needs)
 	for _, needs := range jobNeeds {
@@ -526,7 +526,7 @@ func setupWorkflowInputs(ctx context.Context, inputs *map[string]interface{}, rc
 		config := rc.Run.Workflow.WorkflowCallConfig()
 
 		for name, input := range config.Inputs {
-			value := rc.caller.runContext.Run.Job().With[name]
+			value := rc.caller.runContext.Job().With[name]
 
 			if value != nil {
 				node := yaml.Node{}
@@ -554,7 +554,7 @@ func setupWorkflowInputs(ctx context.Context, inputs *map[string]interface{}, rc
 
 func getWorkflowSecrets(ctx context.Context, rc *RunContext) map[string]string {
 	if rc.caller != nil {
-		job := rc.caller.runContext.Run.Job()
+		job := rc.caller.runContext.Job()
 		secrets := job.Secrets()
 
 		if secrets == nil && job.InheritSecrets() {
