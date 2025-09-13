@@ -76,6 +76,9 @@ func (w *Workflow) UnmarshalYAML(node *yaml.Node) error {
 	}).UnmarshalYAML(node); err != nil {
 		return errors.Join(err, fmt.Errorf("actions YAML Schema Validation Error detected:\nFor more information, see: https://actions-oss.github.io/act-docs/usage/schema.html"))
 	}
+	if err := resolveAliases(node); err != nil {
+		return err
+	}
 	type WorkflowDefault Workflow
 	return node.Decode((*WorkflowDefault)(w))
 }
@@ -89,6 +92,9 @@ func (w *WorkflowStrict) UnmarshalYAML(node *yaml.Node) error {
 		Schema:     schema.GetWorkflowSchema(),
 	}).UnmarshalYAML(node); err != nil {
 		return errors.Join(err, fmt.Errorf("actions YAML Strict Schema Validation Error detected:\nFor more information, see: https://nektosact.com/usage/schema.html"))
+	}
+	if err := resolveAliases(node); err != nil {
+		return err
 	}
 	type WorkflowDefault Workflow
 	return node.Decode((*WorkflowDefault)(w))
