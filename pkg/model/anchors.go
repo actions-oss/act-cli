@@ -19,7 +19,7 @@ func resolveAliases(node *yaml.Node) error {
 			return err
 		}
 
-	case yaml.MappingNode, yaml.SequenceNode:
+	case yaml.DocumentNode, yaml.MappingNode, yaml.SequenceNode:
 		for _, child := range node.Content {
 			if err := resolveAliases(child); err != nil {
 				return err
