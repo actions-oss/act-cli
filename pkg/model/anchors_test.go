@@ -19,6 +19,17 @@ b: &b
 	assert.Error(t, err)
 }
 
+func TestVerifyCycleIsInvalid2(t *testing.T) {
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(`
+a: &a
+  ref: *a
+`), &node)
+	assert.NoError(t, err)
+	err = resolveAliases(&node)
+	assert.Error(t, err)
+}
+
 func TestVerifyNilAliasError(t *testing.T) {
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(`
