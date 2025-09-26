@@ -6,26 +6,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func resolveAliasesExt(node *yaml.Node, path map[*yaml.Node]bool) error {
+func resolveAliasesExt(node *yaml.Node, path map[*yaml.Node]bool, skipCheck bool) error {
+	if !skipCheck && path[node] {
+		return errors.New("circular alias")
+	}
 	switch node.Kind {
 	case yaml.AliasNode:
 		aliasTarget := node.Alias
 		if aliasTarget == nil {
 			return errors.New("unresolved alias node")
 		}
-		if path[aliasTarget] {
-			return errors.New("regression detected: circular alias")
-		}
-		path[aliasTarget] = true
+		path[node] = true
 		*node = *aliasTarget
-		if err := resolveAliasesExt(node, path); err != nil {
+		if err := resolveAliasesExt(node, path, true); err != nil {
 			return err
 		}
 		delete(path, aliasTarget)
 
-	case yaml.MappingNode, yaml.SequenceNode:
+	case yaml.DocumentNode, yaml.MappingNode, yaml.SequenceNode:
 		for _, child := range node.Content {
-			if err := resolveAliasesExt(child, path); err != nil {
+			if err := resolveAliasesExt(child, path, false); err != nil {
 				return err
 			}
 		}
@@ -34,5 +34,5 @@ func resolveAliasesExt(node *yaml.Node, path map[*yaml.Node]bool) error {
 }
 
 func resolveAliases(node *yaml.Node) error {
-	return resolveAliasesExt(node, map[*yaml.Node]bool{})
+	return resolveAliasesExt(node, map[*yaml.Node]bool{}, false)
 }
