@@ -158,7 +158,6 @@ func (l *Lexer) createToken(kind TokenKind, raw string) *Token {
 		return &Token{Kind: TokenKindUnexpected, Raw: raw, Index: l.index}
 	}
 	tok := &Token{Kind: kind, Raw: raw, Index: l.index}
-	//l.index++
 	l.last = tok
 	// Manage stack for grouping
 	switch kind {

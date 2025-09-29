@@ -101,10 +101,8 @@ func ExpandStrategy(strategy *Strategy, matrixExcludeIncludeLists bool, jobTrace
 				}
 				if !match {
 					filtered = append(filtered, row)
-				} else {
-					if jobTraceWriter != nil {
-						jobTraceWriter.Info("Removing %v from matrix due to exclude entry %v", row, exMap)
-					}
+				} else if jobTraceWriter != nil {
+					jobTraceWriter.Info("Removing %v from matrix due to exclude entry %v", row, exMap)
 				}
 			}
 			flatMatrix = filtered

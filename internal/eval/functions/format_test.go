@@ -2,14 +2,13 @@ package functions
 
 import (
 	"fmt"
-	"log"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFormat(t *testing.T) {
 	s, err := Format("Hello {0}, you have {1} new messages", "Alice", 5)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.NoError(t, err)
 	fmt.Println(s) // Hello Alice, you have 5 new messages
 }

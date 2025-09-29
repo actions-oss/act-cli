@@ -126,10 +126,8 @@ func (ee ExpressionEvaluator) evaluateMappingYamlNode(ctx context.Context, node 
 				return nil, err
 			}
 			ret.Content = append(ret.Content, ev.Content...)
-		} else {
-			if ret != nil {
-				ret.Content = append(ret.Content, ek, ev)
-			}
+		} else if ret != nil {
+			ret.Content = append(ret.Content, ek, ev)
 		}
 	}
 	return ret, nil

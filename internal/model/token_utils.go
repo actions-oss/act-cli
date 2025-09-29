@@ -13,7 +13,6 @@ import (
 func DeepEquals(a, b yaml.Node, partialMatch bool) bool {
 	// Scalar comparison
 	if a.Kind == yaml.ScalarNode && b.Kind == yaml.ScalarNode {
-		//return a.Tag == b.Tag && a.Value == b.Value
 		var left, right any
 		return a.Decode(&left) == nil && b.Decode(&right) == nil && v2.CreateIntermediateResult(v2.NewEvaluationContext(), left).AbstractEqual(v2.CreateIntermediateResult(v2.NewEvaluationContext(), right))
 	}

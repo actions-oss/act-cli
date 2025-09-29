@@ -94,7 +94,8 @@ jobs:
 	require.NoError(t, err)
 
 	var raw any
-	node.Content[0].Decode(&raw)
+	err = node.Content[0].Decode(&raw)
+	assert.NoError(t, err)
 
 	ee.RestrictEval = true
 	ee.EvaluationContext.Variables = v2.CaseInsensitiveObject[any]{
