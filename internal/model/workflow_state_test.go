@@ -123,9 +123,9 @@ jobs:
 	require.NoError(t, err)
 	var myw Workflow
 	require.NoError(t, node.Decode(&myw))
-	workflow_call := myw.On.WorkflowCall
-	if workflow_call != nil {
-		for _, out := range workflow_call.Outputs {
+	workflowCall := myw.On.WorkflowCall
+	if workflowCall != nil {
+		for _, out := range workflowCall.Outputs {
 			err = ee.EvaluateYamlNode(context.Background(), &out.Value, &schema.Node{
 				RestrictEval: true,
 				Definition:   "workflow-output-context",
