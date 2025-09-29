@@ -22,14 +22,14 @@ var actionSchema string
 
 var functions = regexp.MustCompile(`^([a-zA-Z0-9_]+)\(([0-9]+),([0-9]+|MAX)\)$`)
 
-type SchemaValidationKind int
+type ValidationKind int
 
 const (
-	SchemaValidationKindFatal SchemaValidationKind = iota
-	SchemaValidationKindWarning
-	SchemaValidationKindInvalidProperty
-	SchemaValidationKindMismatched
-	SchemaValidationKindMissingProperty
+	ValidationKindFatal ValidationKind = iota
+	ValidationKindWarning
+	ValidationKindInvalidProperty
+	ValidationKindMismatched
+	ValidationKindMissingProperty
 )
 
 type Location struct {
@@ -37,19 +37,19 @@ type Location struct {
 	Column int
 }
 
-type SchemaValidationError struct {
-	Kind SchemaValidationKind
+type ValidationError struct {
+	Kind ValidationKind
 	Location
 	Message string
 }
 
-func (e SchemaValidationError) Error() string {
+func (e ValidationError) Error() string {
 	return fmt.Sprintf("Line: %d Column %d: %s", e.Line, e.Column, e.Message)
 }
 
-type SchemaValidationErrorCollection struct {
-	Errors      []SchemaValidationError
-	Collections []SchemaValidationErrorCollection
+type ValidationErrorCollection struct {
+	Errors      []ValidationError
+	Collections []ValidationErrorCollection
 }
 
 func indent(builder *strings.Builder, in string) {
@@ -62,7 +62,7 @@ func indent(builder *strings.Builder, in string) {
 	}
 }
 
-func (c SchemaValidationErrorCollection) Error() string {
+func (c ValidationErrorCollection) Error() string {
 	var builder strings.Builder
 	for _, e := range c.Errors {
 		if builder.Len() > 0 {
@@ -79,25 +79,25 @@ func (c SchemaValidationErrorCollection) Error() string {
 	return builder.String()
 }
 
-func (c *SchemaValidationErrorCollection) AddError(err SchemaValidationError) {
+func (c *ValidationErrorCollection) AddError(err ValidationError) {
 	c.Errors = append(c.Errors, err)
 }
 
-func AsSchemaValidationErrorCollection(err error) *SchemaValidationErrorCollection {
-	if col, ok := err.(SchemaValidationErrorCollection); ok {
+func AsValidationErrorCollection(err error) *ValidationErrorCollection {
+	if col, ok := err.(ValidationErrorCollection); ok {
 		return &col
 	}
-	if col, ok := err.(*SchemaValidationErrorCollection); ok {
+	if col, ok := err.(*ValidationErrorCollection); ok {
 		return col
 	}
-	if e, ok := err.(SchemaValidationError); ok {
-		return &SchemaValidationErrorCollection{
-			Errors: []SchemaValidationError{e},
+	if e, ok := err.(ValidationError); ok {
+		return &ValidationErrorCollection{
+			Errors: []ValidationError{e},
 		}
 	}
-	if e, ok := err.(*SchemaValidationError); ok {
-		return &SchemaValidationErrorCollection{
-			Errors: []SchemaValidationError{*e},
+	if e, ok := err.(*ValidationError); ok {
+		return &ValidationErrorCollection{
+			Errors: []ValidationError{*e},
 		}
 	}
 	return nil
@@ -312,7 +312,7 @@ func (s *Node) checkExpression(node *yaml.Node) (bool, error) {
 
 		exprNode, parseErr := exprparser.Parse(val[:j])
 		if parseErr != nil {
-			err = errors.Join(err, SchemaValidationError{
+			err = errors.Join(err, ValidationError{
 				Location: toLocation(node),
 				Message:  fmt.Sprintf("failed to parse: %s", parseErr.Error()),
 			})
@@ -321,7 +321,7 @@ func (s *Node) checkExpression(node *yaml.Node) (bool, error) {
 		val = val[j+2:]
 		cerr := s.checkSingleExpression(exprNode)
 		if cerr != nil {
-			err = errors.Join(err, SchemaValidationError{
+			err = errors.Join(err, ValidationError{
 				Location: toLocation(node),
 				Message:  cerr.Error(),
 			})
@@ -380,7 +380,7 @@ func (s *Node) UnmarshalYAML(node *yaml.Node) error {
 				return nil
 			}
 		}
-		return SchemaValidationError{
+		return ValidationError{
 			Location: toLocation(node),
 			Message:  fmt.Sprintf("expected one of %s got %s", strings.Join(*def.AllowedValues, ","), s),
 		}
@@ -390,7 +390,7 @@ func (s *Node) UnmarshalYAML(node *yaml.Node) error {
 			return err
 		}
 		if myNull != nil {
-			return SchemaValidationError{
+			return ValidationError{
 				Location: toLocation(node),
 				Message:  "invalid Null",
 			}
@@ -404,7 +404,7 @@ func (s *Node) checkString(node *yaml.Node, def Definition) error {
 	// caller checks node type
 	val := node.Value
 	if def.String.Constant != "" && def.String.Constant != val {
-		return SchemaValidationError{
+		return ValidationError{
 			Location: toLocation(node),
 			Message:  fmt.Sprintf("expected %s got %s", def.String.Constant, val),
 		}
@@ -412,14 +412,14 @@ func (s *Node) checkString(node *yaml.Node, def Definition) error {
 	if def.String.IsExpression && !s.RestrictEval {
 		exprNode, parseErr := exprparser.Parse(node.Value)
 		if parseErr != nil {
-			return SchemaValidationError{
+			return ValidationError{
 				Location: toLocation(node),
 				Message:  fmt.Sprintf("failed to parse: %s", parseErr.Error()),
 			}
 		}
 		cerr := s.checkSingleExpression(exprNode)
 		if cerr != nil {
-			return SchemaValidationError{
+			return ValidationError{
 				Location: toLocation(node),
 				Message:  cerr.Error(),
 			}
@@ -430,7 +430,7 @@ func (s *Node) checkString(node *yaml.Node, def Definition) error {
 
 func (s *Node) checkOneOf(def Definition, node *yaml.Node) error {
 	var invalidProps = math.MaxInt
-	var bestMatches SchemaValidationErrorCollection
+	var bestMatches ValidationErrorCollection
 	for _, v := range *def.OneOf {
 		// Use helper to create child node
 		sub := s.childNode(v)
@@ -438,13 +438,13 @@ func (s *Node) checkOneOf(def Definition, node *yaml.Node) error {
 		if err == nil {
 			return nil
 		}
-		if col := AsSchemaValidationErrorCollection(err); col != nil {
+		if col := AsValidationErrorCollection(err); col != nil {
 			var matched int
 			for _, e := range col.Errors {
-				if e.Kind == SchemaValidationKindInvalidProperty {
+				if e.Kind == ValidationKindInvalidProperty {
 					matched++
 				}
-				if e.Kind == SchemaValidationKindMismatched {
+				if e.Kind == ValidationKindMismatched {
 					if math.MaxInt == invalidProps {
 						bestMatches.Collections = append(bestMatches.Collections, *col)
 						continue
@@ -464,7 +464,7 @@ func (s *Node) checkOneOf(def Definition, node *yaml.Node) error {
 			}
 			continue
 		}
-		bestMatches.Errors = append(bestMatches.Errors, SchemaValidationError{
+		bestMatches.Errors = append(bestMatches.Errors, ValidationError{
 			Location: toLocation(node),
 			Message:  fmt.Sprintf("failed to match %s: %s", v, err.Error()),
 		})
@@ -511,9 +511,9 @@ func toLocation(node *yaml.Node) Location {
 
 func assertKind(node *yaml.Node, kind yaml.Kind) error {
 	if node.Kind != kind {
-		return SchemaValidationError{
+		return ValidationError{
 			Location: toLocation(node),
-			Kind:     SchemaValidationKindMismatched,
+			Kind:     ValidationKindMismatched,
 			Message:  fmt.Sprintf("expected a %s got %s", getStringKind(kind), getStringKind(node.Kind)),
 		}
 	}
@@ -559,14 +559,14 @@ func (s *Node) checkMapping(node *yaml.Node, def Definition) error {
 		return err
 	}
 	insertDirective := regexp.MustCompile(`\${{\s*insert\s*}}`)
-	var allErrors SchemaValidationErrorCollection
+	var allErrors ValidationErrorCollection
 	var hasKeyExpr bool
 	usedProperties := map[string]string{}
 	for i, k := range node.Content {
 		if i%2 == 0 {
 			if insertDirective.MatchString(k.Value) {
 				if len(s.Context) == 0 {
-					allErrors.AddError(SchemaValidationError{
+					allErrors.AddError(ValidationError{
 						Location: toLocation(node),
 						Message:  "insert is not allowed here",
 					})
@@ -577,7 +577,7 @@ func (s *Node) checkMapping(node *yaml.Node, def Definition) error {
 
 			isExpr, err := s.checkExpression(k)
 			if err != nil {
-				allErrors.AddError(SchemaValidationError{
+				allErrors.AddError(ValidationError{
 					Location: toLocation(node),
 					Message:  err.Error(),
 				})
@@ -594,8 +594,8 @@ func (s *Node) checkMapping(node *yaml.Node, def Definition) error {
 				// schema check case sensitive
 				usedProperties[k.Value] = k.Value
 			} else {
-				allErrors.AddError(SchemaValidationError{
-					// Kind:     SchemaValidationKindInvalidProperty,
+				allErrors.AddError(ValidationError{
+					// Kind:     ValidationKindInvalidProperty,
 					Location: toLocation(node),
 					Message:  fmt.Sprintf("duplicate property %v of %v", k.Value, org),
 				})
@@ -603,8 +603,8 @@ func (s *Node) checkMapping(node *yaml.Node, def Definition) error {
 			vdef, ok := def.Mapping.Properties[k.Value]
 			if !ok {
 				if def.Mapping.LooseValueType == "" {
-					allErrors.AddError(SchemaValidationError{
-						Kind:     SchemaValidationKindInvalidProperty,
+					allErrors.AddError(ValidationError{
+						Kind:     ValidationKindInvalidProperty,
 						Location: toLocation(node),
 						Message:  fmt.Sprintf("unknown property %v", k.Value),
 					})
@@ -616,15 +616,15 @@ func (s *Node) checkMapping(node *yaml.Node, def Definition) error {
 			// Use helper to create child node
 			child := s.childNode(vdef.Type)
 			if err := child.UnmarshalYAML(node.Content[i+1]); err != nil {
-				if col := AsSchemaValidationErrorCollection(err); col != nil {
-					allErrors.AddError(SchemaValidationError{
+				if col := AsValidationErrorCollection(err); col != nil {
+					allErrors.AddError(ValidationError{
 						Location: toLocation(node.Content[i+1]),
 						Message:  fmt.Sprintf("error found in value of key %s", k.Value),
 					})
 					allErrors.Collections = append(allErrors.Collections, *col)
 					continue
 				}
-				allErrors.AddError(SchemaValidationError{
+				allErrors.AddError(ValidationError{
 					Location: toLocation(node),
 					Message:  err.Error(),
 				})
@@ -635,9 +635,9 @@ func (s *Node) checkMapping(node *yaml.Node, def Definition) error {
 	if !hasKeyExpr {
 		for k, v := range def.Mapping.Properties {
 			if _, ok := usedProperties[k]; !ok && v.Required {
-				allErrors.AddError(SchemaValidationError{
+				allErrors.AddError(ValidationError{
 					Location: toLocation(node),
-					Kind:     SchemaValidationKindMissingProperty,
+					Kind:     ValidationKindMissingProperty,
 					Message:  fmt.Sprintf("missing property %s", k),
 				})
 			}
