@@ -4,12 +4,16 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGiteaSchemaFactory(t *testing.T) {
 	schema := GetGiteaWorkflowSchema()
 	_ = schema
 
-	data, _ := json.MarshalIndent(schema, "", "  ")
-	os.WriteFile("gitea_workflow_schema.json", data, 0o666)
+	data, err := json.MarshalIndent(schema, "", "  ")
+	assert.NoError(t, err)
+	err = os.WriteFile("gitea_workflow_schema.json", data, 0o666)
+	assert.NoError(t, err)
 }

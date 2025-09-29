@@ -1229,7 +1229,7 @@
             "type": "permission-level-any"
           },
           "models": {
-            "type": "permission-level-any"
+            "type": "permission-level-read-or-no-access"
           },
           "packages": {
             "type": "permission-level-any"
@@ -2395,6 +2395,9 @@
         }
       }
     },
+    "workflow-description": {
+      "string": {}
+    },
     "workflow-dispatch": {
       "one-of": [
         "null",
@@ -2556,7 +2559,7 @@
             "type": "workflow-defaults"
           },
           "description": {
-            "type": "string"
+            "type": "workflow-description"
           },
           "env": {
             "type": "workflow-env"
@@ -2590,7 +2593,7 @@
             "type": "workflow-defaults"
           },
           "description": {
-            "type": "string"
+            "type": "workflow-description"
           },
           "env": {
             "type": "workflow-env"
