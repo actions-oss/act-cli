@@ -57,8 +57,7 @@ func (Contains) Evaluate(eval *Evaluator, args []exprparser.Node) (*EvaluationRe
 	}
 	// Array
 	if col, ok := collection.TryGetCollectionInterface(); ok {
-		switch node := col.(type) {
-		case ReadOnlyArray[any]:
+		if node, ok := col.(ReadOnlyArray[any]); ok {
 			for _, v := range node.GetEnumerator() {
 				canon := CreateIntermediateResult(eval.Context(), v)
 				if canon.AbstractEqual(el) {
@@ -143,8 +142,7 @@ func (Join) Evaluate(eval *Evaluator, args []exprparser.Node) (*EvaluationResult
 	}
 	// Array
 	if col, ok := collection.TryGetCollectionInterface(); ok {
-		switch node := col.(type) {
-		case ReadOnlyArray[any]:
+		if node, ok := col.(ReadOnlyArray[any]); ok {
 			for _, v := range node.GetEnumerator() {
 				canon := CreateIntermediateResult(eval.Context(), v)
 				if canon.AbstractEqual(el) {

@@ -77,18 +77,15 @@ var precedence = map[string]int{
 // Parse parses the expression and returns the root node.
 func Parse(expression string) (Node, error) {
 	lexer := NewLexer(expression, 0)
-	p := &Parser{lexer: lexer}
+	p := &Parser{}
 	// Tokenise all tokens
-	for {
-		tok := lexer.Next()
-		if tok == nil {
-			break
-		}
-		if tok.Kind == TokenKindUnexpected {
-			return nil, fmt.Errorf("unexpected token %s at position %d", tok.Raw, tok.Index)
-		}
-		p.tokens = append(p.tokens, *tok)
+	if err := p.initWithLexer(lexer); err != nil {
+		return nil, err
 	}
+	return p.parse()
+}
+
+func (p *Parser) parse() (Node, error) {
 	// Shunting‑yard algorithm
 	for p.pos < len(p.tokens) {
 		tok := p.tokens[p.pos]
@@ -96,103 +93,36 @@ func Parse(expression string) (Node, error) {
 		switch tok.Kind {
 		case TokenKindNumber, TokenKindString, TokenKindBoolean, TokenKindNull:
 			p.pushValue(&ValueNode{Kind: tok.Kind, Value: tok.Value})
-		case TokenKindNamedValue, TokenKindPropertyName:
+		case TokenKindNamedValue, TokenKindPropertyName, TokenKindWildcard:
 			p.pushValue(&ValueNode{Kind: tok.Kind, Value: tok.Raw})
 		// In the shunting‑yard loop, treat TokenKindDereference as a unary operator
-		case TokenKindDereference:
-			// push as an operator with high precedence
-			for len(p.ops) > 0 {
-				top := p.ops[len(p.ops)-1]
-				if precedence[top.Raw] >= precedence[tok.Raw] {
-					if err := p.popOp(); err != nil {
-						return nil, err
-					}
-				} else {
-					break
-				}
+		case TokenKindLogicalOperator, TokenKindDereference, TokenKindStartIndex:
+			if err := p.pushBinaryOperator(tok); err != nil {
+				return nil, err
 			}
-			p.pushOp(tok)
-		case TokenKindWildcard:
-			p.pushValue(&ValueNode{Kind: tok.Kind, Value: tok.Raw})
 		case TokenKindFunction:
 			p.pushFunc(tok, len(p.vals))
-		case TokenKindStartParameters:
+		case TokenKindStartParameters, TokenKindStartGroup:
 			p.pushOp(tok)
 		case TokenKindSeparator:
-			for len(p.ops) > 0 && p.ops[len(p.ops)-1].Kind != TokenKindStartParameters {
-				if err := p.popOp(); err != nil {
-					return nil, err
-				}
+			if err := p.popGroup(TokenKindStartParameters); err != nil {
+				return nil, err
 			}
 		case TokenKindEndParameters:
-			for len(p.ops) > 0 && p.ops[len(p.ops)-1].Kind != TokenKindStartParameters {
-				if err := p.popOp(); err != nil {
-					return nil, err
-				}
+			if err := p.pushFuncValue(); err != nil {
+				return nil, err
 			}
-			if len(p.ops) == 0 {
-				return nil, errors.New("mismatched parentheses")
-			}
-			// pop the start parameters
-			p.ops = p.ops[:len(p.ops)-1]
-			// create function node
-			fnTok := p.ops[len(p.ops)-1]
-			if fnTok.Kind != TokenKindFunction {
-				return nil, errors.New("expected function token")
-			}
-			p.ops = p.ops[:len(p.ops)-1]
-			// collect arguments
-			args := []Node{}
-			for len(p.vals) > fnTok.StartPos {
-				args = append([]Node{p.vals[len(p.vals)-1]}, args...)
-				p.vals = p.vals[:len(p.vals)-1]
-			}
-			p.pushValue(&FunctionNode{Name: fnTok.Raw, Args: args})
-		case TokenKindStartGroup:
-			p.pushOp(tok)
 		case TokenKindEndGroup:
-			for len(p.ops) > 0 && p.ops[len(p.ops)-1].Kind != TokenKindStartGroup {
-				if err := p.popOp(); err != nil {
-					return nil, err
-				}
+			if err := p.popGroup(TokenKindStartGroup); err != nil {
+				return nil, err
 			}
-			if len(p.ops) == 0 {
-				return nil, errors.New("mismatched parentheses")
-			}
+
 			p.ops = p.ops[:len(p.ops)-1]
-		case TokenKindLogicalOperator:
-			for len(p.ops) > 0 {
-				top := p.ops[len(p.ops)-1]
-				if precedence[top.Raw] >= precedence[tok.Raw] {
-					if err := p.popOp(); err != nil {
-						return nil, err
-					}
-				} else {
-					break
-				}
-			}
-			p.pushOp(tok)
-		case TokenKindStartIndex:
-			for len(p.ops) > 0 {
-				top := p.ops[len(p.ops)-1]
-				if precedence[top.Raw] >= precedence[tok.Raw] {
-					if err := p.popOp(); err != nil {
-						return nil, err
-					}
-				} else {
-					break
-				}
-			}
-			p.pushOp(tok)
 		case TokenKindEndIndex:
-			for len(p.ops) > 0 && p.ops[len(p.ops)-1].Kind != TokenKindStartIndex {
-				if err := p.popOp(); err != nil {
-					return nil, err
-				}
+			if err := p.popGroup(TokenKindStartIndex); err != nil {
+				return nil, err
 			}
-			if len(p.ops) == 0 {
-				return nil, errors.New("mismatched parentheses")
-			}
+
 			// pop the start parameters
 			p.ops = p.ops[:len(p.ops)-1]
 			right := p.vals[len(p.vals)-1]
@@ -211,6 +141,72 @@ func Parse(expression string) (Node, error) {
 		return nil, errors.New("invalid expression")
 	}
 	return p.vals[0], nil
+}
+
+func (p *Parser) pushFuncValue() error {
+	if err := p.popGroup(TokenKindStartParameters); err != nil {
+		return err
+	}
+
+	// pop the start parameters
+	p.ops = p.ops[:len(p.ops)-1]
+	// create function node
+	fnTok := p.ops[len(p.ops)-1]
+	if fnTok.Kind != TokenKindFunction {
+		return errors.New("expected function token")
+	}
+	p.ops = p.ops[:len(p.ops)-1]
+	// collect arguments
+	args := []Node{}
+	for len(p.vals) > fnTok.StartPos {
+		args = append([]Node{p.vals[len(p.vals)-1]}, args...)
+		p.vals = p.vals[:len(p.vals)-1]
+	}
+	p.pushValue(&FunctionNode{Name: fnTok.Raw, Args: args})
+	return nil
+}
+
+func (p *Parser) pushBinaryOperator(tok Token) error {
+	// push as an operator
+	for len(p.ops) > 0 {
+		top := p.ops[len(p.ops)-1]
+		if precedence[top.Raw] >= precedence[tok.Raw] {
+			if err := p.popOp(); err != nil {
+				return err
+			}
+		} else {
+			break
+		}
+	}
+	p.pushOp(tok)
+	return nil
+}
+
+func (p *Parser) initWithLexer(lexer *Lexer) error {
+	p.lexer = lexer
+	for {
+		tok := lexer.Next()
+		if tok == nil {
+			break
+		}
+		if tok.Kind == TokenKindUnexpected {
+			return fmt.Errorf("unexpected token %s at position %d", tok.Raw, tok.Index)
+		}
+		p.tokens = append(p.tokens, *tok)
+	}
+	return nil
+}
+
+func (p *Parser) popGroup(kind TokenKind) error {
+	for len(p.ops) > 0 && p.ops[len(p.ops)-1].Kind != kind {
+		if err := p.popOp(); err != nil {
+			return err
+		}
+	}
+	if len(p.ops) == 0 {
+		return errors.New("mismatched parentheses")
+	}
+	return nil
 }
 
 func (p *Parser) pushValue(v Node) {

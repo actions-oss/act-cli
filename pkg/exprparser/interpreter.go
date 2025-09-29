@@ -103,8 +103,7 @@ func toRaw(left reflect.Value) any {
 		for iter.Next() {
 			key := iter.Key()
 
-			switch key.Kind() {
-			case reflect.String:
+			if key.Kind() == reflect.String {
 				m[key.String()] = toRaw(iter.Value())
 			}
 		}
@@ -191,6 +190,23 @@ func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultSt
 		}
 	}
 
+	functions := impl.GetFunctions()
+
+	vars := impl.GetVariables()
+
+	ctx := eval.EvaluationContext{
+		Functions: functions,
+		Variables: vars,
+	}
+	evaluator := eval.NewEvaluator(&ctx)
+	res, err := evaluator.Evaluate(exprNode)
+	if err != nil {
+		return nil, err
+	}
+	return evaluator.ToRaw(res)
+}
+
+func (impl *interperterImpl) GetFunctions() eval.CaseInsensitiveObject[eval.Function] {
 	functions := eval.GetFunctions()
 	if impl.env.HashFiles != nil {
 		functions["hashfiles"] = &externalFunc{impl.env.HashFiles}
@@ -219,7 +235,10 @@ func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultSt
 	functions["cancelled"] = &externalFunc{func(_ []reflect.Value) (interface{}, error) {
 		return impl.cancelled()
 	}}
+	return functions
+}
 
+func (impl *interperterImpl) GetVariables() eval.ReadOnlyObject[any] {
 	githubCtx := toRawObj(reflect.ValueOf(impl.env.Github))
 	var env any
 	if impl.env.EnvCS {
@@ -256,17 +275,7 @@ func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultSt
 		}
 		vars[name] = cd
 	}
-
-	ctx := eval.EvaluationContext{
-		Functions: functions,
-		Variables: vars,
-	}
-	evaluator := eval.NewEvaluator(&ctx)
-	res, err := evaluator.Evaluate(exprNode)
-	if err != nil {
-		return nil, err
-	}
-	return evaluator.ToRaw(res)
+	return vars
 }
 
 func IsTruthy(input interface{}) bool {

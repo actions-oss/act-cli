@@ -13,73 +13,85 @@ import (
 func DeepEquals(a, b yaml.Node, partialMatch bool) bool {
 	// Scalar comparison
 	if a.Kind == yaml.ScalarNode && b.Kind == yaml.ScalarNode {
-		var left, right any
-		return a.Decode(&left) == nil && b.Decode(&right) == nil && v2.CreateIntermediateResult(v2.NewEvaluationContext(), left).AbstractEqual(v2.CreateIntermediateResult(v2.NewEvaluationContext(), right))
+		return scalarEquals(a, b)
 	}
 
 	// Mapping comparison
 	if a.Kind == yaml.MappingNode && b.Kind == yaml.MappingNode {
-		mapA := make(map[string]yaml.Node)
-		for i := 0; i < len(a.Content); i += 2 {
-			keyNode := a.Content[i]
-			valNode := a.Content[i+1]
-			if keyNode.Kind != yaml.ScalarNode {
-				return false
-			}
-			mapA[strings.ToLower(keyNode.Value)] = *valNode
-		}
-		mapB := make(map[string]yaml.Node)
-		for i := 0; i < len(b.Content); i += 2 {
-			keyNode := b.Content[i]
-			valNode := b.Content[i+1]
-			if keyNode.Kind != yaml.ScalarNode {
-				return false
-			}
-			mapB[strings.ToLower(keyNode.Value)] = *valNode
-		}
-		if partialMatch {
-			if len(mapA) < len(mapB) {
-				return false
-			}
-		} else {
-			if len(mapA) != len(mapB) {
-				return false
-			}
-		}
-		for k, vB := range mapB {
-			vA, ok := mapA[k]
-			if !ok || !DeepEquals(vA, vB, partialMatch) {
-				return false
-			}
-		}
-		return true
+		return deepMapEquals(a, b, partialMatch)
 	}
 
 	// Sequence comparison
 	if a.Kind == yaml.SequenceNode && b.Kind == yaml.SequenceNode {
-		if partialMatch {
-			if len(a.Content) < len(b.Content) {
-				return false
-			}
-		} else {
-			if len(a.Content) != len(b.Content) {
-				return false
-			}
-		}
-		limit := len(b.Content)
-		if !partialMatch {
-			limit = len(a.Content)
-		}
-		for i := 0; i < limit; i++ {
-			if !DeepEquals(*a.Content[i], *b.Content[i], partialMatch) {
-				return false
-			}
-		}
-		return true
+		return deepSequenceEquals(a, b, partialMatch)
 	}
 
 	// Different kinds are not equal
 	return false
+}
+
+func scalarEquals(a, b yaml.Node) bool {
+	var left, right any
+	return a.Decode(&left) == nil && b.Decode(&right) == nil && v2.CreateIntermediateResult(v2.NewEvaluationContext(), left).AbstractEqual(v2.CreateIntermediateResult(v2.NewEvaluationContext(), right))
+}
+
+func deepMapEquals(a, b yaml.Node, partialMatch bool) bool {
+	mapA := make(map[string]yaml.Node)
+	for i := 0; i < len(a.Content); i += 2 {
+		keyNode := a.Content[i]
+		valNode := a.Content[i+1]
+		if keyNode.Kind != yaml.ScalarNode {
+			return false
+		}
+		mapA[strings.ToLower(keyNode.Value)] = *valNode
+	}
+	mapB := make(map[string]yaml.Node)
+	for i := 0; i < len(b.Content); i += 2 {
+		keyNode := b.Content[i]
+		valNode := b.Content[i+1]
+		if keyNode.Kind != yaml.ScalarNode {
+			return false
+		}
+		mapB[strings.ToLower(keyNode.Value)] = *valNode
+	}
+	if partialMatch {
+		if len(mapA) < len(mapB) {
+			return false
+		}
+	} else {
+		if len(mapA) != len(mapB) {
+			return false
+		}
+	}
+	for k, vB := range mapB {
+		vA, ok := mapA[k]
+		if !ok || !DeepEquals(vA, vB, partialMatch) {
+			return false
+		}
+	}
+	return true
+}
+
+func deepSequenceEquals(a, b yaml.Node, partialMatch bool) bool {
+	if partialMatch {
+		if len(a.Content) < len(b.Content) {
+			return false
+		}
+	} else {
+		if len(a.Content) != len(b.Content) {
+			return false
+		}
+	}
+	limit := len(b.Content)
+	if !partialMatch {
+		limit = len(a.Content)
+	}
+	for i := 0; i < limit; i++ {
+		if !DeepEquals(*a.Content[i], *b.Content[i], partialMatch) {
+			return false
+		}
+	}
+	return true
 }
 
 // traverse walks a YAML node recursively.

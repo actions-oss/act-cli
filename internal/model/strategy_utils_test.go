@@ -10,7 +10,7 @@ import (
 type EmptyTraceWriter struct {
 }
 
-func (e *EmptyTraceWriter) Info(format string, args ...interface{}) {
+func (e *EmptyTraceWriter) Info(_ string, _ ...interface{}) {
 }
 
 func TestStrategy(t *testing.T) {

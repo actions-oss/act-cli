@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -135,19 +136,23 @@ func (l *Lexer) Next() *Token {
 		}
 		return l.readOperator()
 	default:
-		if c == '.' {
-			// Could be number or dereference
-			if l.last == nil || l.last.Kind == TokenKindSeparator || l.last.Kind == TokenKindStartGroup || l.last.Kind == TokenKindStartIndex || l.last.Kind == TokenKindStartParameters || l.last.Kind == TokenKindLogicalOperator {
-				return l.readNumber()
-			}
-			l.index++
-			return l.createToken(TokenKindDereference, ".")
-		}
-		if c == '-' || c == '+' || unicode.IsDigit(rune(c)) {
+		return l.defaultNext(c)
+	}
+}
+
+func (l *Lexer) defaultNext(c byte) *Token {
+	if c == '.' {
+		// Could be number or dereference
+		if l.last == nil || l.last.Kind == TokenKindSeparator || l.last.Kind == TokenKindStartGroup || l.last.Kind == TokenKindStartIndex || l.last.Kind == TokenKindStartParameters || l.last.Kind == TokenKindLogicalOperator {
 			return l.readNumber()
 		}
-		return l.readKeyword()
+		l.index++
+		return l.createToken(TokenKindDereference, ".")
 	}
+	if c == '-' || c == '+' || unicode.IsDigit(rune(c)) {
+		return l.readNumber()
+	}
+	return l.readKeyword()
 }
 
 // Helper to create a token and update lexer state.
@@ -171,24 +176,22 @@ func (l *Lexer) createToken(kind TokenKind, raw string) *Token {
 	return tok
 }
 
-// checkLastToken verifies that the token sequence is legal based on the last token.
-func (l *Lexer) checkLastToken(kind TokenKind, raw string) bool {
-	// nil last token represented by nil
+// nil last token represented by nil
+func (l *Lexer) getLastKind() *TokenKind {
 	var lastKind *TokenKind
 	if l.last != nil {
 		lastKind = &l.last.Kind
 	}
+	return lastKind
+}
+
+// checkLastToken verifies that the token sequence is legal based on the last token.
+func (l *Lexer) checkLastToken(kind TokenKind, raw string) bool {
+	lastKind := l.getLastKind()
+
 	// Helper to check if lastKind is in allowed list
 	allowed := func(allowedKinds ...TokenKind) bool {
-		if lastKind == nil {
-			return false
-		}
-		for _, k := range allowedKinds {
-			if *lastKind == k {
-				return true
-			}
-		}
-		return false
+		return lastKind != nil && slices.Contains(allowedKinds, *lastKind)
 	}
 	// For nil last, we treat as no previous token
 	// Define allowed previous kinds for each token kind

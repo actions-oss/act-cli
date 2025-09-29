@@ -114,107 +114,134 @@ func (a FilteredArray) GetEnumerator() []interface{} {
 func (e *Evaluator) evalNode(n exprparser.Node) (*EvaluationResult, error) {
 	switch node := n.(type) {
 	case *exprparser.ValueNode:
-		if node.Kind == exprparser.TokenKindNamedValue {
-			if e.ctx != nil {
-				val := e.ctx.Variables.Get(node.Value.(string))
-				if val == nil {
-					return nil, fmt.Errorf("undefined variable %s", node.Value)
-				}
-				return CreateIntermediateResult(e.Context(), val), nil
-			}
-			return nil, errors.New("no evaluation context")
-		}
-		return CreateIntermediateResult(e.Context(), node.Value), nil
+		return e.evalValueNode(node)
 	case *exprparser.FunctionNode:
-		fn := e.ctx.Functions.Get(node.Name)
-		if fn == nil {
-			return nil, fmt.Errorf("unknown function %v", node.Name)
-		}
-		return fn.Evaluate(e, node.Args)
+		return e.evalFunctionNode(node)
 	case *exprparser.BinaryNode:
-		left, err := e.evalNode(node.Left)
-		if err != nil {
-			return nil, err
-		}
-		switch node.Op {
-		case "&&":
-			if left.IsFalsy() {
-				return left, nil
-			}
-		case "||":
-			if left.IsTruthy() {
-				return left, nil
-			}
-		case ".":
-			if v, ok := node.Right.(*exprparser.ValueNode); ok && v.Kind == exprparser.TokenKindWildcard {
-				var ret FilteredArray
-				if col, ok := left.TryGetCollectionInterface(); ok {
-					if farray, ok := col.(FilteredArray); ok {
-						for _, subcol := range farray.GetEnumerator() {
-							ret = processStar(CreateIntermediateResult(e.Context(), subcol).Value(), ret)
-						}
-					} else {
-						ret = processStar(col, ret)
-					}
-				}
-				return CreateIntermediateResult(e.Context(), ret), nil
-			}
-		}
-		right, err := e.evalNode(node.Right)
-		if err != nil {
-			return nil, err
-		}
-		switch node.Op {
-		case "&&":
-			return right, nil
-		case "||":
-			return right, nil
-		case "==":
-			// Use abstract equality per spec
-			return CreateIntermediateResult(e.Context(), left.AbstractEqual(right)), nil
-		case "!=":
-			return CreateIntermediateResult(e.Context(), left.AbstractNotEqual(right)), nil
-		case ">":
-			return CreateIntermediateResult(e.Context(), left.AbstractGreaterThan(right)), nil
-		case "<":
-			return CreateIntermediateResult(e.Context(), left.AbstractLessThan(right)), nil
-		case ">=":
-			return CreateIntermediateResult(e.Context(), left.AbstractGreaterThanOrEqual(right)), nil
-		case "<=":
-			return CreateIntermediateResult(e.Context(), left.AbstractLessThanOrEqual(right)), nil
-		case ".", "[":
-			if farray, ok := left.Value().(FilteredArray); ok {
-				var ret FilteredArray
-				for _, subcol := range farray.GetEnumerator() {
-					res := processIndex(CreateIntermediateResult(e.Context(), subcol).Value(), right)
-					if res != nil {
-						ret = append(ret, res)
-					}
-				}
-				if ret == nil {
-					return CreateIntermediateResult(e.Context(), nil), nil
-				}
-				return CreateIntermediateResult(e.Context(), ret), nil
-			}
-			col, _ := left.TryGetCollectionInterface()
-			result := processIndex(col, right)
-			return CreateIntermediateResult(e.Context(), result), nil
-		default:
-			return nil, fmt.Errorf("unsupported operator %s", node.Op)
-		}
+		return e.evalBinaryNode(node)
 	case *exprparser.UnaryNode:
-		operand, err := e.evalNode(node.Operand)
-		if err != nil {
-			return nil, err
-		}
-		switch node.Op {
-		case "!":
-			return CreateIntermediateResult(e.Context(), !operand.IsTruthy()), nil
-		default:
-			return nil, fmt.Errorf("unsupported unary operator %s", node.Op)
-		}
+		return e.evalUnaryNode(node)
 	}
 	return nil, errors.New("unknown node type")
+}
+
+func (e *Evaluator) evalValueNode(node *exprparser.ValueNode) (*EvaluationResult, error) {
+	if node.Kind == exprparser.TokenKindNamedValue {
+		if e.ctx != nil {
+			val := e.ctx.Variables.Get(node.Value.(string))
+			if val == nil {
+				return nil, fmt.Errorf("undefined variable %s", node.Value)
+			}
+			return CreateIntermediateResult(e.Context(), val), nil
+		}
+		return nil, errors.New("no evaluation context")
+	}
+	return CreateIntermediateResult(e.Context(), node.Value), nil
+}
+
+func (e *Evaluator) evalFunctionNode(node *exprparser.FunctionNode) (*EvaluationResult, error) {
+	fn := e.ctx.Functions.Get(node.Name)
+	if fn == nil {
+		return nil, fmt.Errorf("unknown function %v", node.Name)
+	}
+	return fn.Evaluate(e, node.Args)
+}
+
+func (e *Evaluator) evalBinaryNode(node *exprparser.BinaryNode) (*EvaluationResult, error) {
+	left, err := e.evalNode(node.Left)
+	if err != nil {
+		return nil, err
+	}
+	if res, err := e.evalBinaryNodeLeft(node, left); res != nil || err != nil {
+		return res, err
+	}
+	right, err := e.evalNode(node.Right)
+	if err != nil {
+		return nil, err
+	}
+	return e.evalBinaryNodeRight(node, left, right)
+}
+
+func (e *Evaluator) evalBinaryNodeLeft(node *exprparser.BinaryNode, left *EvaluationResult) (*EvaluationResult, error) {
+	switch node.Op {
+	case "&&":
+		if left.IsFalsy() {
+			return left, nil
+		}
+	case "||":
+		if left.IsTruthy() {
+			return left, nil
+		}
+	case ".":
+		if v, ok := node.Right.(*exprparser.ValueNode); ok && v.Kind == exprparser.TokenKindWildcard {
+			var ret FilteredArray
+			if col, ok := left.TryGetCollectionInterface(); ok {
+				if farray, ok := col.(FilteredArray); ok {
+					for _, subcol := range farray.GetEnumerator() {
+						ret = processStar(CreateIntermediateResult(e.Context(), subcol).Value(), ret)
+					}
+				} else {
+					ret = processStar(col, ret)
+				}
+			}
+			return CreateIntermediateResult(e.Context(), ret), nil
+		}
+	}
+	return nil, nil
+}
+
+func (e *Evaluator) evalBinaryNodeRight(node *exprparser.BinaryNode, left *EvaluationResult, right *EvaluationResult) (*EvaluationResult, error) {
+	switch node.Op {
+	case "&&":
+		return right, nil
+	case "||":
+		return right, nil
+	case "==":
+		// Use abstract equality per spec
+		return CreateIntermediateResult(e.Context(), left.AbstractEqual(right)), nil
+	case "!=":
+		return CreateIntermediateResult(e.Context(), left.AbstractNotEqual(right)), nil
+	case ">":
+		return CreateIntermediateResult(e.Context(), left.AbstractGreaterThan(right)), nil
+	case "<":
+		return CreateIntermediateResult(e.Context(), left.AbstractLessThan(right)), nil
+	case ">=":
+		return CreateIntermediateResult(e.Context(), left.AbstractGreaterThanOrEqual(right)), nil
+	case "<=":
+		return CreateIntermediateResult(e.Context(), left.AbstractLessThanOrEqual(right)), nil
+	case ".", "[":
+		if farray, ok := left.Value().(FilteredArray); ok {
+			var ret FilteredArray
+			for _, subcol := range farray.GetEnumerator() {
+				res := processIndex(CreateIntermediateResult(e.Context(), subcol).Value(), right)
+				if res != nil {
+					ret = append(ret, res)
+				}
+			}
+			if ret == nil {
+				return CreateIntermediateResult(e.Context(), nil), nil
+			}
+			return CreateIntermediateResult(e.Context(), ret), nil
+		}
+		col, _ := left.TryGetCollectionInterface()
+		result := processIndex(col, right)
+		return CreateIntermediateResult(e.Context(), result), nil
+	default:
+		return nil, fmt.Errorf("unsupported operator %s", node.Op)
+	}
+}
+
+func (e *Evaluator) evalUnaryNode(node *exprparser.UnaryNode) (*EvaluationResult, error) {
+	operand, err := e.evalNode(node.Operand)
+	if err != nil {
+		return nil, err
+	}
+	switch node.Op {
+	case "!":
+		return CreateIntermediateResult(e.Context(), !operand.IsTruthy()), nil
+	default:
+		return nil, fmt.Errorf("unsupported unary operator %s", node.Op)
+	}
 }
 
 func processIndex(col interface{}, right *EvaluationResult) interface{} {

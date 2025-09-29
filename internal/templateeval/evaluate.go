@@ -21,7 +21,7 @@ func isImplExpr(snode *schema.Node) bool {
 	return def.String != nil && def.String.IsExpression
 }
 
-func (ee ExpressionEvaluator) evaluateScalarYamlNode(ctx context.Context, node *yaml.Node, snode *schema.Node) (*yaml.Node, error) {
+func (ee ExpressionEvaluator) evaluateScalarYamlNode(_ context.Context, node *yaml.Node, snode *schema.Node) (*yaml.Node, error) {
 	var in string
 	if err := node.Decode(&in); err != nil {
 		return nil, err
@@ -37,21 +37,7 @@ func (ee ExpressionEvaluator) evaluateScalarYamlNode(ctx context.Context, node *
 	if err != nil {
 		return nil, err
 	}
-	canEvaluate := true
-	for _, v := range snode.GetVariables() {
-		canEvaluate = canEvaluate && ee.EvaluationContext.Variables.Get(v) != nil
-	}
-	for _, v := range snode.GetFunctions() {
-		canEvaluate = canEvaluate && ee.EvaluationContext.Functions.Get(v.Name) != nil
-	}
-	exprparser.VisitNode(parsed, func(node exprparser.Node) {
-		switch el := node.(type) {
-		case *exprparser.FunctionNode:
-			canEvaluate = canEvaluate && ee.EvaluationContext.Functions.Get(el.Name) != nil
-		case *exprparser.ValueNode:
-			canEvaluate = canEvaluate && (el.Kind != exprparser.TokenKindNamedValue || ee.EvaluationContext.Variables.Get(el.Value.(string)) != nil)
-		}
-	})
+	canEvaluate := ee.canEvaluate(parsed, snode)
 	if !canEvaluate {
 		node.Tag = "!!expr"
 		return node, nil
@@ -70,6 +56,25 @@ func (ee ExpressionEvaluator) evaluateScalarYamlNode(ctx context.Context, node *
 	ret.Column = node.Column
 	// Finally check if we found a schema validation error
 	return ret, snode.UnmarshalYAML(ret)
+}
+
+func (ee ExpressionEvaluator) canEvaluate(parsed exprparser.Node, snode *schema.Node) bool {
+	canEvaluate := true
+	for _, v := range snode.GetVariables() {
+		canEvaluate = canEvaluate && ee.EvaluationContext.Variables.Get(v) != nil
+	}
+	for _, v := range snode.GetFunctions() {
+		canEvaluate = canEvaluate && ee.EvaluationContext.Functions.Get(v.Name) != nil
+	}
+	exprparser.VisitNode(parsed, func(node exprparser.Node) {
+		switch el := node.(type) {
+		case *exprparser.FunctionNode:
+			canEvaluate = canEvaluate && ee.EvaluationContext.Functions.Get(el.Name) != nil
+		case *exprparser.ValueNode:
+			canEvaluate = canEvaluate && (el.Kind != exprparser.TokenKindNamedValue || ee.EvaluationContext.Variables.Get(el.Value.(string)) != nil)
+		}
+	})
+	return canEvaluate
 }
 
 func (ee ExpressionEvaluator) evaluateMappingYamlNode(ctx context.Context, node *yaml.Node, snode *schema.Node) (*yaml.Node, error) {
