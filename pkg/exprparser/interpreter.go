@@ -195,10 +195,10 @@ func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultSt
 	if impl.env.HashFiles != nil {
 		functions["hashfiles"] = &externalFunc{impl.env.HashFiles}
 	}
-	functions["always"] = &externalFunc{func(v []reflect.Value) (interface{}, error) {
+	functions["always"] = &externalFunc{func(_ []reflect.Value) (interface{}, error) {
 		return impl.always()
 	}}
-	functions["success"] = &externalFunc{func(v []reflect.Value) (interface{}, error) {
+	functions["success"] = &externalFunc{func(_ []reflect.Value) (interface{}, error) {
 		if impl.config.Context == "job" {
 			return impl.jobSuccess()
 		}
@@ -207,7 +207,7 @@ func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultSt
 		}
 		return nil, fmt.Errorf("context '%s' must be one of 'job' or 'step'", impl.config.Context)
 	}}
-	functions["failure"] = &externalFunc{func(v []reflect.Value) (interface{}, error) {
+	functions["failure"] = &externalFunc{func(_ []reflect.Value) (interface{}, error) {
 		if impl.config.Context == "job" {
 			return impl.jobFailure()
 		}
@@ -216,7 +216,7 @@ func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultSt
 		}
 		return nil, fmt.Errorf("context '%s' must be one of 'job' or 'step'", impl.config.Context)
 	}}
-	functions["cancelled"] = &externalFunc{func(v []reflect.Value) (interface{}, error) {
+	functions["cancelled"] = &externalFunc{func(_ []reflect.Value) (interface{}, error) {
 		return impl.cancelled()
 	}}
 
