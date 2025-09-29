@@ -130,6 +130,30 @@ type Join struct {
 }
 
 func (Join) Evaluate(eval *Evaluator, args []exprparser.Node) (*EvaluationResult, error) {
+	collection, err := eval.Evaluate(args[0])
+	if err != nil {
+		return nil, err
+	}
+	var el *EvaluationResult
+
+	if len(args) > 1 {
+		if el, err = eval.Evaluate(args[1]); err != nil {
+			return nil, err
+		}
+	}
+	// Array
+	if col, ok := collection.TryGetCollectionInterface(); ok {
+		switch node := col.(type) {
+		case ReadOnlyArray[any]:
+			for _, v := range node.GetEnumerator() {
+				canon := CreateIntermediateResult(eval.Context(), v)
+				if canon.AbstractEqual(el) {
+					return CreateIntermediateResult(eval.Context(), true), nil
+				}
+			}
+		}
+		return CreateIntermediateResult(eval.Context(), ""), nil
+	}
 	return CreateIntermediateResult(eval.Context(), nil), nil
 }
 
