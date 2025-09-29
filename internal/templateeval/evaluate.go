@@ -37,19 +37,19 @@ func (ee ExpressionEvaluator) evaluateScalarYamlNode(ctx context.Context, node *
 	if err != nil {
 		return nil, err
 	}
-	var canEvaluate bool = true
+	canEvaluate := true
 	for _, v := range snode.GetVariables() {
-		canEvaluate = canEvaluate && ee.Variables.Get(v) != nil
+		canEvaluate = canEvaluate && ee.EvaluationContext.Variables.Get(v) != nil
 	}
 	for _, v := range snode.GetFunctions() {
-		canEvaluate = canEvaluate && ee.Functions.Get(v.Name) != nil
+		canEvaluate = canEvaluate && ee.EvaluationContext.Functions.Get(v.Name) != nil
 	}
 	exprparser.VisitNode(parsed, func(node exprparser.Node) {
 		switch el := node.(type) {
 		case *exprparser.FunctionNode:
-			canEvaluate = canEvaluate && ee.Functions.Get(el.Name) != nil
+			canEvaluate = canEvaluate && ee.EvaluationContext.Functions.Get(el.Name) != nil
 		case *exprparser.ValueNode:
-			canEvaluate = canEvaluate && (el.Kind != exprparser.TokenKindNamedValue || ee.Variables.Get(el.Value.(string)) != nil)
+			canEvaluate = canEvaluate && (el.Kind != exprparser.TokenKindNamedValue || ee.EvaluationContext.Variables.Get(el.Value.(string)) != nil)
 		}
 	})
 	if !canEvaluate {
