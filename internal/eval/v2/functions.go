@@ -36,7 +36,7 @@ func (ToJSON) Evaluate(eval *Evaluator, args []exprparser.Node) (*EvaluationResu
 	if err != nil {
 		return nil, err
 	}
-	data, err := json.MarshalIndent(raw, "", "    ")
+	data, err := json.MarshalIndent(raw, "", "  ")
 	if err != nil {
 		return nil, err
 	}
