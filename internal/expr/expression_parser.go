@@ -71,8 +71,7 @@ var precedence = map[string]int{
 	">=": 4,
 	"<=": 4,
 	"!":  5,
-	".":  6, // dereference operator
-	"[":  6, // index operator
+	".":  7, // dereference operator
 }
 
 // Parse parses the expression and returns the root node.

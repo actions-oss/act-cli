@@ -5,14 +5,17 @@ on:
     inputs:
       required:
         description: a required input
+        type: string
         required: true
       with_default:
         description: an input with default
         required: false
+        type: string
         default: default
       with_default2:
         description: an input with default
         required: false
+        type: string
         default: ${{ github.event_name }}
       boolean:
         description: an input of type boolean
