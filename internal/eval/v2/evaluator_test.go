@@ -46,6 +46,10 @@ func TestEvaluator_Raw(t *testing.T) {
 		expr string
 		want interface{}
 	}{
+		{"a.b['x']", nil},
+		{"(a.b).c['x']", nil},
+		{"(a.b).*['x']", nil},
+		{"(a['x'])", nil},
 		{"true || false", true},
 		{"false || false", false},
 		{"false || true", true},

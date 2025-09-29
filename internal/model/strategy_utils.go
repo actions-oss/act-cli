@@ -131,7 +131,7 @@ func (strategyContext *strategyContext) handleExclude() error {
 // ExpandStrategy expands the given strategy into a flat matrix and include matrix.
 // It mimics the behavior of the C# StrategyUtils. The strategy parameter is expected
 // to be populated from a YAML mapping that follows the GitHub Actions strategy schema.
-func ExpandStrategy(strategy *Strategy, matrixExcludeIncludeLists bool, jobTraceWriter TraceWriter, jobName string) (*StrategyResult, error) {
+func ExpandStrategy(strategy *Strategy, jobTraceWriter TraceWriter, jobName string) (*StrategyResult, error) {
 	if strategy == nil {
 		return &StrategyResult{FlatMatrix: []map[string]yaml.Node{{}}, IncludeMatrix: []map[string]yaml.Node{}, FailFast: true}, nil
 	}

@@ -170,7 +170,11 @@ func (p *Parser) pushBinaryOperator(tok Token) error {
 	// push as an operator
 	for len(p.ops) > 0 {
 		top := p.ops[len(p.ops)-1]
-		if precedence[top.Raw] >= precedence[tok.Raw] {
+		if precedence[top.Raw] >= precedence[tok.Raw] &&
+			top.Kind != TokenKindStartGroup &&
+			top.Kind != TokenKindStartIndex &&
+			top.Kind != TokenKindStartParameters &&
+			top.Kind != TokenKindSeparator {
 			if err := p.popOp(); err != nil {
 				return err
 			}
