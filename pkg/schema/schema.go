@@ -521,10 +521,6 @@ func assertKind(node *yaml.Node, kind yaml.Kind) error {
 }
 
 func (s *Node) GetNestedNode(path ...string) *Node {
-	if s == nil {
-		//return nil
-		panic("nil")
-	}
 	if len(path) == 0 {
 		return s
 	}
