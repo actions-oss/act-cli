@@ -63,8 +63,8 @@ func (o CaseInsensitiveObject[T]) Get(key string) T {
 	return zero
 }
 
-func (a CaseInsensitiveObject[T]) GetEnumerator() map[string]T {
-	return a
+func (o CaseInsensitiveObject[T]) GetEnumerator() map[string]T {
+	return o
 }
 
 type CaseSensitiveObject[T any] map[string]T
@@ -73,8 +73,8 @@ func (o CaseSensitiveObject[T]) Get(key string) T {
 	return o[key]
 }
 
-func (a CaseSensitiveObject[T]) GetEnumerator() map[string]T {
-	return a
+func (o CaseSensitiveObject[T]) GetEnumerator() map[string]T {
+	return o
 }
 
 // EvaluationResult holds the result of evaluating an expression node.
@@ -318,12 +318,10 @@ func coerceTypes(left, right interface{}) (interface{}, interface{}, ValueKind, 
 	// Boolean or Null -> Number
 	if leftKind == ValueKindBoolean || leftKind == ValueKindNull {
 		left = convertToNumber(left)
-		leftKind = ValueKindNumber
 		return coerceTypes(left, right)
 	}
 	if rightKind == ValueKindBoolean || rightKind == ValueKindNull {
 		right = convertToNumber(right)
-		rightKind = ValueKindNumber
 		return coerceTypes(left, right)
 	}
 
