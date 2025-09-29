@@ -12,8 +12,8 @@ import (
 )
 
 type ExpressionEvaluator struct {
-	RestrictEval bool
-	v2.EvaluationContext
+	RestrictEval      bool
+	EvaluationContext v2.EvaluationContext
 }
 
 func isImplExpr(snode *schema.Node) bool {
