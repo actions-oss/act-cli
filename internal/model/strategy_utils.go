@@ -137,12 +137,12 @@ func ExpandStrategy(strategy *Strategy, jobTraceWriter TraceWriter, jobName stri
 	}
 
 	// Initialize defaults
-
 	strategyContext := &strategyContext{
 		jobTraceWriter: jobTraceWriter,
 		failFast:       strategy.FailFast,
 		maxParallel:    strategy.MaxParallel,
 		matrix:         strategy.Matrix,
+		flatMatrix:     []map[string]yaml.Node{{}},
 	}
 	// Process matrix entries
 	for key, values := range strategyContext.matrix {
