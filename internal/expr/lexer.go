@@ -181,10 +181,6 @@ func (l *Lexer) checkLastToken(kind TokenKind, raw string) bool {
 	// Helper to check if lastKind is in allowed list
 	allowed := func(allowedKinds ...TokenKind) bool {
 		if lastKind == nil {
-			for _, k := range allowedKinds {
-				if k == TokenKindUnexpected { // placeholder for nil? but we use nil check
-				}
-			}
 			return false
 		}
 		for _, k := range allowedKinds {
