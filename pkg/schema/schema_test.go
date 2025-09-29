@@ -91,22 +91,53 @@ jobs:
 	assert.NoError(t, err)
 }
 
-func TestYAMLAnchors(t *testing.T) {
+func TestFailure(t *testing.T) {
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(`
 on: push
 jobs:
   job-with-condition:
-    runs-on: &label
-      self-hosted
-    if: success() || success('joba', 'jobb') || failure() || failure('joba', 'jobb') || always() || cancelled()
-    steps: &steps
-    - run: exit 0
-  then:
-    runs-on: *label
+    runs-on: self-hosted
+    x: failure
+`), &node)
+	if !assert.NoError(t, err) {
+		return
+	}
+	err = (&Node{
+		Definition: "workflow-root-strict",
+		Schema:     GetWorkflowSchema(),
+	}).UnmarshalYAML(&node)
+	assert.Error(t, err)
+}
+
+func TestFailure2(t *testing.T) {
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(`
+on: push
+jobs:
+  job-with-condition:
+    runs-on: self-hosted
+    Runs-on: failure
+`), &node)
+	if !assert.NoError(t, err) {
+		return
+	}
+	err = (&Node{
+		Definition: "workflow-root-strict",
+		Schema:     GetWorkflowSchema(),
+	}).UnmarshalYAML(&node)
+	assert.Error(t, err)
+}
+
+func TestEscape(t *testing.T) {
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(`
+${{ 'on' }}: push
+jobs:
+  job-with-condition:
+    runs-on: self-hosted
     steps:
     - run: exit 0
-
 `), &node)
 	if !assert.NoError(t, err) {
 		return
