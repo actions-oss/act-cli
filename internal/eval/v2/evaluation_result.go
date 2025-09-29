@@ -127,7 +127,7 @@ func (er *EvaluationResult) IsFalsy() bool {
 func isNaN(v float64) bool { return v != v }
 
 // IsPrimitive returns true if the kind is a primitive type.
-func (er *EvaluationResult) IsPrimitive() bool { return er.kind <= ValueKindNumber }
+func (er *EvaluationResult) IsPrimitive() bool { return er.kind <= ValueKindString }
 
 // IsTruthy is the negation of IsFalsy.
 func (er *EvaluationResult) IsTruthy() bool { return !er.IsFalsy() }

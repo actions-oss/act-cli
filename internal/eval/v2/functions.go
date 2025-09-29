@@ -142,17 +142,25 @@ func (Join) Evaluate(eval *Evaluator, args []exprparser.Node) (*EvaluationResult
 	}
 	// Array
 	if col, ok := collection.TryGetCollectionInterface(); ok {
+		var elements []string
 		if node, ok := col.(ReadOnlyArray[any]); ok {
 			for _, v := range node.GetEnumerator() {
-				canon := CreateIntermediateResult(eval.Context(), v)
-				if canon.AbstractEqual(el) {
-					return CreateIntermediateResult(eval.Context(), true), nil
-				}
+				elements = append(elements, CreateIntermediateResult(eval.Context(), v).ConvertToString())
 			}
 		}
-		return CreateIntermediateResult(eval.Context(), ""), nil
+		var sep string
+		if el != nil {
+			sep = el.ConvertToString()
+		} else {
+			sep = ","
+		}
+		return CreateIntermediateResult(eval.Context(), strings.Join(elements, sep)), nil
 	}
-	return CreateIntermediateResult(eval.Context(), nil), nil
+	// Primitive
+	if collection.IsPrimitive() {
+		return CreateIntermediateResult(eval.Context(), collection.ConvertToString()), nil
+	}
+	return CreateIntermediateResult(eval.Context(), ""), nil
 }
 
 func GetFunctions() CaseInsensitiveObject[Function] {

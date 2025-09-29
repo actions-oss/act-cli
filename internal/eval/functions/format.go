@@ -25,7 +25,7 @@ func Format(formatStr string, args ...interface{}) (string, error) {
 
 			// escaped left brace
 			if l+1 < len(formatStr) && formatStr[l+1] == '{' {
-				sb.WriteString(formatStr[i : l+2])
+				sb.WriteString(formatStr[l : l+1])
 				i = l + 2
 				continue
 			}
@@ -61,9 +61,9 @@ func Format(formatStr string, args ...interface{}) (string, error) {
 		// right brace
 		if rbrace >= 0 {
 			// escaped right brace
-			if rbrace+1 < len(formatStr) && formatStr[rbrace+1] == '}' {
-				sb.WriteString(formatStr[i : rbrace+2])
-				i = rbrace + 2
+			if i+rbrace+1 < len(formatStr) && formatStr[i+rbrace+1] == '}' {
+				sb.WriteString(formatStr[i : i+rbrace+1])
+				i += rbrace + 2
 				continue
 			}
 			return "", fmt.Errorf("invalid format string: %s", formatStr)
