@@ -60,18 +60,29 @@ type OpToken struct {
 	StartPos int
 }
 
-// precedence maps operator raw values to precedence levels.
-var precedence = map[string]int{
-	"||": 1,
-	"&&": 2,
-	"==": 3,
-	"!=": 3,
-	">":  4,
-	"<":  4,
-	">=": 4,
-	"<=": 4,
-	"!":  5,
-	".":  7, // dereference operator
+func precedence(tkn Token) int {
+	switch tkn.Kind {
+	case TokenKindStartGroup:
+		return 20
+	case TokenKindStartIndex, TokenKindStartParameters, TokenKindDereference:
+		return 19
+	case TokenKindLogicalOperator:
+		switch tkn.Raw {
+		case "!":
+			return 16
+		case ">", ">=", "<", "<=":
+			return 11
+		case "==", "!=":
+			return 10
+		case "&&":
+			return 6
+		case "||":
+			return 5
+		}
+	case TokenKindEndGroup, TokenKindEndIndex, TokenKindEndParameters, TokenKindSeparator:
+		return 1
+	}
+	return 0
 }
 
 // Parse parses the expression and returns the root node.
@@ -96,13 +107,13 @@ func (p *Parser) parse() (Node, error) {
 		case TokenKindNamedValue, TokenKindPropertyName, TokenKindWildcard:
 			p.pushValue(&ValueNode{Kind: tok.Kind, Value: tok.Raw})
 		// In the shunting‑yard loop, treat TokenKindDereference as a unary operator
-		case TokenKindLogicalOperator, TokenKindDereference, TokenKindStartIndex:
+		case TokenKindLogicalOperator, TokenKindDereference:
 			if err := p.pushBinaryOperator(tok); err != nil {
 				return nil, err
 			}
 		case TokenKindFunction:
 			p.pushFunc(tok, len(p.vals))
-		case TokenKindStartParameters, TokenKindStartGroup:
+		case TokenKindStartParameters, TokenKindStartGroup, TokenKindStartIndex:
 			p.pushOp(tok)
 		case TokenKindSeparator:
 			if err := p.popGroup(TokenKindStartParameters); err != nil {
@@ -168,20 +179,20 @@ func (p *Parser) pushFuncValue() error {
 
 func (p *Parser) pushBinaryOperator(tok Token) error {
 	// push as an operator
-	for len(p.ops) > 0 {
-		top := p.ops[len(p.ops)-1]
-		if precedence[top.Raw] >= precedence[tok.Raw] &&
-			top.Kind != TokenKindStartGroup &&
-			top.Kind != TokenKindStartIndex &&
-			top.Kind != TokenKindStartParameters &&
-			top.Kind != TokenKindSeparator {
-			if err := p.popOp(); err != nil {
-				return err
-			}
-		} else {
-			break
-		}
-	}
+	// for len(p.ops) > 0 {
+	// 	top := p.ops[len(p.ops)-1]
+	// 	if precedence(top.Token) >= precedence(tok) &&
+	// 		top.Kind != TokenKindStartGroup &&
+	// 		top.Kind != TokenKindStartIndex &&
+	// 		top.Kind != TokenKindStartParameters &&
+	// 		top.Kind != TokenKindSeparator {
+	// 		if err := p.popOp(); err != nil {
+	// 			return err
+	// 		}
+	// 	} else {
+	// 		break
+	// 	}
+	// }
 	p.pushOp(tok)
 	return nil
 }
@@ -218,6 +229,20 @@ func (p *Parser) pushValue(v Node) {
 }
 
 func (p *Parser) pushOp(t Token) {
+	for len(p.ops) > 0 {
+		top := p.ops[len(p.ops)-1]
+		if precedence(top.Token) >= precedence(t) &&
+			top.Kind != TokenKindStartGroup &&
+			top.Kind != TokenKindStartIndex &&
+			top.Kind != TokenKindStartParameters &&
+			top.Kind != TokenKindSeparator {
+			if err := p.popOp(); err != nil {
+				panic(err)
+			}
+		} else {
+			break
+		}
+	}
 	p.ops = append(p.ops, OpToken{Token: t})
 }
 
