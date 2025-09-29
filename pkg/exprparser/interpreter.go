@@ -84,9 +84,17 @@ func NewInterpeter(env *EvaluationEnvironment, config Config) Interpreter {
 }
 
 func toRawObj(left reflect.Value) map[string]any {
+	res, _ := toRaw(left).(map[string]any)
+	return res
+}
+
+func toRaw(left reflect.Value) any {
 	switch left.Kind() {
 	case reflect.Pointer:
-		return toRawObj(left.Elem())
+		if left.IsNil() {
+			return nil
+		}
+		return toRaw(left.Elem())
 	case reflect.Map:
 		iter := left.MapRange()
 
@@ -97,7 +105,7 @@ func toRawObj(left reflect.Value) map[string]any {
 
 			switch key.Kind() {
 			case reflect.String:
-				m[key.String()] = iter.Value().Interface()
+				m[key.String()] = toRaw(iter.Value())
 			}
 		}
 		return m
@@ -118,13 +126,13 @@ func toRawObj(left reflect.Value) map[string]any {
 				text, _ := t.MarshalText()
 				m[name] = string(text)
 			} else {
-				m[name] = v
+				m[name] = toRaw(left.Field(i))
 			}
 		}
 
 		return m
 	}
-	return nil
+	return left.Interface()
 }
 
 // All values are evaluated as string, funcs that takes objects are implemented elsewhere
@@ -149,42 +157,40 @@ func (e externalFunc) Evaluate(ev *eval.Evaluator, args []exprparser.Node) (*eva
 }
 
 func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultStatusCheck) (interface{}, error) {
-	// input = strings.TrimPrefix(input, "${{")
-	// if defaultStatusCheck != DefaultStatusCheckNone && input == "" {
-	// 	input = "success()"
-	// }
-	// parser := actionlint.NewExprParser()
-	// exprNode, err := parser.Parse(actionlint.NewExprLexer(input + "}}"))
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to parse: %s", err.Message)
-	// }
+	input = strings.TrimPrefix(input, "${{")
+	input = strings.TrimSuffix(input, "}}")
+	if defaultStatusCheck != DefaultStatusCheckNone && input == "" {
+		input = "success()"
+	}
 
-	// if defaultStatusCheck != DefaultStatusCheckNone {
-	// 	hasStatusCheckFunction := false
-	// 	actionlint.VisitExprNode(exprNode, func(node, _ actionlint.ExprNode, entering bool) {
-	// 		if funcCallNode, ok := node.(*actionlint.FuncCallNode); entering && ok {
-	// 			switch strings.ToLower(funcCallNode.Callee) {
-	// 			case "success", "always", "cancelled", "failure":
-	// 				hasStatusCheckFunction = true
-	// 			}
-	// 		}
-	// 	})
+	exprNode, err := exprparser.Parse(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse: %s", err.Error())
+	}
 
-	// 	if !hasStatusCheckFunction {
-	// 		exprNode = &actionlint.LogicalOpNode{
-	// 			Kind: actionlint.LogicalOpNodeKindAnd,
-	// 			Left: &actionlint.FuncCallNode{
-	// 				Callee: defaultStatusCheck.String(),
-	// 				Args:   []actionlint.ExprNode{},
-	// 			},
-	// 			Right: exprNode,
-	// 		}
-	// 	}
-	// }
+	if defaultStatusCheck != DefaultStatusCheckNone {
+		hasStatusCheckFunction := false
+		exprparser.VisitNode(exprNode, func(node exprparser.Node) {
+			if funcCallNode, ok := node.(*exprparser.FunctionNode); ok {
+				switch strings.ToLower(funcCallNode.Name) {
+				case "success", "always", "cancelled", "failure":
+					hasStatusCheckFunction = true
+				}
+			}
+		})
 
-	// result, err2 := impl.evaluateNode(exprNode)
+		if !hasStatusCheckFunction {
+			exprNode = &exprparser.BinaryNode{
+				Op: "&&",
+				Left: &exprparser.FunctionNode{
+					Name: defaultStatusCheck.String(),
+					Args: []exprparser.Node{},
+				},
+				Right: exprNode,
+			}
+		}
+	}
 
-	// return result, err2
 	functions := eval.GetFunctions()
 	if impl.env.HashFiles != nil {
 		functions["hashfiles"] = &externalFunc{impl.env.HashFiles}
@@ -235,12 +241,32 @@ func (impl *interperterImpl) Evaluate(input string, defaultStatusCheck DefaultSt
 		"jobs":     toRawObj(reflect.ValueOf(impl.env.Jobs)),
 		"inputs":   toRawObj(reflect.ValueOf(impl.env.Inputs)),
 	}
+	for name, cd := range impl.env.CtxData {
+		lowerName := strings.ToLower(name)
+		if serverPayload, ok := cd.(map[string]interface{}); ok {
+			if lowerName == "github" {
+				for k, v := range serverPayload {
+					// skip empty values, because github.workspace was set by Gitea Actions to an empty string
+					if _, ok := githubCtx[k]; !ok || v != "" && v != nil {
+						githubCtx[k] = v
+					}
+				}
+				continue
+			}
+		}
+		vars[name] = cd
+	}
+
 	ctx := eval.EvaluationContext{
 		Functions: functions,
 		Variables: vars,
 	}
-
-	return eval.NewEvaluator(&ctx).EvaluateRaw(input)
+	evaluator := eval.NewEvaluator(&ctx)
+	res, err := evaluator.Evaluate(exprNode)
+	if err != nil {
+		return nil, err
+	}
+	return evaluator.ToRaw(res)
 }
 
 func IsTruthy(input interface{}) bool {

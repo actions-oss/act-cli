@@ -287,3 +287,18 @@ func (n *BinaryNode) String() string {
 
 // String returns a string representation of the node.
 func (n *UnaryNode) String() string { return fmt.Sprintf("(%s%s)", n.Op, n.Operand.String()) }
+
+func VisitNode(exprNode Node, callback func(node Node)) {
+	callback(exprNode)
+	switch node := exprNode.(type) {
+	case *FunctionNode:
+		for _, arg := range node.Args {
+			VisitNode(arg, callback)
+		}
+	case *UnaryNode:
+		VisitNode(node.Operand, callback)
+	case *BinaryNode:
+		VisitNode(node.Left, callback)
+		VisitNode(node.Right, callback)
+	}
+}

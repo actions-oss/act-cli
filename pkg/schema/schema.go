@@ -204,21 +204,6 @@ type FunctionInfo struct {
 	Max  int
 }
 
-func visitNode(exprNode exprparser.Node, callback func(node exprparser.Node)) {
-	callback(exprNode)
-	switch node := exprNode.(type) {
-	case *exprparser.FunctionNode:
-		for _, arg := range node.Args {
-			visitNode(arg, callback)
-		}
-	case *exprparser.UnaryNode:
-		visitNode(node.Operand, callback)
-	case *exprparser.BinaryNode:
-		visitNode(node.Left, callback)
-		visitNode(node.Right, callback)
-	}
-}
-
 func (s *Node) checkSingleExpression(exprNode exprparser.Node) error {
 	if len(s.Context) == 0 {
 		switch exprNode.(type) {
@@ -232,7 +217,7 @@ func (s *Node) checkSingleExpression(exprNode exprparser.Node) error {
 	funcs := s.GetFunctions()
 
 	var err error
-	visitNode(exprNode, func(node exprparser.Node) {
+	exprparser.VisitNode(exprNode, func(node exprparser.Node) {
 		if funcCallNode, ok := node.(*exprparser.FunctionNode); ok {
 			for _, v := range funcs {
 				if strings.EqualFold(funcCallNode.Name, v.Name) {
@@ -706,7 +691,7 @@ func (s *Node) ValidateExpression(node *yaml.Node, allowedVars map[string]struct
 		}
 		val = val[j+2:]
 		// walk expression tree
-		visitNode(exprNode, func(n exprparser.Node) {
+		exprparser.VisitNode(exprNode, func(n exprparser.Node) {
 			switch el := n.(type) {
 			case *exprparser.FunctionNode:
 				if _, ok := allowedFuncs[el.Name]; !ok {

@@ -16,21 +16,6 @@ type ExpressionEvaluator struct {
 	v2.EvaluationContext
 }
 
-func visitNode(exprNode exprparser.Node, callback func(node exprparser.Node)) {
-	callback(exprNode)
-	switch node := exprNode.(type) {
-	case *exprparser.FunctionNode:
-		for _, arg := range node.Args {
-			visitNode(arg, callback)
-		}
-	case *exprparser.UnaryNode:
-		visitNode(node.Operand, callback)
-	case *exprparser.BinaryNode:
-		visitNode(node.Left, callback)
-		visitNode(node.Right, callback)
-	}
-}
-
 func isImplExpr(snode *schema.Node) bool {
 	def := snode.Schema.GetDefinition(snode.Definition)
 	return def.String != nil && def.String.IsExpression
@@ -59,7 +44,7 @@ func (ee ExpressionEvaluator) evaluateScalarYamlNode(ctx context.Context, node *
 	for _, v := range snode.GetFunctions() {
 		canEvaluate = canEvaluate && ee.Functions.Get(v.Name) != nil
 	}
-	visitNode(parsed, func(node exprparser.Node) {
+	exprparser.VisitNode(parsed, func(node exprparser.Node) {
 		switch el := node.(type) {
 		case *exprparser.FunctionNode:
 			canEvaluate = canEvaluate && ee.Functions.Get(el.Name) != nil

@@ -2,6 +2,7 @@ package v2
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -39,7 +40,7 @@ type ReadOnlyObject[T any] interface {
 type BasicArray[T any] []T
 
 func (a BasicArray[T]) GetAt(i int64) T {
-	if int(i) > len(a) {
+	if int(i) >= len(a) {
 		var zero T
 		return zero
 	}
@@ -350,8 +351,9 @@ func abstractEqual(left, right interface{}) bool {
 		return strings.EqualFold(left.(string), right.(string))
 	case ValueKindBoolean:
 		return left.(bool) == right.(bool)
-	case ValueKindObject, ValueKindArray:
-		return left == right
+		// Compare object equality fails via panic
+		// case ValueKindObject, ValueKindArray:
+		// 	return left == right
 	}
 	return false
 }
@@ -415,12 +417,24 @@ func convertToNumber(v interface{}) float64 {
 	case float32:
 		return float64(val)
 	case string:
+		// parsenumber
+		if val == "" {
+			return float64(0)
+		}
+		if len(val) > 2 {
+			switch val[:2] {
+			case "0x", "0o":
+				if i, err := strconv.ParseInt(val, 0, 32); err == nil {
+					return float64(i)
+				}
+			}
+		}
 		if f, err := strconv.ParseFloat(val, 64); err == nil {
 			return f
 		}
-		return 0
+		return math.NaN()
 	default:
-		return 0
+		return math.NaN()
 	}
 }
 

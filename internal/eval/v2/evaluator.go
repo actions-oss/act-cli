@@ -186,7 +186,13 @@ func (e *Evaluator) evalNode(n exprparser.Node) (*EvaluationResult, error) {
 			if farray, ok := left.Value().(FilteredArray); ok {
 				var ret FilteredArray
 				for _, subcol := range farray.GetEnumerator() {
-					ret = append(ret, processIndex(CreateIntermediateResult(e.Context(), subcol).Value(), right))
+					res := processIndex(CreateIntermediateResult(e.Context(), subcol).Value(), right)
+					if res != nil {
+						ret = append(ret, res)
+					}
+				}
+				if ret == nil {
+					return CreateIntermediateResult(e.Context(), nil), nil
 				}
 				return CreateIntermediateResult(e.Context(), ret), nil
 			}
@@ -222,7 +228,7 @@ func processIndex(col interface{}, right *EvaluationResult) interface{} {
 	}
 	if arrayVal, ok := col.(ReadOnlyArray[any]); ok {
 		key, ok := right.Value().(float64)
-		if !ok {
+		if !ok || key < 0 {
 			return nil
 		}
 		val := arrayVal.GetAt(int64(key))
