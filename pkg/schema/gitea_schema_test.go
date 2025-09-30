@@ -14,6 +14,6 @@ func TestGiteaSchemaFactory(t *testing.T) {
 
 	data, err := json.MarshalIndent(schema, "", "  ")
 	assert.NoError(t, err)
-	err = os.WriteFile("gitea_workflow_schema.json", data, 0o600)
+	err = os.WriteFile("gitea_workflow_schema.json", append(data, "\n"...), 0o600)
 	assert.NoError(t, err)
 }
