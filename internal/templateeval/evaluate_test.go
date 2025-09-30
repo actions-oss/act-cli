@@ -71,6 +71,7 @@ jobs:
 				Definition: "workflow-root",
 				Schema:     schema.GetWorkflowSchema(),
 			})
+			require.NoError(t, err)
 
 			if tc.restrict {
 				ee.RestrictEval = true

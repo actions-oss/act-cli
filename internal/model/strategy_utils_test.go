@@ -60,7 +60,7 @@ matrix:
 		var strategy Strategy
 		err := yaml.Unmarshal([]byte(tc.content), &strategy)
 		require.NoError(t, err)
-		res, err := ExpandStrategy(&strategy, &EmptyTraceWriter{}, "")
+		res, err := ExpandStrategy(&strategy, &EmptyTraceWriter{})
 		require.NoError(t, err)
 		require.Len(t, res.FlatMatrix, tc.flatmatrix)
 		require.Len(t, res.IncludeMatrix, tc.includematrix)
