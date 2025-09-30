@@ -75,6 +75,7 @@ func TestOperators(t *testing.T) {
 		{"github.event.commits[0].author.username != github.event.commits[1].author.username1", true, "property-comparison3", ""},
 		{"github.event.commits[0].author.username1 != github.event.commits[1].author.username2", false, "property-comparison4", ""},
 		{"secrets != env", true, "property-comparison5", ""},
+		{"job.container && 'failure' || 'ok'", "ok", "object-truth", ""},
 	}
 
 	env := &EvaluationEnvironment{

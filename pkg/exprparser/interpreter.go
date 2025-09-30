@@ -89,6 +89,9 @@ func toRawObj(left reflect.Value) map[string]any {
 }
 
 func toRaw(left reflect.Value) any {
+	if left.IsZero() {
+		return nil
+	}
 	switch left.Kind() {
 	case reflect.Pointer:
 		if left.IsNil() {
@@ -104,8 +107,14 @@ func toRaw(left reflect.Value) any {
 			key := iter.Key()
 
 			if key.Kind() == reflect.String {
-				m[key.String()] = toRaw(iter.Value())
+				nv := toRaw(iter.Value())
+				if nv != nil {
+					m[key.String()] = nv
+				}
 			}
+		}
+		if len(m) == 0 {
+			return nil
 		}
 		return m
 	case reflect.Struct:
@@ -123,9 +132,14 @@ func toRaw(left reflect.Value) any {
 			v := left.Field(i).Interface()
 			if t, ok := v.(encoding.TextMarshaler); ok {
 				text, _ := t.MarshalText()
-				m[name] = string(text)
+				if len(text) > 0 {
+					m[name] = string(text)
+				}
 			} else {
-				m[name] = toRaw(left.Field(i))
+				nv := toRaw(left.Field(i))
+				if nv != nil {
+					m[name] = nv
+				}
 			}
 		}
 
