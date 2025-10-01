@@ -106,15 +106,12 @@ func (p *Parser) parse() (Node, error) {
 			p.pushValue(&ValueNode{Kind: tok.Kind, Value: tok.Value})
 		case TokenKindNamedValue, TokenKindPropertyName, TokenKindWildcard:
 			p.pushValue(&ValueNode{Kind: tok.Kind, Value: tok.Raw})
-		// In the shunting‑yard loop, treat TokenKindDereference as a unary operator
-		case TokenKindLogicalOperator, TokenKindDereference:
-			if err := p.pushBinaryOperator(tok); err != nil {
-				return nil, err
-			}
 		case TokenKindFunction:
 			p.pushFunc(tok, len(p.vals))
-		case TokenKindStartParameters, TokenKindStartGroup, TokenKindStartIndex:
-			p.pushOp(tok)
+		case TokenKindStartParameters, TokenKindStartGroup, TokenKindStartIndex, TokenKindLogicalOperator, TokenKindDereference:
+			if err := p.pushOp(tok); err != nil {
+				return nil, err
+			}
 		case TokenKindSeparator:
 			if err := p.popGroup(TokenKindStartParameters); err != nil {
 				return nil, err
@@ -177,26 +174,6 @@ func (p *Parser) pushFuncValue() error {
 	return nil
 }
 
-func (p *Parser) pushBinaryOperator(tok Token) error {
-	// push as an operator
-	// for len(p.ops) > 0 {
-	// 	top := p.ops[len(p.ops)-1]
-	// 	if precedence(top.Token) >= precedence(tok) &&
-	// 		top.Kind != TokenKindStartGroup &&
-	// 		top.Kind != TokenKindStartIndex &&
-	// 		top.Kind != TokenKindStartParameters &&
-	// 		top.Kind != TokenKindSeparator {
-	// 		if err := p.popOp(); err != nil {
-	// 			return err
-	// 		}
-	// 	} else {
-	// 		break
-	// 	}
-	// }
-	p.pushOp(tok)
-	return nil
-}
-
 func (p *Parser) initWithLexer(lexer *Lexer) error {
 	p.lexer = lexer
 	for {
@@ -228,7 +205,7 @@ func (p *Parser) pushValue(v Node) {
 	p.vals = append(p.vals, v)
 }
 
-func (p *Parser) pushOp(t Token) {
+func (p *Parser) pushOp(t Token) error {
 	for len(p.ops) > 0 {
 		top := p.ops[len(p.ops)-1]
 		if precedence(top.Token) >= precedence(t) &&
@@ -237,13 +214,14 @@ func (p *Parser) pushOp(t Token) {
 			top.Kind != TokenKindStartParameters &&
 			top.Kind != TokenKindSeparator {
 			if err := p.popOp(); err != nil {
-				panic(err)
+				return err
 			}
 		} else {
 			break
 		}
 	}
 	p.ops = append(p.ops, OpToken{Token: t})
+	return nil
 }
 
 func (p *Parser) pushFunc(t Token, start int) {
