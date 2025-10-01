@@ -1,6 +1,6 @@
 module github.com/actions-oss/act-cli
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
@@ -8,8 +8,8 @@ require (
 	github.com/adrg/xdg v0.5.3
 	github.com/andreaskoch/go-fswatch v1.0.0
 	github.com/creack/pty v1.1.24
-	github.com/docker/cli v28.3.3+incompatible
-	github.com/docker/docker v28.3.3+incompatible
+	github.com/docker/cli v28.4.0+incompatible
+	github.com/docker/docker v28.4.0+incompatible
 	github.com/docker/go-connections v0.6.0
 	github.com/go-git/go-billy/v5 v5.6.2
 	github.com/go-git/go-git/v5 v5.16.2
@@ -25,11 +25,11 @@ require (
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.10.1
-	github.com/spf13/pflag v1.0.9
+	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	github.com/timshannon/bolthold v0.0.0-20240314194003-30aac6950928
 	go.etcd.io/bbolt v1.4.3
-	golang.org/x/term v0.34.0
+	golang.org/x/term v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.2
 )
@@ -41,9 +41,9 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/moby/go-archive v0.1.0
-	golang.org/x/crypto v0.41.0
-	golang.org/x/sync v0.16.0
-	google.golang.org/protobuf v1.36.8
+	golang.org/x/crypto v0.42.0
+	golang.org/x/sync v0.17.0
+	google.golang.org/protobuf v1.36.9
 )
 
 require (
@@ -65,7 +65,6 @@ require (
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
@@ -105,9 +104,9 @@ require (
 	go.opentelemetry.io/otel/sdk v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
-	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
