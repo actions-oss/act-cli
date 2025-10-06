@@ -7,6 +7,7 @@
 - `--use-new-action-cache` has been removed, the default clone mode of nektos/act has been removed
 - CI tests are run in 6min compared to 17min on nektos/act
 - Flags `--pull=false` and `--rebuild=false` are inverted to `--no-poll` and `--no-rebuild`
+- YAML Anchors are supported
 
 # Act User Guide
 
