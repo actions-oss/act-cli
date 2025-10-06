@@ -1,0 +1,2678 @@
+{
+  "Definitions": {
+    "boolean-needs-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "gitea",
+        "env"
+      ],
+      "boolean": {}
+    },
+    "boolean-steps-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "boolean": {}
+    },
+    "boolean-strategy-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "boolean": {}
+    },
+    "branch-protection-rule": {
+      "one-of": [
+        "null",
+        "branch-protection-rule-mapping"
+      ]
+    },
+    "branch-protection-rule-activity": {
+      "one-of": [
+        "branch-protection-rule-activity-type",
+        "branch-protection-rule-activity-types"
+      ]
+    },
+    "branch-protection-rule-activity-type": {
+      "allowed-values": [
+        "created",
+        "edited",
+        "deleted"
+      ]
+    },
+    "branch-protection-rule-activity-types": {
+      "sequence": {
+        "item-type": "branch-protection-rule-activity-type"
+      }
+    },
+    "branch-protection-rule-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "branch-protection-rule-activity"
+          }
+        }
+      }
+    },
+    "branch-protection-rule-string": {
+      "string": {
+        "constant": "branch_protection_rule"
+      }
+    },
+    "check-run": {
+      "one-of": [
+        "null",
+        "check-run-mapping"
+      ]
+    },
+    "check-run-activity": {
+      "one-of": [
+        "check-run-activity-type",
+        "check-run-activity-types"
+      ]
+    },
+    "check-run-activity-type": {
+      "allowed-values": [
+        "completed",
+        "created",
+        "rerequested",
+        "requested_action"
+      ]
+    },
+    "check-run-activity-types": {
+      "sequence": {
+        "item-type": "check-run-activity-type"
+      }
+    },
+    "check-run-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "check-run-activity"
+          }
+        }
+      }
+    },
+    "check-run-string": {
+      "string": {
+        "constant": "check_run"
+      }
+    },
+    "check-suite": {
+      "one-of": [
+        "null",
+        "check-suite-mapping"
+      ]
+    },
+    "check-suite-activity": {
+      "one-of": [
+        "check-suite-activity-type",
+        "check-suite-activity-types"
+      ]
+    },
+    "check-suite-activity-type": {
+      "allowed-values": [
+        "completed"
+      ]
+    },
+    "check-suite-activity-types": {
+      "sequence": {
+        "item-type": "check-suite-activity-type"
+      }
+    },
+    "check-suite-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "check-suite-activity"
+          }
+        }
+      }
+    },
+    "check-suite-string": {
+      "string": {
+        "constant": "check_suite"
+      }
+    },
+    "concurrency-mapping": {
+      "mapping": {
+        "properties": {
+          "cancel-in-progress": {
+            "type": "boolean"
+          },
+          "group": {
+            "type": "non-empty-string",
+            "required": true
+          }
+        }
+      }
+    },
+    "container": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "string",
+        "container-mapping"
+      ]
+    },
+    "container-env": {
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "string-runner-context"
+      }
+    },
+    "container-mapping": {
+      "mapping": {
+        "properties": {
+          "cmd": {
+            "type": "sequence-of-non-empty-string"
+          },
+          "credentials": {
+            "type": "container-registry-credentials"
+          },
+          "env": {
+            "type": "container-env"
+          },
+          "image": {
+            "type": "non-empty-string"
+          },
+          "options": {
+            "type": "non-empty-string"
+          },
+          "ports": {
+            "type": "sequence-of-non-empty-string"
+          },
+          "volumes": {
+            "type": "sequence-of-non-empty-string"
+          }
+        }
+      }
+    },
+    "container-registry-credentials": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "secrets",
+        "env",
+        "gitea",
+        "env"
+      ],
+      "mapping": {
+        "properties": {
+          "password": {
+            "type": "non-empty-string"
+          },
+          "username": {
+            "type": "non-empty-string"
+          }
+        }
+      }
+    },
+    "create": {
+      "null": {}
+    },
+    "create-string": {
+      "string": {
+        "constant": "create"
+      }
+    },
+    "cron-mapping": {
+      "mapping": {
+        "properties": {
+          "cron": {
+            "type": "cron-pattern"
+          }
+        }
+      }
+    },
+    "cron-pattern": {
+      "string": {}
+    },
+    "delete": {
+      "null": {}
+    },
+    "delete-string": {
+      "string": {
+        "constant": "delete"
+      }
+    },
+    "deployment": {
+      "null": {}
+    },
+    "deployment-status": {
+      "null": {}
+    },
+    "deployment-status-string": {
+      "string": {
+        "constant": "deployment_status"
+      }
+    },
+    "deployment-string": {
+      "string": {
+        "constant": "deployment"
+      }
+    },
+    "discussion": {
+      "one-of": [
+        "null",
+        "discussion-mapping"
+      ]
+    },
+    "discussion-activity": {
+      "one-of": [
+        "discussion-activity-type",
+        "discussion-activity-types"
+      ]
+    },
+    "discussion-activity-type": {
+      "allowed-values": [
+        "created",
+        "edited",
+        "deleted",
+        "transferred",
+        "pinned",
+        "unpinned",
+        "labeled",
+        "unlabeled",
+        "locked",
+        "unlocked",
+        "category_changed",
+        "answered",
+        "unanswered"
+      ]
+    },
+    "discussion-activity-types": {
+      "sequence": {
+        "item-type": "discussion-activity-type"
+      }
+    },
+    "discussion-comment": {
+      "one-of": [
+        "null",
+        "discussion-comment-mapping"
+      ]
+    },
+    "discussion-comment-activity": {
+      "one-of": [
+        "discussion-comment-activity-type",
+        "discussion-comment-activity-types"
+      ]
+    },
+    "discussion-comment-activity-type": {
+      "allowed-values": [
+        "created",
+        "edited",
+        "deleted"
+      ]
+    },
+    "discussion-comment-activity-types": {
+      "sequence": {
+        "item-type": "discussion-comment-activity-type"
+      }
+    },
+    "discussion-comment-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "discussion-comment-activity"
+          }
+        }
+      }
+    },
+    "discussion-comment-string": {
+      "string": {
+        "constant": "discussion_comment"
+      }
+    },
+    "discussion-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "discussion-activity"
+          }
+        }
+      }
+    },
+    "discussion-string": {
+      "string": {
+        "constant": "discussion"
+      }
+    },
+    "event-branches": {
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string"
+      ]
+    },
+    "event-branches-ignore": {
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string"
+      ]
+    },
+    "event-paths": {
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string"
+      ]
+    },
+    "event-paths-ignore": {
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string"
+      ]
+    },
+    "event-tags": {
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string"
+      ]
+    },
+    "event-tags-ignore": {
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string"
+      ]
+    },
+    "fork": {
+      "null": {}
+    },
+    "fork-string": {
+      "string": {
+        "constant": "fork"
+      }
+    },
+    "gollum": {
+      "null": {}
+    },
+    "gollum-string": {
+      "string": {
+        "constant": "gollum"
+      }
+    },
+    "input-type-boolean": {
+      "string": {
+        "constant": "boolean"
+      }
+    },
+    "input-type-choice": {
+      "string": {
+        "constant": "choice"
+      }
+    },
+    "input-type-environment": {
+      "string": {
+        "constant": "environment"
+      }
+    },
+    "input-type-number": {
+      "string": {
+        "constant": "number"
+      }
+    },
+    "input-type-string": {
+      "string": {
+        "constant": "string"
+      }
+    },
+    "issue-comment": {
+      "one-of": [
+        "null",
+        "issue-comment-mapping"
+      ]
+    },
+    "issue-comment-activity": {
+      "one-of": [
+        "issue-comment-activity-type",
+        "issue-comment-activity-types"
+      ]
+    },
+    "issue-comment-activity-type": {
+      "allowed-values": [
+        "created",
+        "edited",
+        "deleted"
+      ]
+    },
+    "issue-comment-activity-types": {
+      "sequence": {
+        "item-type": "issue-comment-activity-type"
+      }
+    },
+    "issue-comment-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "issue-comment-activity"
+          }
+        }
+      }
+    },
+    "issue-comment-string": {
+      "string": {
+        "constant": "issue_comment"
+      }
+    },
+    "issues": {
+      "one-of": [
+        "null",
+        "issues-mapping"
+      ]
+    },
+    "issues-activity": {
+      "one-of": [
+        "issues-activity-type",
+        "issues-activity-types"
+      ]
+    },
+    "issues-activity-type": {
+      "allowed-values": [
+        "opened",
+        "edited",
+        "deleted",
+        "transferred",
+        "pinned",
+        "unpinned",
+        "closed",
+        "reopened",
+        "assigned",
+        "unassigned",
+        "labeled",
+        "unlabeled",
+        "locked",
+        "unlocked",
+        "milestoned",
+        "demilestoned"
+      ]
+    },
+    "issues-activity-types": {
+      "sequence": {
+        "item-type": "issues-activity-type"
+      }
+    },
+    "issues-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "issues-activity"
+          }
+        }
+      }
+    },
+    "issues-string": {
+      "string": {
+        "constant": "issues"
+      }
+    },
+    "job": {
+      "one-of": [
+        "job-factory",
+        "workflow-job"
+      ]
+    },
+    "job-concurrency": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "non-empty-string",
+        "concurrency-mapping"
+      ]
+    },
+    "job-defaults": {
+      "mapping": {
+        "properties": {
+          "run": {
+            "type": "job-defaults-run"
+          }
+        }
+      }
+    },
+    "job-defaults-run": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "strategy",
+        "matrix",
+        "needs",
+        "env",
+        "gitea",
+        "env"
+      ],
+      "mapping": {
+        "properties": {
+          "shell": {
+            "type": "shell"
+          },
+          "working-directory": {
+            "type": "working-directory"
+          }
+        }
+      }
+    },
+    "job-env": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "gitea",
+        "env"
+      ],
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "string"
+      }
+    },
+    "job-environment": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "string",
+        "job-environment-mapping"
+      ]
+    },
+    "job-environment-mapping": {
+      "mapping": {
+        "properties": {
+          "name": {
+            "type": "job-environment-name",
+            "required": true
+          },
+          "url": {
+            "type": "string-runner-context-no-secrets"
+          }
+        }
+      }
+    },
+    "job-environment-name": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "string": {}
+    },
+    "job-factory": {
+      "mapping": {
+        "properties": {
+          "cancel-timeout-minutes": {
+            "type": "number-strategy-context"
+          },
+          "concurrency": {
+            "type": "job-concurrency"
+          },
+          "container": {
+            "type": "container"
+          },
+          "continue-on-error": {
+            "type": "boolean-strategy-context"
+          },
+          "defaults": {
+            "type": "job-defaults"
+          },
+          "env": {
+            "type": "job-env"
+          },
+          "environment": {
+            "type": "job-environment"
+          },
+          "if": {
+            "type": "job-if"
+          },
+          "name": {
+            "type": "string-strategy-context"
+          },
+          "needs": {
+            "type": "needs"
+          },
+          "outputs": {
+            "type": "job-outputs"
+          },
+          "permissions": {
+            "type": "permissions"
+          },
+          "runs-on": {
+            "type": "runs-on",
+            "required": true
+          },
+          "services": {
+            "type": "services"
+          },
+          "steps": {
+            "type": "steps"
+          },
+          "strategy": {
+            "type": "strategy"
+          },
+          "timeout-minutes": {
+            "type": "number-strategy-context"
+          }
+        }
+      }
+    },
+    "job-id": {
+      "string": {}
+    },
+    "job-if": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "always(0,0)",
+        "failure(0,MAX)",
+        "cancelled(0,0)",
+        "success(0,MAX)",
+        "gitea",
+        "env",
+        "secrets"
+      ],
+      "string": {
+        "is-expression": true
+      }
+    },
+    "job-if-result": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "always(0,0)",
+        "failure(0,MAX)",
+        "cancelled(0,0)",
+        "success(0,MAX)",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "null",
+        "boolean",
+        "number",
+        "string",
+        "sequence",
+        "mapping"
+      ]
+    },
+    "job-outputs": {
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "string-runner-context"
+      }
+    },
+    "jobs": {
+      "mapping": {
+        "loose-key-type": "job-id",
+        "loose-value-type": "job"
+      }
+    },
+    "label": {
+      "one-of": [
+        "null",
+        "label-mapping"
+      ]
+    },
+    "label-activity": {
+      "one-of": [
+        "label-activity-type",
+        "label-activity-types"
+      ]
+    },
+    "label-activity-type": {
+      "allowed-values": [
+        "created",
+        "edited",
+        "deleted"
+      ]
+    },
+    "label-activity-types": {
+      "sequence": {
+        "item-type": "label-activity-type"
+      }
+    },
+    "label-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "label-activity"
+          }
+        }
+      }
+    },
+    "label-string": {
+      "string": {
+        "constant": "label"
+      }
+    },
+    "matrix": {
+      "mapping": {
+        "properties": {
+          "exclude": {
+            "type": "matrix-filter"
+          },
+          "include": {
+            "type": "matrix-filter"
+          }
+        },
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "sequence"
+      }
+    },
+    "matrix-filter": {
+      "sequence": {
+        "item-type": "matrix-filter-item"
+      }
+    },
+    "matrix-filter-item": {
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "any"
+      }
+    },
+    "merge-group": {
+      "one-of": [
+        "null",
+        "merge-group-mapping"
+      ]
+    },
+    "merge-group-activity": {
+      "one-of": [
+        "merge-group-activity-type",
+        "merge-group-activity-types"
+      ]
+    },
+    "merge-group-activity-type": {
+      "allowed-values": [
+        "checks_requested"
+      ]
+    },
+    "merge-group-activity-types": {
+      "sequence": {
+        "item-type": "merge-group-activity-type"
+      }
+    },
+    "merge-group-mapping": {
+      "mapping": {
+        "properties": {
+          "branches": {
+            "type": "event-branches"
+          },
+          "branches-ignore": {
+            "type": "event-branches-ignore"
+          },
+          "types": {
+            "type": "merge-group-activity"
+          }
+        }
+      }
+    },
+    "merge-group-string": {
+      "string": {
+        "constant": "merge_group"
+      }
+    },
+    "milestone": {
+      "one-of": [
+        "null",
+        "milestone-mapping"
+      ]
+    },
+    "milestone-activity": {
+      "one-of": [
+        "milestone-activity-type",
+        "milestone-activity-types"
+      ]
+    },
+    "milestone-activity-type": {
+      "allowed-values": [
+        "created",
+        "closed",
+        "opened",
+        "edited",
+        "deleted"
+      ]
+    },
+    "milestone-activity-types": {
+      "sequence": {
+        "item-type": "milestone-activity-type"
+      }
+    },
+    "milestone-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "milestone-activity"
+          }
+        }
+      }
+    },
+    "milestone-string": {
+      "string": {
+        "constant": "milestone"
+      }
+    },
+    "needs": {
+      "one-of": [
+        "sequence-of-non-empty-string",
+        "non-empty-string"
+      ]
+    },
+    "non-empty-string": {
+      "string": {}
+    },
+    "number-needs-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "gitea",
+        "env"
+      ],
+      "number": {}
+    },
+    "number-steps-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "number": {}
+    },
+    "number-strategy-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "number": {}
+    },
+    "on": {
+      "one-of": [
+        "string",
+        "sequence",
+        "on-mapping"
+      ]
+    },
+    "on-mapping": {
+      "mapping": {
+        "properties": {
+          "workflow_call": {
+            "type": "workflow-call"
+          }
+        },
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "any"
+      }
+    },
+    "on-mapping-strict": {
+      "mapping": {
+        "properties": {
+          "branch_protection_rule": {
+            "type": "branch-protection-rule"
+          },
+          "check_run": {
+            "type": "check-run"
+          },
+          "check_suite": {
+            "type": "check-suite"
+          },
+          "create": {
+            "type": "create"
+          },
+          "delete": {
+            "type": "delete"
+          },
+          "deployment": {
+            "type": "deployment"
+          },
+          "deployment_status": {
+            "type": "deployment-status"
+          },
+          "discussion": {
+            "type": "discussion"
+          },
+          "discussion_comment": {
+            "type": "discussion-comment"
+          },
+          "fork": {
+            "type": "fork"
+          },
+          "gollum": {
+            "type": "gollum"
+          },
+          "issue_comment": {
+            "type": "issue-comment"
+          },
+          "issues": {
+            "type": "issues"
+          },
+          "label": {
+            "type": "label"
+          },
+          "merge_group": {
+            "type": "merge-group"
+          },
+          "milestone": {
+            "type": "milestone"
+          },
+          "page_build": {
+            "type": "page-build"
+          },
+          "project": {
+            "type": "project"
+          },
+          "project_card": {
+            "type": "project-card"
+          },
+          "project_column": {
+            "type": "project-column"
+          },
+          "public": {
+            "type": "public"
+          },
+          "pull_request": {
+            "type": "pull-request"
+          },
+          "pull_request_comment": {
+            "type": "pull-request-comment"
+          },
+          "pull_request_review": {
+            "type": "pull-request-review"
+          },
+          "pull_request_review_comment": {
+            "type": "pull-request-review-comment"
+          },
+          "pull_request_target": {
+            "type": "pull-request-target"
+          },
+          "push": {
+            "type": "push"
+          },
+          "registry_package": {
+            "type": "registry-package"
+          },
+          "release": {
+            "type": "release"
+          },
+          "repository_dispatch": {
+            "type": "repository-dispatch"
+          },
+          "schedule": {
+            "type": "schedule"
+          },
+          "status": {
+            "type": "status"
+          },
+          "watch": {
+            "type": "watch"
+          },
+          "workflow_call": {
+            "type": "workflow-call"
+          },
+          "workflow_dispatch": {
+            "type": "workflow-dispatch"
+          },
+          "workflow_run": {
+            "type": "workflow-run"
+          }
+        }
+      }
+    },
+    "on-sequence-strict": {
+      "sequence": {
+        "item-type": "on-string-strict"
+      }
+    },
+    "on-strict": {
+      "one-of": [
+        "on-string-strict",
+        "on-sequence-strict",
+        "on-mapping-strict"
+      ]
+    },
+    "on-string-strict": {
+      "one-of": [
+        "branch-protection-rule-string",
+        "check-run-string",
+        "check-suite-string",
+        "create-string",
+        "delete-string",
+        "deployment-string",
+        "deployment-status-string",
+        "discussion-string",
+        "discussion-comment-string",
+        "fork-string",
+        "gollum-string",
+        "issue-comment-string",
+        "issues-string",
+        "label-string",
+        "merge-group-string",
+        "milestone-string",
+        "page-build-string",
+        "project-string",
+        "project-card-string",
+        "project-column-string",
+        "public-string",
+        "pull-request-string",
+        "pull-request-comment-string",
+        "pull-request-review-string",
+        "pull-request-review-comment-string",
+        "pull-request-target-string",
+        "push-string",
+        "registry-package-string",
+        "release-string",
+        "repository-dispatch-string",
+        "schedule-string",
+        "status-string",
+        "watch-string",
+        "workflow-call-string",
+        "workflow-dispatch-string",
+        "workflow-run-string"
+      ]
+    },
+    "page-build": {
+      "null": {}
+    },
+    "page-build-string": {
+      "string": {
+        "constant": "page_build"
+      }
+    },
+    "permission-level-any": {
+      "one-of": [
+        "permission-level-read",
+        "permission-level-write",
+        "permission-level-no-access"
+      ]
+    },
+    "permission-level-no-access": {
+      "string": {
+        "constant": "none"
+      }
+    },
+    "permission-level-read": {
+      "string": {
+        "constant": "read"
+      }
+    },
+    "permission-level-read-or-no-access": {
+      "one-of": [
+        "permission-level-read",
+        "permission-level-no-access"
+      ]
+    },
+    "permission-level-shorthand-read-all": {
+      "string": {
+        "constant": "read-all"
+      }
+    },
+    "permission-level-shorthand-write-all": {
+      "string": {
+        "constant": "write-all"
+      }
+    },
+    "permission-level-write": {
+      "string": {
+        "constant": "write"
+      }
+    },
+    "permission-level-write-or-no-access": {
+      "one-of": [
+        "permission-level-write",
+        "permission-level-no-access"
+      ]
+    },
+    "permissions": {
+      "one-of": [
+        "permissions-mapping",
+        "permission-level-shorthand-read-all",
+        "permission-level-shorthand-write-all"
+      ]
+    },
+    "permissions-mapping": {
+      "mapping": {
+        "properties": {
+          "actions": {
+            "type": "permission-level-any"
+          },
+          "attestations": {
+            "type": "permission-level-any"
+          },
+          "checks": {
+            "type": "permission-level-any"
+          },
+          "contents": {
+            "type": "permission-level-any"
+          },
+          "deployments": {
+            "type": "permission-level-any"
+          },
+          "discussions": {
+            "type": "permission-level-any"
+          },
+          "id-token": {
+            "type": "permission-level-write-or-no-access"
+          },
+          "issues": {
+            "type": "permission-level-any"
+          },
+          "models": {
+            "type": "permission-level-read-or-no-access"
+          },
+          "packages": {
+            "type": "permission-level-any"
+          },
+          "pages": {
+            "type": "permission-level-any"
+          },
+          "pull-requests": {
+            "type": "permission-level-any"
+          },
+          "repository-projects": {
+            "type": "permission-level-any"
+          },
+          "security-events": {
+            "type": "permission-level-any"
+          },
+          "statuses": {
+            "type": "permission-level-any"
+          }
+        }
+      }
+    },
+    "project": {
+      "one-of": [
+        "null",
+        "project-mapping"
+      ]
+    },
+    "project-activity": {
+      "one-of": [
+        "project-activity-type",
+        "project-activity-types"
+      ]
+    },
+    "project-activity-type": {
+      "allowed-values": [
+        "created",
+        "closed",
+        "reopened",
+        "edited",
+        "deleted"
+      ]
+    },
+    "project-activity-types": {
+      "sequence": {
+        "item-type": "project-activity-type"
+      }
+    },
+    "project-card": {
+      "one-of": [
+        "null",
+        "project-card-mapping"
+      ]
+    },
+    "project-card-activity": {
+      "one-of": [
+        "project-card-activity-type",
+        "project-card-activity-types"
+      ]
+    },
+    "project-card-activity-type": {
+      "allowed-values": [
+        "created",
+        "moved",
+        "converted",
+        "edited",
+        "deleted"
+      ]
+    },
+    "project-card-activity-types": {
+      "sequence": {
+        "item-type": "project-card-activity-type"
+      }
+    },
+    "project-card-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "project-card-activity"
+          }
+        }
+      }
+    },
+    "project-card-string": {
+      "string": {
+        "constant": "project_card"
+      }
+    },
+    "project-column": {
+      "one-of": [
+        "null",
+        "project-column-mapping"
+      ]
+    },
+    "project-column-activity": {
+      "one-of": [
+        "project-column-activity-type",
+        "project-column-activity-types"
+      ]
+    },
+    "project-column-activity-type": {
+      "allowed-values": [
+        "created",
+        "updated",
+        "moved",
+        "deleted"
+      ]
+    },
+    "project-column-activity-types": {
+      "sequence": {
+        "item-type": "project-column-activity-type"
+      }
+    },
+    "project-column-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "project-column-activity"
+          }
+        }
+      }
+    },
+    "project-column-string": {
+      "string": {
+        "constant": "project_column"
+      }
+    },
+    "project-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "project-activity"
+          }
+        }
+      }
+    },
+    "project-string": {
+      "string": {
+        "constant": "project"
+      }
+    },
+    "public": {
+      "null": {}
+    },
+    "public-string": {
+      "string": {
+        "constant": "public"
+      }
+    },
+    "pull-request": {
+      "one-of": [
+        "null",
+        "pull-request-mapping"
+      ]
+    },
+    "pull-request-activity": {
+      "one-of": [
+        "pull-request-activity-type",
+        "pull-request-activity-types"
+      ]
+    },
+    "pull-request-activity-type": {
+      "allowed-values": [
+        "assigned",
+        "unassigned",
+        "labeled",
+        "unlabeled",
+        "opened",
+        "edited",
+        "closed",
+        "reopened",
+        "synchronize",
+        "converted_to_draft",
+        "ready_for_review",
+        "locked",
+        "unlocked",
+        "review_requested",
+        "review_request_removed",
+        "auto_merge_enabled",
+        "auto_merge_disabled"
+      ]
+    },
+    "pull-request-activity-types": {
+      "sequence": {
+        "item-type": "pull-request-activity-type"
+      }
+    },
+    "pull-request-comment": {
+      "one-of": [
+        "null",
+        "issue-comment-mapping"
+      ]
+    },
+    "pull-request-comment-string": {
+      "string": {
+        "constant": "pull_request_comment"
+      }
+    },
+    "pull-request-mapping": {
+      "mapping": {
+        "properties": {
+          "branches": {
+            "type": "event-branches"
+          },
+          "branches-ignore": {
+            "type": "event-branches-ignore"
+          },
+          "paths": {
+            "type": "event-paths"
+          },
+          "paths-ignore": {
+            "type": "event-paths-ignore"
+          },
+          "types": {
+            "type": "pull-request-activity"
+          }
+        }
+      }
+    },
+    "pull-request-review": {
+      "one-of": [
+        "null",
+        "pull-request-review-mapping"
+      ]
+    },
+    "pull-request-review-activity": {
+      "one-of": [
+        "pull-request-review-activity-type",
+        "pull-request-review-activity-types"
+      ]
+    },
+    "pull-request-review-activity-type": {
+      "allowed-values": [
+        "submitted",
+        "edited",
+        "dismissed"
+      ]
+    },
+    "pull-request-review-activity-types": {
+      "sequence": {
+        "item-type": "pull-request-review-activity-type"
+      }
+    },
+    "pull-request-review-comment": {
+      "one-of": [
+        "null",
+        "pull-request-review-comment-mapping"
+      ]
+    },
+    "pull-request-review-comment-activity": {
+      "one-of": [
+        "pull-request-review-comment-activity-type",
+        "pull-request-review-comment-activity-types"
+      ]
+    },
+    "pull-request-review-comment-activity-type": {
+      "allowed-values": [
+        "created",
+        "edited",
+        "deleted"
+      ]
+    },
+    "pull-request-review-comment-activity-types": {
+      "sequence": {
+        "item-type": "pull-request-review-comment-activity-type"
+      }
+    },
+    "pull-request-review-comment-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "pull-request-review-comment-activity"
+          }
+        }
+      }
+    },
+    "pull-request-review-comment-string": {
+      "string": {
+        "constant": "pull_request_review_comment"
+      }
+    },
+    "pull-request-review-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "pull-request-review-activity"
+          }
+        }
+      }
+    },
+    "pull-request-review-string": {
+      "string": {
+        "constant": "pull_request_review"
+      }
+    },
+    "pull-request-string": {
+      "string": {
+        "constant": "pull_request"
+      }
+    },
+    "pull-request-target": {
+      "one-of": [
+        "null",
+        "pull-request-target-mapping"
+      ]
+    },
+    "pull-request-target-activity": {
+      "one-of": [
+        "pull-request-target-activity-type",
+        "pull-request-target-activity-types"
+      ]
+    },
+    "pull-request-target-activity-type": {
+      "allowed-values": [
+        "assigned",
+        "unassigned",
+        "labeled",
+        "unlabeled",
+        "opened",
+        "edited",
+        "closed",
+        "reopened",
+        "synchronize",
+        "converted_to_draft",
+        "ready_for_review",
+        "locked",
+        "unlocked",
+        "review_requested",
+        "review_request_removed",
+        "auto_merge_enabled",
+        "auto_merge_disabled"
+      ]
+    },
+    "pull-request-target-activity-types": {
+      "sequence": {
+        "item-type": "pull-request-target-activity-type"
+      }
+    },
+    "pull-request-target-mapping": {
+      "mapping": {
+        "properties": {
+          "branches": {
+            "type": "event-branches"
+          },
+          "branches-ignore": {
+            "type": "event-branches-ignore"
+          },
+          "paths": {
+            "type": "event-paths"
+          },
+          "paths-ignore": {
+            "type": "event-paths-ignore"
+          },
+          "types": {
+            "type": "pull-request-target-activity"
+          }
+        }
+      }
+    },
+    "pull-request-target-string": {
+      "string": {
+        "constant": "pull_request_target"
+      }
+    },
+    "push": {
+      "one-of": [
+        "null",
+        "push-mapping"
+      ]
+    },
+    "push-mapping": {
+      "mapping": {
+        "properties": {
+          "branches": {
+            "type": "event-branches"
+          },
+          "branches-ignore": {
+            "type": "event-branches-ignore"
+          },
+          "paths": {
+            "type": "event-paths"
+          },
+          "paths-ignore": {
+            "type": "event-paths-ignore"
+          },
+          "tags": {
+            "type": "event-tags"
+          },
+          "tags-ignore": {
+            "type": "event-tags-ignore"
+          }
+        }
+      }
+    },
+    "push-string": {
+      "string": {
+        "constant": "push"
+      }
+    },
+    "registry-package": {
+      "one-of": [
+        "null",
+        "registry-package-mapping"
+      ]
+    },
+    "registry-package-activity": {
+      "one-of": [
+        "registry-package-activity-type",
+        "registry-package-activity-types"
+      ]
+    },
+    "registry-package-activity-type": {
+      "allowed-values": [
+        "published",
+        "updated"
+      ]
+    },
+    "registry-package-activity-types": {
+      "sequence": {
+        "item-type": "registry-package-activity-type"
+      }
+    },
+    "registry-package-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "registry-package-activity"
+          }
+        }
+      }
+    },
+    "registry-package-string": {
+      "string": {
+        "constant": "registry_package"
+      }
+    },
+    "regular-step": {
+      "mapping": {
+        "properties": {
+          "continue-on-error": {
+            "type": "step-continue-on-error"
+          },
+          "env": {
+            "type": "step-env"
+          },
+          "id": {
+            "type": "step-id"
+          },
+          "if": {
+            "type": "step-if"
+          },
+          "name": {
+            "type": "step-name"
+          },
+          "timeout-minutes": {
+            "type": "step-timeout-minutes"
+          },
+          "uses": {
+            "type": "string-strategy-context",
+            "required": true
+          },
+          "with": {
+            "type": "step-with"
+          }
+        }
+      }
+    },
+    "release": {
+      "one-of": [
+        "null",
+        "release-mapping"
+      ]
+    },
+    "release-activity": {
+      "one-of": [
+        "release-activity-type",
+        "release-activity-types"
+      ]
+    },
+    "release-activity-type": {
+      "allowed-values": [
+        "published",
+        "unpublished",
+        "created",
+        "edited",
+        "deleted",
+        "prereleased",
+        "released"
+      ]
+    },
+    "release-activity-types": {
+      "sequence": {
+        "item-type": "release-activity-type"
+      }
+    },
+    "release-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "release-activity"
+          }
+        }
+      }
+    },
+    "release-string": {
+      "string": {
+        "constant": "release"
+      }
+    },
+    "repository-dispatch": {
+      "one-of": [
+        "null",
+        "repository-dispatch-mapping"
+      ]
+    },
+    "repository-dispatch-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "sequence-of-non-empty-string"
+          }
+        }
+      }
+    },
+    "repository-dispatch-string": {
+      "string": {
+        "constant": "branch_protection_rule"
+      }
+    },
+    "run-name": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "gitea",
+        "env"
+      ],
+      "string": {}
+    },
+    "run-step": {
+      "mapping": {
+        "properties": {
+          "continue-on-error": {
+            "type": "step-continue-on-error"
+          },
+          "env": {
+            "type": "step-env"
+          },
+          "id": {
+            "type": "step-id"
+          },
+          "if": {
+            "type": "step-if"
+          },
+          "name": {
+            "type": "step-name"
+          },
+          "run": {
+            "type": "string-steps-context",
+            "required": true
+          },
+          "shell": {
+            "type": "shell"
+          },
+          "timeout-minutes": {
+            "type": "step-timeout-minutes"
+          },
+          "working-directory": {
+            "type": "string-steps-context"
+          }
+        }
+      }
+    },
+    "runs-on": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string",
+        "runs-on-mapping"
+      ]
+    },
+    "runs-on-labels": {
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string"
+      ]
+    },
+    "runs-on-mapping": {
+      "mapping": {
+        "properties": {
+          "group": {
+            "type": "non-empty-string"
+          },
+          "labels": {
+            "type": "runs-on-labels"
+          }
+        }
+      }
+    },
+    "scalar-needs-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "scalar-needs-context-with-secrets": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "secrets",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "schedule": {
+      "sequence": {
+        "item-type": "cron-mapping"
+      }
+    },
+    "schedule-string": {
+      "string": {
+        "constant": "schedule"
+      }
+    },
+    "sequence-of-non-empty-string": {
+      "sequence": {
+        "item-type": "non-empty-string"
+      }
+    },
+    "services": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "services-container"
+      }
+    },
+    "services-container": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "non-empty-string",
+        "container-mapping"
+      ]
+    },
+    "shell": {
+      "string": {}
+    },
+    "status": {
+      "null": {}
+    },
+    "status-string": {
+      "string": {
+        "constant": "status"
+      }
+    },
+    "step-continue-on-error": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "boolean": {}
+    },
+    "step-env": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "string"
+      }
+    },
+    "step-id": {
+      "string": {}
+    },
+    "step-if": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "always(0,0)",
+        "failure(0,0)",
+        "cancelled(0,0)",
+        "success(0,0)",
+        "hashFiles(1,255)",
+        "gitea",
+        "env",
+        "secrets"
+      ],
+      "string": {
+        "is-expression": true
+      }
+    },
+    "step-if-result": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "strategy",
+        "matrix",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "always(0,0)",
+        "failure(0,0)",
+        "cancelled(0,0)",
+        "success(0,0)",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "null",
+        "boolean",
+        "number",
+        "string",
+        "sequence",
+        "mapping"
+      ]
+    },
+    "step-name": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "string": {}
+    },
+    "step-timeout-minutes": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "number": {}
+    },
+    "step-uses": {
+      "string": {}
+    },
+    "step-with": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "string"
+      }
+    },
+    "steps": {
+      "sequence": {
+        "item-type": "steps-item"
+      }
+    },
+    "steps-item": {
+      "one-of": [
+        "run-step",
+        "regular-step"
+      ]
+    },
+    "strategy": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "gitea",
+        "env"
+      ],
+      "mapping": {
+        "properties": {
+          "fail-fast": {
+            "type": "boolean"
+          },
+          "matrix": {
+            "type": "matrix"
+          },
+          "max-parallel": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "string-needs-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "gitea",
+        "env"
+      ],
+      "string": {}
+    },
+    "string-runner-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "gitea",
+        "env"
+      ],
+      "string": {}
+    },
+    "string-runner-context-no-secrets": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "gitea",
+        "env"
+      ],
+      "string": {}
+    },
+    "string-steps-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "secrets",
+        "steps",
+        "job",
+        "runner",
+        "env",
+        "hashFiles(1,255)",
+        "gitea",
+        "env"
+      ],
+      "string": {}
+    },
+    "string-strategy-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "needs",
+        "strategy",
+        "matrix",
+        "gitea",
+        "env",
+        "secrets"
+      ],
+      "string": {}
+    },
+    "watch": {
+      "one-of": [
+        "null",
+        "watch-mapping"
+      ]
+    },
+    "watch-activity": {
+      "one-of": [
+        "watch-activity-type",
+        "watch-activity-types"
+      ]
+    },
+    "watch-activity-type": {
+      "allowed-values": [
+        "started"
+      ]
+    },
+    "watch-activity-types": {
+      "sequence": {
+        "item-type": "watch-activity-type"
+      }
+    },
+    "watch-mapping": {
+      "mapping": {
+        "properties": {
+          "types": {
+            "type": "watch-activity"
+          }
+        }
+      }
+    },
+    "watch-string": {
+      "string": {
+        "constant": "watch"
+      }
+    },
+    "workflow-call": {
+      "one-of": [
+        "null",
+        "workflow-call-mapping"
+      ]
+    },
+    "workflow-call-input-default": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "workflow-call-input-definition": {
+      "mapping": {
+        "properties": {
+          "default": {
+            "type": "workflow-call-input-default"
+          },
+          "description": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "workflow-call-input-type",
+            "required": true
+          }
+        }
+      }
+    },
+    "workflow-call-input-type": {
+      "one-of": [
+        "input-type-string",
+        "input-type-boolean",
+        "input-type-number"
+      ]
+    },
+    "workflow-call-inputs": {
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "workflow-call-input-definition"
+      }
+    },
+    "workflow-call-mapping": {
+      "mapping": {
+        "properties": {
+          "inputs": {
+            "type": "workflow-call-inputs"
+          },
+          "outputs": {
+            "type": "workflow-call-outputs"
+          },
+          "secrets": {
+            "type": "workflow-call-secrets"
+          }
+        }
+      }
+    },
+    "workflow-call-output-definition": {
+      "mapping": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "value": {
+            "type": "workflow-output-context",
+            "required": true
+          }
+        }
+      }
+    },
+    "workflow-call-output-name": {
+      "string": {}
+    },
+    "workflow-call-outputs": {
+      "mapping": {
+        "loose-key-type": "workflow-call-output-name",
+        "loose-value-type": "workflow-call-output-definition"
+      }
+    },
+    "workflow-call-secret-definition": {
+      "one-of": [
+        "null",
+        "workflow-call-secret-mapping-definition"
+      ]
+    },
+    "workflow-call-secret-mapping-definition": {
+      "mapping": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "workflow-call-secret-name": {
+      "string": {}
+    },
+    "workflow-call-secrets": {
+      "mapping": {
+        "loose-key-type": "workflow-call-secret-name",
+        "loose-value-type": "workflow-call-secret-definition"
+      }
+    },
+    "workflow-call-string": {
+      "string": {
+        "constant": "workflow_call"
+      }
+    },
+    "workflow-concurrency": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "gitea",
+        "env"
+      ],
+      "one-of": [
+        "string",
+        "concurrency-mapping"
+      ]
+    },
+    "workflow-defaults": {
+      "mapping": {
+        "properties": {
+          "run": {
+            "type": "workflow-defaults-run"
+          }
+        }
+      }
+    },
+    "workflow-defaults-run": {
+      "mapping": {
+        "properties": {
+          "shell": {
+            "type": "shell"
+          },
+          "working-directory": {
+            "type": "working-directory"
+          }
+        }
+      }
+    },
+    "workflow-description": {
+      "string": {}
+    },
+    "workflow-dispatch": {
+      "one-of": [
+        "null",
+        "workflow-dispatch-mapping"
+      ]
+    },
+    "workflow-dispatch-input": {
+      "mapping": {
+        "properties": {
+          "default": {
+            "type": "workflow-dispatch-input-default"
+          },
+          "description": {
+            "type": "string"
+          },
+          "options": {
+            "type": "sequence-of-non-empty-string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "workflow-dispatch-input-type"
+          }
+        }
+      }
+    },
+    "workflow-dispatch-input-default": {
+      "one-of": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "workflow-dispatch-input-name": {
+      "string": {}
+    },
+    "workflow-dispatch-input-type": {
+      "one-of": [
+        "input-type-string",
+        "input-type-boolean",
+        "input-type-number",
+        "input-type-environment",
+        "input-type-choice"
+      ]
+    },
+    "workflow-dispatch-inputs": {
+      "mapping": {
+        "loose-key-type": "workflow-dispatch-input-name",
+        "loose-value-type": "workflow-dispatch-input"
+      }
+    },
+    "workflow-dispatch-mapping": {
+      "mapping": {
+        "properties": {
+          "inputs": {
+            "type": "workflow-dispatch-inputs"
+          }
+        }
+      }
+    },
+    "workflow-dispatch-string": {
+      "string": {
+        "constant": "workflow_dispatch"
+      }
+    },
+    "workflow-env": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "secrets",
+        "gitea",
+        "env"
+      ],
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "string"
+      }
+    },
+    "workflow-job": {
+      "mapping": {
+        "properties": {
+          "concurrency": {
+            "type": "job-concurrency"
+          },
+          "if": {
+            "type": "job-if"
+          },
+          "name": {
+            "type": "string-strategy-context"
+          },
+          "needs": {
+            "type": "needs"
+          },
+          "permissions": {
+            "type": "permissions"
+          },
+          "secrets": {
+            "type": "workflow-job-secrets"
+          },
+          "strategy": {
+            "type": "strategy"
+          },
+          "uses": {
+            "type": "string-strategy-context",
+            "required": true
+          },
+          "with": {
+            "type": "workflow-job-with"
+          }
+        }
+      }
+    },
+    "workflow-job-secrets": {
+      "one-of": [
+        "workflow-job-secrets-mapping",
+        "workflow-job-secrets-inherit"
+      ]
+    },
+    "workflow-job-secrets-inherit": {
+      "string": {
+        "constant": "inherit"
+      }
+    },
+    "workflow-job-secrets-mapping": {
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "scalar-needs-context-with-secrets"
+      }
+    },
+    "workflow-job-with": {
+      "mapping": {
+        "loose-key-type": "non-empty-string",
+        "loose-value-type": "scalar-needs-context"
+      }
+    },
+    "workflow-name": {
+      "string": {}
+    },
+    "workflow-output-context": {
+      "context": [
+        "github",
+        "inputs",
+        "vars",
+        "jobs",
+        "gitea",
+        "env"
+      ],
+      "string": {}
+    },
+    "workflow-root": {
+      "mapping": {
+        "properties": {
+          "concurrency": {
+            "type": "workflow-concurrency"
+          },
+          "defaults": {
+            "type": "workflow-defaults"
+          },
+          "description": {
+            "type": "workflow-description"
+          },
+          "env": {
+            "type": "workflow-env"
+          },
+          "jobs": {
+            "type": "jobs",
+            "required": true
+          },
+          "name": {
+            "type": "workflow-name"
+          },
+          "on": {
+            "type": "on"
+          },
+          "permissions": {
+            "type": "permissions"
+          },
+          "run-name": {
+            "type": "run-name"
+          }
+        }
+      }
+    },
+    "workflow-root-strict": {
+      "mapping": {
+        "properties": {
+          "concurrency": {
+            "type": "workflow-concurrency"
+          },
+          "defaults": {
+            "type": "workflow-defaults"
+          },
+          "description": {
+            "type": "workflow-description"
+          },
+          "env": {
+            "type": "workflow-env"
+          },
+          "jobs": {
+            "type": "jobs",
+            "required": true
+          },
+          "name": {
+            "type": "workflow-name"
+          },
+          "on": {
+            "type": "on-strict",
+            "required": true
+          },
+          "permissions": {
+            "type": "permissions"
+          },
+          "run-name": {
+            "type": "run-name"
+          }
+        }
+      }
+    },
+    "workflow-run": {
+      "one-of": [
+        "null",
+        "workflow-run-mapping"
+      ]
+    },
+    "workflow-run-activity": {
+      "one-of": [
+        "workflow-run-activity-type",
+        "workflow-run-activity-types"
+      ]
+    },
+    "workflow-run-activity-type": {
+      "allowed-values": [
+        "requested",
+        "completed",
+        "in_progress"
+      ]
+    },
+    "workflow-run-activity-types": {
+      "sequence": {
+        "item-type": "workflow-run-activity-type"
+      }
+    },
+    "workflow-run-mapping": {
+      "mapping": {
+        "properties": {
+          "branches": {
+            "type": "event-branches"
+          },
+          "branches-ignore": {
+            "type": "event-branches-ignore"
+          },
+          "types": {
+            "type": "workflow-run-activity"
+          },
+          "workflows": {
+            "type": "workflow-run-workflows"
+          }
+        }
+      }
+    },
+    "workflow-run-string": {
+      "string": {
+        "constant": "workflow_run"
+      }
+    },
+    "workflow-run-workflows": {
+      "one-of": [
+        "non-empty-string",
+        "sequence-of-non-empty-string"
+      ]
+    },
+    "working-directory": {
+      "string": {}
+    }
+  }
+}

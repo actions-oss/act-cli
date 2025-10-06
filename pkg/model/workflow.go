@@ -69,15 +69,15 @@ func (w *Workflow) OnEvent(event string) interface{} {
 }
 
 func (w *Workflow) UnmarshalYAML(node *yaml.Node) error {
+	if err := resolveAliases(node); err != nil {
+		return err
+	}
 	// Validate the schema before deserializing it into our model
 	if err := (&schema.Node{
 		Definition: "workflow-root",
 		Schema:     schema.GetWorkflowSchema(),
 	}).UnmarshalYAML(node); err != nil {
 		return errors.Join(err, fmt.Errorf("actions YAML Schema Validation Error detected:\nFor more information, see: https://actions-oss.github.io/act-docs/usage/schema.html"))
-	}
-	if err := resolveAliases(node); err != nil {
-		return err
 	}
 	type WorkflowDefault Workflow
 	return node.Decode((*WorkflowDefault)(w))
@@ -86,15 +86,15 @@ func (w *Workflow) UnmarshalYAML(node *yaml.Node) error {
 type WorkflowStrict Workflow
 
 func (w *WorkflowStrict) UnmarshalYAML(node *yaml.Node) error {
+	if err := resolveAliases(node); err != nil {
+		return err
+	}
 	// Validate the schema before deserializing it into our model
 	if err := (&schema.Node{
 		Definition: "workflow-root-strict",
 		Schema:     schema.GetWorkflowSchema(),
 	}).UnmarshalYAML(node); err != nil {
 		return errors.Join(err, fmt.Errorf("actions YAML Strict Schema Validation Error detected:\nFor more information, see: https://nektosact.com/usage/schema.html"))
-	}
-	if err := resolveAliases(node); err != nil {
-		return err
 	}
 	type WorkflowDefault Workflow
 	return node.Decode((*WorkflowDefault)(w))

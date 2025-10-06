@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rhysd/actionlint"
+	exprparser "github.com/actions-oss/act-cli/internal/expr"
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,6 +21,87 @@ var workflowSchema string
 var actionSchema string
 
 var functions = regexp.MustCompile(`^([a-zA-Z0-9_]+)\(([0-9]+),([0-9]+|MAX)\)$`)
+
+type ValidationKind int
+
+const (
+	ValidationKindFatal ValidationKind = iota
+	ValidationKindWarning
+	ValidationKindInvalidProperty
+	ValidationKindMismatched
+	ValidationKindMissingProperty
+)
+
+type Location struct {
+	Line   int
+	Column int
+}
+
+type ValidationError struct {
+	Kind ValidationKind
+	Location
+	Message string
+}
+
+func (e ValidationError) Error() string {
+	return fmt.Sprintf("Line: %d Column %d: %s", e.Line, e.Column, e.Message)
+}
+
+type ValidationErrorCollection struct {
+	Errors      []ValidationError
+	Collections []ValidationErrorCollection
+}
+
+func indent(builder *strings.Builder, in string) {
+	for _, v := range strings.Split(in, "\n") {
+		if v != "" {
+			builder.WriteString("  ")
+			builder.WriteString(v)
+		}
+		builder.WriteString("\n")
+	}
+}
+
+func (c ValidationErrorCollection) Error() string {
+	var builder strings.Builder
+	for _, e := range c.Errors {
+		if builder.Len() > 0 {
+			builder.WriteString("\n")
+		}
+		builder.WriteString(e.Error())
+	}
+	for _, e := range c.Collections {
+		if builder.Len() > 0 {
+			builder.WriteString("\n")
+		}
+		indent(&builder, e.Error())
+	}
+	return builder.String()
+}
+
+func (c *ValidationErrorCollection) AddError(err ValidationError) {
+	c.Errors = append(c.Errors, err)
+}
+
+func AsValidationErrorCollection(err error) *ValidationErrorCollection {
+	if col, ok := err.(ValidationErrorCollection); ok {
+		return &col
+	}
+	if col, ok := err.(*ValidationErrorCollection); ok {
+		return col
+	}
+	if e, ok := err.(ValidationError); ok {
+		return &ValidationErrorCollection{
+			Errors: []ValidationError{e},
+		}
+	}
+	if e, ok := err.(*ValidationError); ok {
+		return &ValidationErrorCollection{
+			Errors: []ValidationError{*e},
+		}
+	}
+	return nil
+}
 
 type Schema struct {
 	Definitions map[string]Definition
@@ -50,26 +131,26 @@ func (s *Schema) GetDefinition(name string) Definition {
 }
 
 type Definition struct {
-	Context       []string
-	Mapping       *MappingDefinition
-	Sequence      *SequenceDefinition
-	OneOf         *[]string `json:"one-of"`
-	AllowedValues *[]string `json:"allowed-values"`
-	String        *StringDefinition
-	Number        *NumberDefinition
-	Boolean       *BooleanDefinition
-	Null          *NullDefinition
+	Context       []string            `json:"context,omitempty"`
+	Mapping       *MappingDefinition  `json:"mapping,omitempty"`
+	Sequence      *SequenceDefinition `json:"sequence,omitempty"`
+	OneOf         *[]string           `json:"one-of,omitempty"`
+	AllowedValues *[]string           `json:"allowed-values,omitempty"`
+	String        *StringDefinition   `json:"string,omitempty"`
+	Number        *NumberDefinition   `json:"number,omitempty"`
+	Boolean       *BooleanDefinition  `json:"boolean,omitempty"`
+	Null          *NullDefinition     `json:"null,omitempty"`
 }
 
 type MappingDefinition struct {
-	Properties     map[string]MappingProperty
-	LooseKeyType   string `json:"loose-key-type"`
-	LooseValueType string `json:"loose-value-type"`
+	Properties     map[string]MappingProperty `json:"properties,omitempty"`
+	LooseKeyType   string                     `json:"loose-key-type,omitempty"`
+	LooseValueType string                     `json:"loose-value-type,omitempty"`
 }
 
 type MappingProperty struct {
-	Type     string
-	Required bool
+	Type     string `json:"type,omitempty"`
+	Required bool   `json:"required,omitempty"`
 }
 
 func (s *MappingProperty) UnmarshalJSON(data []byte) error {
@@ -85,8 +166,8 @@ type SequenceDefinition struct {
 }
 
 type StringDefinition struct {
-	Constant     string
-	IsExpression bool `json:"is-expression"`
+	Constant     string `json:"constant,omitempty"`
+	IsExpression bool   `json:"is-expression,omitempty"`
 }
 
 type NumberDefinition struct {
@@ -111,23 +192,22 @@ func GetActionSchema() *Schema {
 }
 
 type Node struct {
-	Definition string
-	Schema     *Schema
-	Context    []string
+	RestrictEval bool
+	Definition   string
+	Schema       *Schema
+	Context      []string
 }
 
 type FunctionInfo struct {
-	name string
-	min  int
-	max  int
+	Name string
+	Min  int
+	Max  int
 }
 
-func (s *Node) checkSingleExpression(exprNode actionlint.ExprNode) error {
+func (s *Node) checkSingleExpression(exprNode exprparser.Node) error {
 	if len(s.Context) == 0 {
-		switch exprNode.Token().Kind {
-		case actionlint.TokenKindInt:
-		case actionlint.TokenKindFloat:
-		case actionlint.TokenKindString:
+		switch exprNode.(type) {
+		case *exprparser.ValueNode:
 			return nil
 		default:
 			return fmt.Errorf("expressions are not allowed here")
@@ -137,42 +217,44 @@ func (s *Node) checkSingleExpression(exprNode actionlint.ExprNode) error {
 	funcs := s.GetFunctions()
 
 	var err error
-	actionlint.VisitExprNode(exprNode, func(node, _ actionlint.ExprNode, entering bool) {
-		if funcCallNode, ok := node.(*actionlint.FuncCallNode); entering && ok {
-			for _, v := range *funcs {
-				if strings.EqualFold(funcCallNode.Callee, v.name) {
-					if v.min > len(funcCallNode.Args) {
-						err = errors.Join(err, fmt.Errorf("missing parameters for %s expected >= %v got %v", funcCallNode.Callee, v.min, len(funcCallNode.Args)))
+	exprparser.VisitNode(exprNode, func(node exprparser.Node) {
+		if funcCallNode, ok := node.(*exprparser.FunctionNode); ok {
+			for _, v := range funcs {
+				if strings.EqualFold(funcCallNode.Name, v.Name) {
+					if v.Min > len(funcCallNode.Args) {
+						err = errors.Join(err, fmt.Errorf("missing parameters for %s expected >= %v got %v", funcCallNode.Name, v.Min, len(funcCallNode.Args)))
 					}
-					if v.max < len(funcCallNode.Args) {
-						err = errors.Join(err, fmt.Errorf("too many parameters for %s expected <= %v got %v", funcCallNode.Callee, v.max, len(funcCallNode.Args)))
+					if v.Max < len(funcCallNode.Args) {
+						err = errors.Join(err, fmt.Errorf("too many parameters for %s expected <= %v got %v", funcCallNode.Name, v.Max, len(funcCallNode.Args)))
 					}
 					return
 				}
 			}
-			err = errors.Join(err, fmt.Errorf("unknown Function Call %s", funcCallNode.Callee))
+			err = errors.Join(err, fmt.Errorf("unknown Function Call %s", funcCallNode.Name))
 		}
-		if varNode, ok := node.(*actionlint.VariableNode); entering && ok {
-			for _, v := range s.Context {
-				if strings.EqualFold(varNode.Name, v) {
-					return
+		if varNode, ok := node.(*exprparser.ValueNode); ok && varNode.Kind == exprparser.TokenKindNamedValue {
+			if str, ok := varNode.Value.(string); ok {
+				for _, v := range s.Context {
+					if strings.EqualFold(str, v) {
+						return
+					}
 				}
 			}
-			err = errors.Join(err, fmt.Errorf("unknown Variable Access %s", varNode.Name))
+			err = errors.Join(err, fmt.Errorf("unknown Variable Access %v", varNode.Value))
 		}
 	})
 	return err
 }
 
-func (s *Node) GetFunctions() *[]FunctionInfo {
-	funcs := &[]FunctionInfo{}
-	AddFunction(funcs, "contains", 2, 2)
-	AddFunction(funcs, "endsWith", 2, 2)
-	AddFunction(funcs, "format", 1, 255)
-	AddFunction(funcs, "join", 1, 2)
-	AddFunction(funcs, "startsWith", 2, 2)
-	AddFunction(funcs, "toJson", 1, 1)
-	AddFunction(funcs, "fromJson", 1, 1)
+func (s *Node) GetFunctions() []FunctionInfo {
+	funcs := []FunctionInfo{}
+	AddFunction(&funcs, "contains", 2, 2)
+	AddFunction(&funcs, "endsWith", 2, 2)
+	AddFunction(&funcs, "format", 1, 255)
+	AddFunction(&funcs, "join", 1, 2)
+	AddFunction(&funcs, "startsWith", 2, 2)
+	AddFunction(&funcs, "toJson", 1, 1)
+	AddFunction(&funcs, "fromJson", 1, 1)
 	for _, v := range s.Context {
 		i := strings.Index(v, "(")
 		if i == -1 {
@@ -189,17 +271,32 @@ func (s *Node) GetFunctions() *[]FunctionInfo {
 			} else {
 				maxParameters, _ = strconv.ParseInt(maxParametersRaw, 10, 32)
 			}
-			*funcs = append(*funcs, FunctionInfo{
-				name: functionName,
-				min:  int(minParameters),
-				max:  int(maxParameters),
+			funcs = append(funcs, FunctionInfo{
+				Name: functionName,
+				Min:  int(minParameters),
+				Max:  int(maxParameters),
 			})
 		}
 	}
 	return funcs
 }
 
+func exprEnd(expr string) int {
+	var inQuotes bool
+	for i, v := range expr {
+		if v == '\'' {
+			inQuotes = !inQuotes
+		} else if !inQuotes && i+1 < len(expr) && expr[i:i+2] == "}}" {
+			return i
+		}
+	}
+	return -1
+}
+
 func (s *Node) checkExpression(node *yaml.Node) (bool, error) {
+	if s.RestrictEval {
+		return false, nil
+	}
 	val := node.Value
 	hadExpr := false
 	var err error
@@ -211,35 +308,38 @@ func (s *Node) checkExpression(node *yaml.Node) (bool, error) {
 		}
 		hadExpr = true
 
-		parser := actionlint.NewExprParser()
-		lexer := actionlint.NewExprLexer(val)
-		exprNode, parseErr := parser.Parse(lexer)
+		j := exprEnd(val)
+
+		exprNode, parseErr := exprparser.Parse(val[:j])
 		if parseErr != nil {
-			err = errors.Join(err, fmt.Errorf("%sFailed to parse: %s", formatLocation(node), parseErr.Message))
+			err = errors.Join(err, ValidationError{
+				Location: toLocation(node),
+				Message:  fmt.Sprintf("failed to parse: %s", parseErr.Error()),
+			})
 			continue
 		}
-		val = val[lexer.Offset():]
+		val = val[j+2:]
 		cerr := s.checkSingleExpression(exprNode)
 		if cerr != nil {
-			err = errors.Join(err, fmt.Errorf("%s%w", formatLocation(node), cerr))
+			err = errors.Join(err, ValidationError{
+				Location: toLocation(node),
+				Message:  cerr.Error(),
+			})
 		}
 	}
 }
 
 func AddFunction(funcs *[]FunctionInfo, s string, i1, i2 int) {
 	*funcs = append(*funcs, FunctionInfo{
-		name: s,
-		min:  i1,
-		max:  i2,
+		Name: s,
+		Min:  i1,
+		Max:  i2,
 	})
 }
 
 func (s *Node) UnmarshalYAML(node *yaml.Node) error {
 	if node != nil && node.Kind == yaml.DocumentNode {
 		return s.UnmarshalYAML(node.Content[0])
-	}
-	if node.Kind == yaml.AliasNode {
-		node = node.Alias
 	}
 	def := s.Schema.GetDefinition(s.Definition)
 	if s.Context == nil {
@@ -261,8 +361,8 @@ func (s *Node) UnmarshalYAML(node *yaml.Node) error {
 		return s.checkOneOf(def, node)
 	}
 
-	if node.Kind != yaml.ScalarNode {
-		return fmt.Errorf("%sExpected a scalar got %v", formatLocation(node), getStringKind(node.Kind))
+	if err := assertKind(node, yaml.ScalarNode); err != nil {
+		return err
 	}
 
 	if def.String != nil {
@@ -280,50 +380,99 @@ func (s *Node) UnmarshalYAML(node *yaml.Node) error {
 				return nil
 			}
 		}
-		return fmt.Errorf("%sExpected one of %s got %s", formatLocation(node), strings.Join(*def.AllowedValues, ","), s)
+		return ValidationError{
+			Location: toLocation(node),
+			Message:  fmt.Sprintf("expected one of %s got %s", strings.Join(*def.AllowedValues, ","), s),
+		}
 	} else if def.Null != nil {
 		var myNull *byte
-		return node.Decode(&myNull)
+		if err := node.Decode(&myNull); err != nil {
+			return err
+		}
+		if myNull != nil {
+			return ValidationError{
+				Location: toLocation(node),
+				Message:  "invalid Null",
+			}
+		}
+		return nil
 	}
 	return errors.ErrUnsupported
 }
 
 func (s *Node) checkString(node *yaml.Node, def Definition) error {
+	// caller checks node type
 	val := node.Value
 	if def.String.Constant != "" && def.String.Constant != val {
-		return fmt.Errorf("%sExpected %s got %s", formatLocation(node), def.String.Constant, val)
+		return ValidationError{
+			Location: toLocation(node),
+			Message:  fmt.Sprintf("expected %s got %s", def.String.Constant, val),
+		}
 	}
-	if def.String.IsExpression {
-		parser := actionlint.NewExprParser()
-		lexer := actionlint.NewExprLexer(val + "}}")
-		exprNode, parseErr := parser.Parse(lexer)
+	if def.String.IsExpression && !s.RestrictEval {
+		exprNode, parseErr := exprparser.Parse(node.Value)
 		if parseErr != nil {
-			return fmt.Errorf("%sFailed to parse: %s", formatLocation(node), parseErr.Message)
+			return ValidationError{
+				Location: toLocation(node),
+				Message:  fmt.Sprintf("failed to parse: %s", parseErr.Error()),
+			}
 		}
 		cerr := s.checkSingleExpression(exprNode)
 		if cerr != nil {
-			return fmt.Errorf("%s%w", formatLocation(node), cerr)
+			return ValidationError{
+				Location: toLocation(node),
+				Message:  cerr.Error(),
+			}
 		}
 	}
 	return nil
 }
 
 func (s *Node) checkOneOf(def Definition, node *yaml.Node) error {
-	var allErrors error
+	var invalidProps = math.MaxInt
+	var bestMatches ValidationErrorCollection
 	for _, v := range *def.OneOf {
-		sub := &Node{
-			Definition: v,
-			Schema:     s.Schema,
-			Context:    append(append([]string{}, s.Context...), s.Schema.GetDefinition(v).Context...),
-		}
-
+		// Use helper to create child node
+		sub := s.childNode(v)
 		err := sub.UnmarshalYAML(node)
 		if err == nil {
 			return nil
 		}
-		allErrors = errors.Join(allErrors, fmt.Errorf("%sFailed to match %s: %w", formatLocation(node), v, err))
+		if col := AsValidationErrorCollection(err); col != nil {
+			var matched int
+			for _, e := range col.Errors {
+				if e.Kind == ValidationKindInvalidProperty {
+					matched++
+				}
+				if e.Kind == ValidationKindMismatched {
+					if math.MaxInt == invalidProps {
+						bestMatches.Collections = append(bestMatches.Collections, *col)
+						continue
+					}
+				}
+			}
+			if matched == 0 {
+				matched = math.MaxInt
+			}
+			if matched <= invalidProps {
+				if matched < invalidProps {
+					// clear, we have better matching ones
+					bestMatches.Collections = nil
+				}
+				bestMatches.Collections = append(bestMatches.Collections, *col)
+				invalidProps = matched
+			}
+			continue
+		}
+		bestMatches.Errors = append(bestMatches.Errors, ValidationError{
+			Location: toLocation(node),
+			Message:  fmt.Sprintf("failed to match %s: %s", v, err.Error()),
+		})
 	}
-	return allErrors
+	if len(bestMatches.Errors) > 0 || len(bestMatches.Collections) > 0 {
+		return bestMatches
+	}
+	return nil
 }
 
 func getStringKind(k yaml.Kind) string {
@@ -344,65 +493,216 @@ func getStringKind(k yaml.Kind) string {
 }
 
 func (s *Node) checkSequence(node *yaml.Node, def Definition) error {
-	if node.Kind != yaml.SequenceNode {
-		return fmt.Errorf("%sExpected a sequence got %v", formatLocation(node), getStringKind(node.Kind))
+	if err := assertKind(node, yaml.SequenceNode); err != nil {
+		return err
 	}
 	var allErrors error
 	for _, v := range node.Content {
-		allErrors = errors.Join(allErrors, (&Node{
-			Definition: def.Sequence.ItemType,
-			Schema:     s.Schema,
-			Context:    append(append([]string{}, s.Context...), s.Schema.GetDefinition(def.Sequence.ItemType).Context...),
-		}).UnmarshalYAML(v))
+		// Use helper to create child node
+		child := s.childNode(def.Sequence.ItemType)
+		allErrors = errors.Join(allErrors, child.UnmarshalYAML(v))
 	}
 	return allErrors
 }
 
-func formatLocation(node *yaml.Node) string {
-	return fmt.Sprintf("Line: %v Column %v: ", node.Line, node.Column)
+func toLocation(node *yaml.Node) Location {
+	return Location{Line: node.Line, Column: node.Column}
+}
+
+func assertKind(node *yaml.Node, kind yaml.Kind) error {
+	if node.Kind != kind {
+		return ValidationError{
+			Location: toLocation(node),
+			Kind:     ValidationKindMismatched,
+			Message:  fmt.Sprintf("expected a %s got %s", getStringKind(kind), getStringKind(node.Kind)),
+		}
+	}
+	return nil
+}
+
+func (s *Node) GetNestedNode(path ...string) *Node {
+	if len(path) == 0 {
+		return s
+	}
+	def := s.Schema.GetDefinition(s.Definition)
+	if def.Mapping != nil {
+		prop, ok := def.Mapping.Properties[path[0]]
+		if !ok {
+			if def.Mapping.LooseValueType == "" {
+				return nil
+			}
+			return s.childNode(def.Mapping.LooseValueType).GetNestedNode(path[1:]...)
+		}
+		return s.childNode(prop.Type).GetNestedNode(path[1:]...)
+	}
+	if def.Sequence != nil {
+		// OneOf Branching
+		if path[0] != "*" {
+			return nil
+		}
+		return s.childNode(def.Sequence.ItemType).GetNestedNode(path[1:]...)
+	}
+	if def.OneOf != nil {
+		for _, one := range *def.OneOf {
+			opt := s.childNode(one).GetNestedNode(path...)
+			if opt != nil {
+				return opt
+			}
+		}
+		return nil
+	}
+	return nil
 }
 
 func (s *Node) checkMapping(node *yaml.Node, def Definition) error {
-	if node.Kind != yaml.MappingNode {
-		return fmt.Errorf("%sExpected a mapping got %v", formatLocation(node), getStringKind(node.Kind))
+	if err := assertKind(node, yaml.MappingNode); err != nil {
+		return err
 	}
 	insertDirective := regexp.MustCompile(`\${{\s*insert\s*}}`)
-	var allErrors error
+	var allErrors ValidationErrorCollection
+	var hasKeyExpr bool
+	usedProperties := map[string]string{}
 	for i, k := range node.Content {
 		if i%2 == 0 {
 			if insertDirective.MatchString(k.Value) {
 				if len(s.Context) == 0 {
-					allErrors = errors.Join(allErrors, fmt.Errorf("%sinsert is not allowed here", formatLocation(k)))
+					allErrors.AddError(ValidationError{
+						Location: toLocation(node),
+						Message:  "insert is not allowed here",
+					})
 				}
+				hasKeyExpr = true
 				continue
 			}
 
 			isExpr, err := s.checkExpression(k)
 			if err != nil {
-				allErrors = errors.Join(allErrors, err)
+				allErrors.AddError(ValidationError{
+					Location: toLocation(node),
+					Message:  err.Error(),
+				})
+				hasKeyExpr = true
 				continue
 			}
 			if isExpr {
+				hasKeyExpr = true
 				continue
+			}
+			if org, ok := usedProperties[strings.ToLower(k.Value)]; !ok {
+				// duplicate check case insensitive
+				usedProperties[strings.ToLower(k.Value)] = k.Value
+				// schema check case sensitive
+				usedProperties[k.Value] = k.Value
+			} else {
+				allErrors.AddError(ValidationError{
+					// Kind:     ValidationKindInvalidProperty,
+					Location: toLocation(node),
+					Message:  fmt.Sprintf("duplicate property %v of %v", k.Value, org),
+				})
 			}
 			vdef, ok := def.Mapping.Properties[k.Value]
 			if !ok {
 				if def.Mapping.LooseValueType == "" {
-					allErrors = errors.Join(allErrors, fmt.Errorf("%sUnknown Property %v", formatLocation(k), k.Value))
+					allErrors.AddError(ValidationError{
+						Kind:     ValidationKindInvalidProperty,
+						Location: toLocation(node),
+						Message:  fmt.Sprintf("unknown property %v", k.Value),
+					})
 					continue
 				}
 				vdef = MappingProperty{Type: def.Mapping.LooseValueType}
 			}
 
-			if err := (&Node{
-				Definition: vdef.Type,
-				Schema:     s.Schema,
-				Context:    append(append([]string{}, s.Context...), s.Schema.GetDefinition(vdef.Type).Context...),
-			}).UnmarshalYAML(node.Content[i+1]); err != nil {
-				allErrors = errors.Join(allErrors, err)
+			// Use helper to create child node
+			child := s.childNode(vdef.Type)
+			if err := child.UnmarshalYAML(node.Content[i+1]); err != nil {
+				if col := AsValidationErrorCollection(err); col != nil {
+					allErrors.AddError(ValidationError{
+						Location: toLocation(node.Content[i+1]),
+						Message:  fmt.Sprintf("error found in value of key %s", k.Value),
+					})
+					allErrors.Collections = append(allErrors.Collections, *col)
+					continue
+				}
+				allErrors.AddError(ValidationError{
+					Location: toLocation(node),
+					Message:  err.Error(),
+				})
 				continue
 			}
 		}
 	}
+	if !hasKeyExpr {
+		for k, v := range def.Mapping.Properties {
+			if _, ok := usedProperties[k]; !ok && v.Required {
+				allErrors.AddError(ValidationError{
+					Location: toLocation(node),
+					Kind:     ValidationKindMissingProperty,
+					Message:  fmt.Sprintf("missing property %s", k),
+				})
+			}
+		}
+	}
+	if len(allErrors.Errors) == 0 && len(allErrors.Collections) == 0 {
+		return nil
+	}
 	return allErrors
+}
+
+func (s *Node) childNode(defName string) *Node {
+	return &Node{
+		RestrictEval: s.RestrictEval,
+		Definition:   defName,
+		Schema:       s.Schema,
+		Context:      append(append([]string{}, s.Context...), s.Schema.GetDefinition(defName).Context...),
+	}
+}
+
+func (s *Node) GetVariables() []string {
+	// Return only variable names (exclude function signatures)
+	vars := []string{}
+	for _, v := range s.Context {
+		if !strings.Contains(v, "(") {
+			vars = append(vars, v)
+		}
+	}
+	return vars
+}
+
+// ValidateExpression checks whether all variables and functions used in the expressions
+// inside the provided yaml.Node are present in the allowed sets. It returns false
+// if any variable or function is missing.
+func (s *Node) ValidateExpression(node *yaml.Node, allowedVars map[string]struct{}, allowedFuncs map[string]struct{}) bool {
+	val := node.Value
+	for {
+		i := strings.Index(val, "${{")
+		if i == -1 {
+			break
+		}
+		val = val[i+3:]
+		j := exprEnd(val)
+		exprNode, parseErr := exprparser.Parse(val[:j])
+		if parseErr != nil {
+			return false
+		}
+		val = val[j+2:]
+		// walk expression tree
+		exprparser.VisitNode(exprNode, func(n exprparser.Node) {
+			switch el := n.(type) {
+			case *exprparser.FunctionNode:
+				if _, ok := allowedFuncs[el.Name]; !ok {
+					// missing function
+					// use a panic to break out
+					panic("missing function")
+				}
+			case *exprparser.ValueNode:
+				if el.Kind == exprparser.TokenKindNamedValue {
+					if _, ok := allowedVars[el.Value.(string)]; !ok {
+						panic("missing variable")
+					}
+				}
+			}
+		})
+	}
+	return true
 }

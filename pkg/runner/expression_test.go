@@ -143,6 +143,9 @@ func TestEvaluateRunContext(t *testing.T) {
 			out, err := ee.evaluate(context.Background(), table.in, exprparser.DefaultStatusCheckNone)
 			if table.errMesg == "" {
 				assertObject.NoError(err, table.in)
+				if i, ok := table.out.(int); ok {
+					table.out = float64(i)
+				}
 				assertObject.Equal(table.out, out, table.in)
 			} else {
 				assertObject.Error(err, table.in)

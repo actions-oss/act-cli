@@ -444,6 +444,12 @@ func TestStep_ShellCommand(t *testing.T) {
 func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
 	yaml := `
     name: local-action-docker-url
+    on: push
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo Test
     `
 	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
 	assert.NoError(t, err, "read workflow should succeed")
@@ -452,16 +458,12 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
 
 	yaml = `
     name: local-action-docker-url
-    on: push
-    `
-	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
-	assert.NoError(t, err, "read workflow should succeed")
-	workflowDispatch = workflow.WorkflowDispatchConfig()
-	assert.Nil(t, workflowDispatch)
-
-	yaml = `
-    name: local-action-docker-url
     on: workflow_dispatch
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo Test
     `
 	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
 	assert.NoError(t, err, "read workflow should succeed")
@@ -472,6 +474,11 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
 	yaml = `
     name: local-action-docker-url
     on: [push, pull_request]
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo Test
     `
 	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
 	assert.NoError(t, err, "read workflow should succeed")
@@ -481,6 +488,11 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
 	yaml = `
     name: local-action-docker-url
     on: [push, workflow_dispatch]
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo Test
     `
 	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
 	assert.NoError(t, err, "read workflow should succeed")
@@ -493,6 +505,11 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
     on:
         - push
         - workflow_dispatch
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo Test
     `
 	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
 	assert.NoError(t, err, "read workflow should succeed")
@@ -505,6 +522,11 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
     on:
         push:
         pull_request:
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo Test
     `
 	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
 	assert.NoError(t, err, "read workflow should succeed")
@@ -527,6 +549,11 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
                     - info
                     - warning
                     - debug
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo Test
     `
 	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
 	assert.NoError(t, err, "read workflow should succeed")
