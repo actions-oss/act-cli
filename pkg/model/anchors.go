@@ -3,7 +3,7 @@ package model
 import (
 	"errors"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 func resolveAliasesExt(node *yaml.Node, path map[*yaml.Node]bool, skipCheck bool) error {

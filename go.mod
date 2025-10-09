@@ -28,8 +28,8 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/timshannon/bolthold v0.0.0-20240314194003-30aac6950928
 	go.etcd.io/bbolt v1.4.3
+	go.yaml.in/yaml/v4 v4.0.0-rc.2
 	golang.org/x/term v0.35.0
-	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.2
 )
 
@@ -103,6 +103,7 @@ require (
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/rhysd/actionlint => github.com/actions-oss/act-cli-actionlint v0.0.0-20250517100532-8f847f29ba36
