@@ -12,7 +12,7 @@ import (
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/schema"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // Workflow is the structure of the files in .github/workflows

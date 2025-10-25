@@ -8,7 +8,7 @@ import (
 	v2 "github.com/actions-oss/act-cli/internal/eval/v2"
 	exprparser "github.com/actions-oss/act-cli/internal/expr"
 	"github.com/actions-oss/act-cli/pkg/schema"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 type ExpressionEvaluator struct {

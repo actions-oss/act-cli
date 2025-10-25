@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/actions-oss/act-cli/pkg/schema"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // ActionRunsUsing is the type of runner for the action

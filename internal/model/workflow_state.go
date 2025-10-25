@@ -1,6 +1,6 @@
 package model
 
-import "gopkg.in/yaml.v3"
+import "go.yaml.in/yaml/v4"
 
 type JobStatus int
 
