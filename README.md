@@ -27,4 +27,3 @@ Want to contribute to act? Awesome! Check out the [contributing guidelines](CONT
 - Clone this repo `git clone git@github.com:actions-oss/act-cli.git`
 - Run unit tests with `make test`
 - Build and install: `make install`
-
