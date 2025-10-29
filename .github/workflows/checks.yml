@@ -60,7 +60,9 @@ jobs:
       # ACTIONS_RUNTIME_URL provided to every step, act does not override
       - name: Run Tests
         run: |
-          export ACTIONS_RUNTIME_URL=""
+          unset ACTIONS_RUNTIME_URL
+          unset ACTIONS_RESULTS_URL
+          unset ACTIONS_RUNTIME_TOKEN
           export GITHUB_REPOSITORY="${GITHUB_REPOSITORY#${SERVER_URL%/}/}"
           export ACT_REPOSITORY="${GITHUB_REPOSITORY#${SERVER_URL%/}/}"
           export ACT_OWNER="${ACT_OWNER#${SERVER_URL%/}/}"
