@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/docker/docker/api/types/image"
@@ -51,6 +52,22 @@ func TestImageExistsLocally(t *testing.T) {
 	imageDefaultArchExists, err := ImageExistsLocally(ctx, "node:16-buster-slim", "linux/amd64")
 	assert.Nil(t, err)
 	assert.Equal(t, true, imageDefaultArchExists)
+}
+
+func TestImageExistsLocallyQemu(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+	if _, ok := os.LookupEnv("NO_QEMU"); ok {
+		t.Skip("skipping test because QEMU is disabled")
+	}
+
+	ctx := context.Background()
+
+	// pull an image
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	assert.Nil(t, err)
+	cli.NegotiateAPIVersion(context.Background())
 
 	// Validate if another architecture platform can be pulled
 	readerArm64, err := cli.ImagePull(ctx, "node:16-buster-slim", image.PullOptions{

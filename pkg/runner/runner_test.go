@@ -692,6 +692,9 @@ func TestRunDifferentArchitecture(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
+	if _, ok := os.LookupEnv("NO_QEMU"); ok {
+		t.Skip("skipping test because QEMU is disabled")
+	}
 
 	tjfi := TestJobFileInfo{
 		workdir:      workdir,

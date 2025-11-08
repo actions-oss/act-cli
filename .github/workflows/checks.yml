@@ -9,6 +9,7 @@ env:
   ACT_OWNER: ${{ github.repository_owner }}
   ACT_REPOSITORY: ${{ github.repository }}
   CGO_ENABLED: 0
+  NO_QEMU: 1
 
 jobs:
   lint:
@@ -43,6 +44,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - uses: actions/setup-go@v6
+        if: "!env.NO_QEMU"
         with:
           go-version-file: go.mod
           check-latest: true
