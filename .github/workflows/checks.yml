@@ -42,9 +42,9 @@ jobs:
         with:
           fetch-depth: 2
       - name: Set up QEMU
+        if: "!env.NO_QEMU"
         uses: docker/setup-qemu-action@v3
       - uses: actions/setup-go@v6
-        if: "!env.NO_QEMU"
         with:
           go-version-file: go.mod
           check-latest: true
