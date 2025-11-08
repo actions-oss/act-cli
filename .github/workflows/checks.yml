@@ -136,8 +136,8 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 20
-      - name: Install @actions/artifact
-        run: npm install @actions/artifact
+      - name: Install @actions/artifact@2.1.0
+        run: npm install @actions/artifact@2.1.0
       - uses: https://github.com/christopherHX/gitea-upload-artifact@v4
         with:
           name: go-module
