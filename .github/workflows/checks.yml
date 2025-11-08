@@ -138,6 +138,8 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
+            // We do not use features depending on GITHUB_API_URL so we can hardcode it to avoid the GHES no support error
+            process.env["GITHUB_SERVER_URL"] = "https://github.com";
             const {DefaultArtifactClient} = require('@actions/artifact');
             const aartifact = new DefaultArtifactClient();
             var artifacts = JSON.parse(process.env.ARTIFACTS);
