@@ -1,0 +1,144 @@
+name: checks
+on: [pull_request, workflow_dispatch]
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+env:
+  ACT_OWNER: ${{ github.repository_owner }}
+  ACT_REPOSITORY: ${{ github.repository }}
+  CGO_ENABLED: 0
+  NO_QEMU: 1
+  NO_EXTERNAL_IP: 1
+  DOOD: 1
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - uses: golangci/golangci-lint-action@v8.0.0
+        with:
+          version: v2.1.6
+      - uses: megalinter/megalinter/flavors/go@v9.1.0
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          GITHUB_STATUS_REPORTER: ${{ !env.ACT }}
+          GITHUB_COMMENT_REPORTER: ${{ !env.ACT }}
+
+  test-linux:
+    name: test-linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Set up QEMU
+        if: '!env.NO_QEMU'
+        uses: docker/setup-qemu-action@v3
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - uses: actions/cache@v4
+        if: ${{ !env.ACT }}
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Install gotestfmt
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.5.0
+      # Regressions by Gitea Actions CI Migration
+      # GITHUB_REPOSITORY contains the server url
+      # ACTIONS_RUNTIME_URL provided to every step, act does not override
+      - name: Run Tests
+        run: |
+          unset ACTIONS_RUNTIME_URL
+          unset ACTIONS_RESULTS_URL
+          unset ACTIONS_RUNTIME_TOKEN
+          export GITHUB_REPOSITORY="${GITHUB_REPOSITORY#${SERVER_URL%/}/}"
+          export ACT_REPOSITORY="${GITHUB_REPOSITORY#${SERVER_URL%/}/}"
+          export ACT_OWNER="${ACT_OWNER#${SERVER_URL%/}/}"
+          env
+          go test -json -v -cover -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic -timeout 20m ./... | gotestfmt -hide successful-packages,empty-packages 2>&1
+        env:
+          SERVER_URL: ${{ github.server_url }}
+      - name: Run act from cli
+        run: go run main.go -P ubuntu-latest=node:16-buster-slim -C ./pkg/runner/testdata/ -W ./basic/push.yml
+      - name: Run act from cli without docker support
+        run: go run -tags WITHOUT_DOCKER main.go -P ubuntu-latest=-self-hosted -C ./pkg/runner/testdata/ -W ./local-action-js/push.yml
+
+  snapshot:
+    name: snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - uses: actions/cache@v4
+        if: ${{ !env.ACT }}
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: GoReleaser
+        id: goreleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: v2
+          args: release --snapshot --clean
+      - name: Setup Node
+        continue-on-error: true
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+      - name: Install @actions/artifact@2.1.0
+        continue-on-error: true
+        run: npm install @actions/artifact@2.1.0
+      - name: Upload All
+        uses: actions/github-script@v8
+        continue-on-error: true
+        with:
+          script: |
+            // We do not use features depending on GITHUB_API_URL so we can hardcode it to avoid the GHES no support error
+            process.env["GITHUB_SERVER_URL"] = "https://github.com";
+            const {DefaultArtifactClient} = require('@actions/artifact');
+            const aartifact = new DefaultArtifactClient();
+            var artifacts = JSON.parse(process.env.ARTIFACTS);
+            for(var artifact of artifacts) {
+              if(artifact.type === "Binary") {
+                const {id, size} = await aartifact.uploadArtifact(
+                  // name of the artifact
+                  `${artifact.name}-${artifact.target}`,
+                  // files to include (supports absolute and relative paths)
+                  [artifact.path],
+                  process.cwd(),
+                  {
+                    // optional: how long to retain the artifact
+                    // if unspecified, defaults to repository/org retention settings (the limit of this value)
+                    retentionDays: 10
+                  }
+                );
+                console.log(`Created artifact with id: ${id} (bytes: ${size}`);
+              }
+            }
+        env:
+          ARTIFACTS: ${{ steps.goreleaser.outputs.artifacts }}
+      - name: Chocolatey
+        uses: ./.github/actions/choco
+        with:
+          version: v0.0.0-pr
