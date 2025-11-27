@@ -9,6 +9,9 @@ env:
   ACT_OWNER: ${{ github.repository_owner }}
   ACT_REPOSITORY: ${{ github.repository }}
   CGO_ENABLED: 0
+  NO_QEMU: 1
+  NO_EXTERNAL_IP: 1
+  DOOD: 1
 
 jobs:
   lint:
@@ -41,6 +44,7 @@ jobs:
         with:
           fetch-depth: 2
       - name: Set up QEMU
+        if: "!env.NO_QEMU"
         uses: docker/setup-qemu-action@v3
       - uses: actions/setup-go@v6
         with:
@@ -55,18 +59,25 @@ jobs:
             ${{ runner.os }}-go-
       - name: Install gotestfmt
         run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.5.0
+      # Regressions by Gitea Actions CI Migration
+      # GITHUB_REPOSITORY contains the server url
+      # ACTIONS_RUNTIME_URL provided to every step, act does not override
       - name: Run Tests
-        run: go test -json -v -cover -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic -timeout 20m ./... | gotestfmt -hide successful-packages,empty-packages 2>&1
+        run: |
+          unset ACTIONS_RUNTIME_URL
+          unset ACTIONS_RESULTS_URL
+          unset ACTIONS_RUNTIME_TOKEN
+          export GITHUB_REPOSITORY="${GITHUB_REPOSITORY#${SERVER_URL%/}/}"
+          export ACT_REPOSITORY="${GITHUB_REPOSITORY#${SERVER_URL%/}/}"
+          export ACT_OWNER="${ACT_OWNER#${SERVER_URL%/}/}"
+          env
+          go test -json -v -cover -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic -timeout 20m ./... | gotestfmt -hide successful-packages,empty-packages 2>&1
+        env:
+          SERVER_URL: ${{ github.server_url }}
       - name: Run act from cli
         run: go run main.go -P ubuntu-latest=node:16-buster-slim -C ./pkg/runner/testdata/ -W ./basic/push.yml
       - name: Run act from cli without docker support
         run: go run -tags WITHOUT_DOCKER main.go -P ubuntu-latest=-self-hosted -C ./pkg/runner/testdata/ -W ./local-action-js/push.yml
-      - name: Upload Codecov report
-        uses: codecov/codecov-action@v5
-        with:
-          files: coverage.txt
-          fail_ci_if_error: true # optional (default = false)
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-host:
     strategy:
@@ -75,6 +86,7 @@ jobs:
           - windows-latest
           - macos-latest
     name: test-host-${{matrix.os}}
+    if: vars.ENABLE_HOST_TESTS == '1'
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v5
@@ -95,6 +107,10 @@ jobs:
     name: snapshot
     runs-on: ubuntu-latest
     steps:
+      - uses: https://github.com/christopherHX/gitea-upload-artifact@v4
+        with:
+          name: go-module
+          path: go.mod
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
@@ -114,15 +130,25 @@ jobs:
           version: v2
           args: release --snapshot --clean
       - name: Setup Node
+        continue-on-error: true
         uses: actions/setup-node@v6
         with:
           node-version: 20
-      - name: Install @actions/artifact
-        run: npm install @actions/artifact
+      - name: Install @actions/artifact@2.1.0
+        continue-on-error: true
+        run: npm install @actions/artifact@2.1.0
+      - uses: https://github.com/christopherHX/gitea-upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: go-module
+          path: go.mod
       - name: Upload All
         uses: actions/github-script@v8
+        continue-on-error: true
         with:
           script: |
+            // We do not use features depending on GITHUB_API_URL so we can hardcode it to avoid the GHES no support error
+            process.env["GITHUB_SERVER_URL"] = "https://github.com";
             const {DefaultArtifactClient} = require('@actions/artifact');
             const aartifact = new DefaultArtifactClient();
             var artifacts = JSON.parse(process.env.ARTIFACTS);

@@ -1,0 +1,72 @@
+name: release
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release:
+    # TODO use environment to scope secrets
+    name: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - uses: actions/cache@v4
+        if: ${{ !env.ACT }}
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GORELEASER_GITHUB_TOKEN || github.token }}
+      - name: Winget
+        uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: nektos.act
+          installers-regex: '_Windows_\w+\.zip$'
+          token: ${{ secrets.WINGET_TOKEN }}
+        if: env.ENABLED
+        env:
+          ENABLED: ${{ secrets.WINGET_TOKEN && '1' || '' }}
+      - name: Chocolatey
+        uses: ./.github/actions/choco
+        with:
+          version: ${{ github.ref }}
+          apiKey: ${{ secrets.CHOCO_APIKEY }}
+          push: true
+        if: env.ENABLED
+        env:
+          ENABLED: ${{ secrets.CHOCO_APIKEY && '1' || ''  }}
+      # TODO use ssh deployment key
+      - name: GitHub CLI extension
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.CLI_GITHUB_TOKEN || secrets.GORELEASER_GITHUB_TOKEN }}
+          script: |
+            const mainRef = (await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: 'gh-act',
+              ref: 'heads/main',
+            })).data;
+            console.log(mainRef);
+            github.rest.git.createRef({
+              owner: 'nektos',
+              repo: 'gh-act',
+              ref: context.ref,
+              sha: mainRef.object.sha,
+            });
+        if: env.ENABLED
+        env:
+          ENABLED: ${{ (secrets.CLI_GITHUB_TOKEN || secrets.GORELEASER_GITHUB_TOKEN) && '1' || ''  }}

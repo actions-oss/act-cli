@@ -222,8 +222,8 @@ func findGitSlug(url string, githubInstance string) (string, string, error) {
 	}
 
 	if matches := matchesRegex(url,
-		regexp.MustCompile(`^https?://([^/]+)/(.+)/(.+?)(?:.git)?$`),
-		regexp.MustCompile(`([^/]+)[:/](.+)/(.+?)(?:.git)?$`),
+		regexp.MustCompile(`^https?://(?:[^/]+)/([^/]+)/([^/]+)(?:.git)?$`),
+		regexp.MustCompile(`([^/]+)[:/]([^/]+)/([^/]+)(?:.git)?$`),
 	); matches != nil {
 		return "GitHubEnterprise", fmt.Sprintf("%s/%s", matches[2], matches[3]), nil
 	}

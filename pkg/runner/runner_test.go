@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -329,11 +330,16 @@ func TestRunEvent(t *testing.T) {
 
 		// local remote action overrides
 		{workdir, "local-remote-action-overrides", "push", "", platforms, secrets},
+	}
 
-		// docker action on host executor
-		{workdir, "docker-action-host-env", "push", "", platforms, secrets},
-		// docker service on host executor
-		{workdir, "nginx-service-container-host-mode", "push", "", platforms, secrets},
+	if _, ok := os.LookupEnv("DOOD"); !ok {
+		// Does not work in Docker Out of Docker context, e.g. -v /var/run/docker.sock:/var/run/docker.sock
+		tables = append(tables, []TestJobFileInfo{
+			// docker action on host executor
+			{workdir, "docker-action-host-env", "push", "", platforms, secrets},
+			// docker service on host executor
+			{workdir, "nginx-service-container-host-mode", "push", "", platforms, secrets},
+		}...)
 	}
 
 	for _, table := range tables {
@@ -552,7 +558,6 @@ func TestRunEventHostEnvironment(t *testing.T) {
 		tables = append(tables, []TestJobFileInfo{
 			// Shells
 			{workdir, "shells/defaults", "push", "", platforms, secrets},
-			{workdir, "shells/pwsh", "push", "", platforms, secrets},
 			{workdir, "shells/bash", "push", "", platforms, secrets},
 			{workdir, "shells/python", "push", "", platforms, secrets},
 			{workdir, "shells/sh", "push", "", platforms, secrets},
@@ -599,6 +604,13 @@ func TestRunEventHostEnvironment(t *testing.T) {
 			{workdir, "evalenv", "push", "", platforms, secrets},
 			{workdir, "ensure-post-steps", "push", "Job 'second-post-step-should-fail' failed", platforms, secrets},
 		}...)
+
+		// No pwsh on current default container image
+		if pwsh, err := exec.LookPath("pwsh"); err == nil && pwsh != "" {
+			tables = append(tables, []TestJobFileInfo{
+				{workdir, "shells/pwsh", "push", "", platforms, secrets},
+			}...)
+		}
 	}
 	if runtime.GOOS == "windows" {
 		platforms := map[string]string{
