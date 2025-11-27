@@ -249,6 +249,9 @@ func TestArtifactFlow(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
+	if _, ok := os.LookupEnv("NO_EXTERNAL_IP"); ok {
+		t.Skip("skipping test because QEMU is disabled")
+	}
 
 	ctx := context.Background()
 

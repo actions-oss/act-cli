@@ -34,6 +34,7 @@ func TestFindGitSlug(t *testing.T) {
 		{"http://github.com/actions-oss/act-cli", "GitHub", "actions-oss/act-cli"},
 		{"git+ssh://git@github.com/owner/repo.git", "GitHub", "owner/repo"},
 		{"http://myotherrepo.com/act.git", "", "http://myotherrepo.com/act.git"},
+		{"https://gitea.com/actions-oss/act-cli.git", "GitHubEnterprise", "actions-oss/act-cli.git"},
 	}
 
 	for _, tt := range slugTests {

@@ -212,7 +212,8 @@ func matchesRegex(url string, matchers ...findStringSubmatcher) []string {
 	return nil
 }
 
-func findGitSlug(url string, githubInstance string) (string, string, error) {
+// TODO deprecate and remove githubInstance parameter
+func findGitSlug(url string, _ /* githubInstance */ string) (string, string, error) {
 	if matches := matchesRegex(url, codeCommitHTTPRegex, codeCommitSSHRegex); matches != nil {
 		return "CodeCommit", matches[2], nil
 	}
@@ -221,14 +222,13 @@ func findGitSlug(url string, githubInstance string) (string, string, error) {
 		return "GitHub", fmt.Sprintf("%s/%s", matches[1], matches[2]), nil
 	}
 
-	if githubInstance != "github.com" {
-		if matches := matchesRegex(url,
-			regexp.MustCompile(fmt.Sprintf(`^https?://%s/(.+)/(.+?)(?:.git)?$`, githubInstance)),
-			regexp.MustCompile(fmt.Sprintf(`%s[:/](.+)/(.+?)(?:.git)?$`, githubInstance)),
-		); matches != nil {
-			return "GitHubEnterprise", fmt.Sprintf("%s/%s", matches[1], matches[2]), nil
-		}
+	if matches := matchesRegex(url,
+		regexp.MustCompile(`^https?://(?:[^/]+)/([^/]+)/([^/]+)(?:.git)?$`),
+		regexp.MustCompile(`([^/]+)[:/]([^/]+)/([^/]+)(?:.git)?$`),
+	); matches != nil {
+		return "GitHubEnterprise", fmt.Sprintf("%s/%s", matches[1], matches[2]), nil
 	}
+
 	return "", url, nil
 }
 
