@@ -212,7 +212,8 @@ func matchesRegex(url string, matchers ...findStringSubmatcher) []string {
 	return nil
 }
 
-func findGitSlug(url string, githubInstance string) (string, string, error) {
+// TODO deprecate and remove githubInstance parameter
+func findGitSlug(url string, _ /* githubInstance */ string) (string, string, error) {
 	if matches := matchesRegex(url, codeCommitHTTPRegex, codeCommitSSHRegex); matches != nil {
 		return "CodeCommit", matches[2], nil
 	}
