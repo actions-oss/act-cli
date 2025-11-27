@@ -83,10 +83,6 @@ jobs:
     name: snapshot
     runs-on: ubuntu-latest
     steps:
-      - uses: https://github.com/christopherHX/gitea-upload-artifact@v4
-        with:
-          name: go-module
-          path: go.mod
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
@@ -113,11 +109,6 @@ jobs:
       - name: Install @actions/artifact@2.1.0
         continue-on-error: true
         run: npm install @actions/artifact@2.1.0
-      - uses: https://github.com/christopherHX/gitea-upload-artifact@v4
-        continue-on-error: true
-        with:
-          name: go-module
-          path: go.mod
       - name: Upload All
         uses: actions/github-script@v8
         continue-on-error: true
