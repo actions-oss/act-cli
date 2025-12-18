@@ -43,6 +43,18 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 2
+      - name: Cleanup Docker Engine
+        run: |
+          docker ps -a --format '{{ if eq (truncate .Names 4) "act-" }}
+          {{ .ID }}
+          {{end}}' | xargs -r docker rm -f || :
+          docker volume ls --format '{{ if eq (truncate .Name 4) "act-" }}
+          {{ .Name }}
+          {{ end }}' | xargs -r docker volume rm -f || :
+          docker images --format '{{ if eq (truncate .Repository 4) "act-" }}
+          {{ .ID }}
+          {{ end }}' | xargs -r docker rmi -f || :
+          docker images -q | xargs -r docker rmi || :
       - name: Set up QEMU
         if: '!env.NO_QEMU'
         uses: docker/setup-qemu-action@v3

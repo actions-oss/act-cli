@@ -97,6 +97,12 @@ func TestEvaluator_Raw(t *testing.T) {
 		{"contains(fromjson('[[3,5],[5,6]]').*[1], 6)", true},
 		{"contains(fromjson('[[3,5],[5,6]]').*[1], 3)", false},
 		{"contains(fromjson('[[3,5],[5,6]]').*[1], '6')", true},
+		{"case(6 == 6, 0, 1)", 0.0},
+		{"case(6 != 6, 0, 1)", 1.0},
+		{"case(6 != 6, 0, 'test')", "test"},
+		{"case(contains(fromjson('[\"ac\"]'), 'a'), 0, 'test')", "test"},
+		{"case(0 == 1, 0, 2 == 2, 1, 0)", 1.0},
+		{"case(0 == 1, 0, 2 != 2, 1, 0)", 0.0},
 	}
 
 	for _, tt := range tests {
