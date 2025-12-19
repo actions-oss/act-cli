@@ -1,0 +1,19 @@
+on: push
+jobs:
+  test-symlinks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create symlink
+        run: |
+          mkdir action-dir
+          cat << 'EOF' > action-dir/action.yml
+          runs:
+            using: composite
+            steps:
+            - run: echo test
+              shell: bash
+          EOF
+          ln -s $PWD/action-dir ../action-sym
+      - run: cat ../action-sym/action.yml
+      - name: Verify symlink
+        uses: ./../action-sym

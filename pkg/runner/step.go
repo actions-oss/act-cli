@@ -362,12 +362,19 @@ func mergeIntoMapCaseInsensitive(target map[string]string, maps ...map[string]st
 	}
 }
 
-func symlinkJoin(filename, sym, parent string) (string, error) {
+func symlinkJoin(filename, sym string, parents ...string) (string, error) {
 	dir := path.Dir(filename)
 	dest := path.Join(dir, sym)
-	prefix := path.Clean(parent) + "/"
-	if strings.HasPrefix(dest, prefix) || prefix == "./" {
-		return dest, nil
+	var builder strings.Builder
+	for _, parent := range parents {
+		prefix := strings.TrimSuffix(path.Clean(parent), "/") + "/"
+		if strings.HasPrefix(dest, prefix) || prefix == "./" {
+			return dest, nil
+		}
+		if builder.Len() != 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(strings.ReplaceAll(dest, "'", "''"))
 	}
-	return "", fmt.Errorf("symlink tries to access file '%s' outside of '%s'", strings.ReplaceAll(dest, "'", "''"), strings.ReplaceAll(parent, "'", "''"))
+	return "", fmt.Errorf("symlink tries to access file '%s' outside of '%s'", strings.ReplaceAll(dest, "'", "''"), builder.String())
 }

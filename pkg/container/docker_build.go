@@ -4,6 +4,7 @@ package container
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -61,11 +62,8 @@ func NewDockerBuildExecutor(input NewDockerBuildExecutorInput) common.Executor {
 		logger.Debugf("Creating image from context dir '%s' with tag '%s' and platform '%s'", input.ContextDir, input.ImageTag, input.Platform)
 		resp, err := cli.ImageBuild(ctx, buildContext, options)
 
-		err = logDockerResponse(logger, resp.Body, err != nil)
-		if err != nil {
-			return err
-		}
-		return nil
+		err = errors.Join(err, logDockerResponse(logger, resp.Body, err != nil))
+		return err
 	}
 }
 func createBuildContext(ctx context.Context, contextDir string, relDockerfile string) (io.ReadCloser, error) {

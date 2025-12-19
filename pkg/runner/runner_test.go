@@ -330,6 +330,9 @@ func TestRunEvent(t *testing.T) {
 
 		// local remote action overrides
 		{workdir, "local-remote-action-overrides", "push", "", platforms, secrets},
+
+		// local folder symlink in ./../action-sym
+		{workdir, "uses-local-dot-dot-dir-symlink", "push", "", platforms, secrets},
 	}
 
 	if _, ok := os.LookupEnv("DOOD"); !ok {

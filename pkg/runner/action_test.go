@@ -141,6 +141,7 @@ runs:
 }
 
 func TestActionRunner(t *testing.T) {
+	remoteAction := newRemoteAction("org/repo/path@ref")
 	table := []struct {
 		name        string
 		step        actionStep
@@ -176,7 +177,8 @@ func TestActionRunner(t *testing.T) {
 						Using: "node16",
 					},
 				},
-				env: map[string]string{},
+				remoteAction: remoteAction,
+				env:          map[string]string{},
 			},
 			expectedEnv: map[string]string{"INPUT_KEY": "default value"},
 		},
@@ -216,7 +218,8 @@ func TestActionRunner(t *testing.T) {
 						Using: "node16",
 					},
 				},
-				env: map[string]string{},
+				remoteAction: remoteAction,
+				env:          map[string]string{},
 			},
 			expectedEnv: map[string]string{"STATE_name": "state value"},
 		},
@@ -227,7 +230,7 @@ func TestActionRunner(t *testing.T) {
 			ctx := context.Background()
 
 			cm := &containerMock{}
-			cm.Mock.On("CopyTarStream", ctx, "/var/run/act/actions/dir/", mock.Anything).Return(nil)
+			cm.Mock.On("CopyTarStream", ctx, "/var/run/act/actions/org-repo-path@ref/", mock.Anything).Return(nil)
 
 			cacheMock := &TestRepositoryCache{}
 			cacheMock.Mock.On("GetTarArchive", ctx, "", "", "").Return(io.NopCloser(io.MultiReader()))
@@ -241,12 +244,12 @@ func TestActionRunner(t *testing.T) {
 				return true
 			})
 
-			cm.On("Exec", []string{"node", "/var/run/act/actions/dir/path"}, envMatcher, "", "").Return(func(_ context.Context) error { return nil })
+			cm.On("Exec", []string{"node", "/var/run/act/actions/org-repo-path@ref/path"}, envMatcher, "", "").Return(func(_ context.Context) error { return nil })
 
 			tt.step.getRunContext().JobContainer = cm
 			tt.step.getRunContext().Config.ActionCache = cacheMock
 
-			err := runActionImpl(tt.step, "dir", newRemoteAction("org/repo/path@ref"))(ctx)
+			err := runActionImpl(tt.step)(ctx)
 
 			assert.Nil(t, err)
 			cm.AssertExpectations(t)
