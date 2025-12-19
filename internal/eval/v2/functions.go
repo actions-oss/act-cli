@@ -2,6 +2,7 @@ package v2
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/actions-oss/act-cli/internal/eval/functions"
@@ -163,6 +164,30 @@ func (Join) Evaluate(eval *Evaluator, args []exprparser.Node) (*EvaluationResult
 	return CreateIntermediateResult(eval.Context(), ""), nil
 }
 
+type Case struct {
+}
+
+func (Case) Evaluate(eval *Evaluator, args []exprparser.Node) (*EvaluationResult, error) {
+	if len(args)%2 == 0 {
+		return nil, errors.New("case function requires an odd number of arguments")
+	}
+
+	for i := 0; i < len(args)-1; i += 2 {
+		condition, err := eval.Evaluate(args[i])
+		if err != nil {
+			return nil, err
+		}
+		if condition.kind != ValueKindBoolean {
+			return nil, errors.New("case function conditions must evaluate to boolean")
+		}
+		if condition.IsTruthy() {
+			return eval.Evaluate(args[i+1])
+		}
+	}
+
+	return eval.Evaluate(args[len(args)-1])
+}
+
 func GetFunctions() CaseInsensitiveObject[Function] {
 	return CaseInsensitiveObject[Function](map[string]Function{
 		"fromjson":   &FromJSON{},
@@ -172,5 +197,6 @@ func GetFunctions() CaseInsensitiveObject[Function] {
 		"endswith":   &EndsWith{},
 		"format":     &Format{},
 		"join":       &Join{},
+		"case":       &Case{},
 	})
 }

@@ -345,3 +345,30 @@ func TestIsContinueOnError(t *testing.T) {
 	assertObject.False(continueOnError)
 	assertObject.NotNil(err)
 }
+
+func TestSymlinkJoin(t *testing.T) {
+	table := []struct {
+		from   string
+		target string
+		root   []string
+		result string
+		err    string
+	}{
+		{"/some/file/somewhere/action.yml", "../../../", []string{"/"}, "/", ""},
+		{"/some/file/somewhere/action.yml", "../../../var/lib/act/action.yml", []string{"/some/file/somewhere", "/var/lib/act"}, "/var/lib/act/action.yml", ""},
+		{"/some/file/somewhere/action.yml", "../../../var/lib/act/action.yml", []string{"/"}, "/var/lib/act/action.yml", ""},
+		{"/some/file/somewhere/action.yml", "../../var/lib/act/action.yml", []string{"/some/file/somewhere", "/var/lib/act"}, "", "Not allowed"},
+		{"/some/file/somewhere/action.yml", "../../var/lib/act/action.yml", []string{"/some/file", "/var/lib/act"}, "", "Not allowed"},
+		{"/some/file/somewhere/action.yml", "../../var/lib/act/action.yml", []string{"/some/", "/var/lib/act"}, "/some/var/lib/act/action.yml", ""},
+	}
+
+	for _, entry := range table {
+		result, err := symlinkJoin(entry.from, entry.target, entry.root...)
+		if entry.err == "" {
+			assert.NoError(t, err)
+		} else {
+			assert.Error(t, err, entry.err)
+		}
+		assert.Equal(t, entry.result, result)
+	}
+}

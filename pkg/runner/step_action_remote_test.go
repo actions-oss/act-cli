@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,8 +24,8 @@ func (sarm *stepActionRemoteMocks) readAction(_ context.Context, step *model.Ste
 	return args.Get(0).(*model.Action), args.Error(1)
 }
 
-func (sarm *stepActionRemoteMocks) runAction(step actionStep, actionDir string, remoteAction *remoteAction) common.Executor {
-	args := sarm.Called(step, actionDir, remoteAction)
+func (sarm *stepActionRemoteMocks) runAction(step actionStep) common.Executor {
+	args := sarm.Called(step)
 	return args.Get(0).(func(context.Context) error)
 }
 
@@ -200,11 +199,6 @@ func TestStepActionRemote(t *testing.T) {
 			}
 
 			cacheMock.Mock.On("Fetch", ctx, mock.AnythingOfType("string"), serverURL+"/remote/action", "v1", "").Return("someval")
-			suffixMatcher := func(suffix string) interface{} {
-				return mock.MatchedBy(func(actionDir string) bool {
-					return strings.HasSuffix(actionDir, suffix)
-				})
-			}
 
 			if tt.mocks.read {
 				sarm.Mock.On("readAction", sar.Step, "someval", "", mock.Anything, mock.Anything).Return(&model.Action{}, nil)
@@ -212,7 +206,7 @@ func TestStepActionRemote(t *testing.T) {
 			if tt.mocks.run {
 				remoteAction := newRemoteAction(sar.Step.Uses)
 				remoteAction.URL = serverURL
-				sarm.On("runAction", sar, suffixMatcher("act/remote-action@v1"), remoteAction).Return(func(_ context.Context) error { return tt.runError })
+				sarm.On("runAction", sar).Return(func(_ context.Context) error { return tt.runError })
 
 				cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(_ context.Context) error {
 					return nil
@@ -550,12 +544,14 @@ func TestStepActionRemotePost(t *testing.T) {
 			ctx := context.Background()
 
 			cm := &containerMock{}
+			cacheMock := &TestRepositoryCache{}
 
 			sar := &stepActionRemote{
 				env: map[string]string{},
 				RunContext: &RunContext{
 					Config: &Config{
 						GitHubInstance: "https://github.com",
+						ActionCache:    cacheMock,
 					},
 					JobContainer: cm,
 					Run: &model.Run{
@@ -570,8 +566,9 @@ func TestStepActionRemotePost(t *testing.T) {
 					IntraActionState: tt.IntraActionState,
 					nodeToolFullPath: "node",
 				},
-				Step:   tt.stepModel,
-				action: tt.actionModel,
+				Step:         tt.stepModel,
+				action:       tt.actionModel,
+				remoteAction: newRemoteAction(tt.stepModel.Uses),
 			}
 			sar.RunContext.ExprEval = sar.RunContext.NewExpressionEvaluator(ctx)
 
@@ -596,6 +593,10 @@ func TestStepActionRemotePost(t *testing.T) {
 
 				cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
 				cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
+
+				actionArchive := io.NopCloser(&bytes.Buffer{})
+				cacheMock.On("GetTarArchive", mock.Anything, "", "", "").Return(actionArchive, nil)
+				cm.On("CopyTarStream", mock.Anything, "/var/run/act/actions/remote-action@v1/", actionArchive).Return(nil)
 			}
 
 			err := sar.post()(ctx)
@@ -606,7 +607,7 @@ func TestStepActionRemotePost(t *testing.T) {
 					assert.Equal(t, value, sar.env[key])
 				}
 			}
-			// Enshure that StepResults is nil in this test
+			// Ensure that StepResults is nil in this test
 			assert.Equal(t, sar.RunContext.StepResults["post-step"], (*model.StepResult)(nil))
 			cm.AssertExpectations(t)
 		})

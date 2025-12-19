@@ -40,10 +40,18 @@ func (sal *stepActionLocal) main() common.Executor {
 			return nil
 		}
 
-		actionDir := filepath.Join(sal.getRunContext().Config.Workdir, sal.Step.Uses)
+		workdir := sal.getRunContext().Config.Workdir
+		actionDir := filepath.Join(workdir, sal.Step.Uses)
 
 		localReader := func(ctx context.Context) actionYamlReader {
-			_, cpath := getContainerActionPaths(sal.Step, path.Join(actionDir, ""), sal.RunContext)
+			// In case we want to limit resolving symlinks, folders are resolved by archive function
+			// _, cpath = sal.getContainerActionPathsExt(".")
+			roots := []string{
+				".", // Allow everything, other code permits it already
+				// path.Dir(cpath),                          // Allow RUNNER_WORKSPACE e.g. GITHUB_WORKSPACE/../
+				// sal.RunContext.JobContainer.GetActPath(), // Allow remote action folders
+			}
+			_, cpath := sal.getContainerActionPaths()
 			return func(filename string) (io.Reader, io.Closer, error) {
 				spath := path.Join(cpath, filename)
 				for i := 0; i < maxSymlinkDepth; i++ {
@@ -61,7 +69,7 @@ func (sal *stepActionLocal) main() common.Executor {
 						return nil, nil, err
 					}
 					if header.FileInfo().Mode()&os.ModeSymlink == os.ModeSymlink {
-						spath, err = symlinkJoin(spath, header.Linkname, cpath)
+						spath, err = symlinkJoin(spath, header.Linkname, roots...)
 						if err != nil {
 							return nil, nil, err
 						}
@@ -80,7 +88,7 @@ func (sal *stepActionLocal) main() common.Executor {
 
 		sal.action = actionModel
 
-		return sal.runAction(sal, actionDir, nil)(ctx)
+		return sal.runAction(sal)(ctx)
 	})
 }
 
@@ -118,10 +126,33 @@ func (sal *stepActionLocal) getActionModel() *model.Action {
 	return sal.action
 }
 
+func (sal *stepActionLocal) getContainerActionPathsExt(subPath string) (string, string) {
+	workdir := sal.RunContext.Config.Workdir
+	actionName := normalizePath(subPath)
+	containerActionDir := path.Join(sal.RunContext.JobContainer.ToContainerPath(workdir), actionName)
+	return actionName, containerActionDir
+}
+
+func (sal *stepActionLocal) getContainerActionPaths() (string, string) {
+	return sal.getContainerActionPathsExt(sal.Step.Uses)
+}
+
+func (sal *stepActionLocal) getTarArchive(ctx context.Context, src string) (io.ReadCloser, error) {
+	return sal.RunContext.JobContainer.GetContainerArchive(ctx, src)
+}
+
+func (sal *stepActionLocal) getActionPath() string {
+	return sal.RunContext.JobContainer.ToContainerPath(path.Join(sal.RunContext.Config.Workdir, sal.Step.Uses))
+}
+
+func (sal *stepActionLocal) maybeCopyToActionDir(_ context.Context) error {
+	// nothing to do
+	return nil
+}
+
 func (sal *stepActionLocal) getCompositeRunContext(ctx context.Context) *RunContext {
 	if sal.compositeRunContext == nil {
-		actionDir := filepath.Join(sal.RunContext.Config.Workdir, sal.Step.Uses)
-		_, containerActionDir := getContainerActionPaths(sal.getStepModel(), actionDir, sal.RunContext)
+		_, containerActionDir := sal.getContainerActionPaths()
 
 		sal.compositeRunContext = newCompositeRunContext(ctx, sal.RunContext, sal, containerActionDir)
 		sal.compositeSteps = sal.compositeRunContext.compositeExecutor(sal.action)

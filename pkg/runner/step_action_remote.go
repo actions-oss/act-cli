@@ -121,9 +121,7 @@ func (sar *stepActionRemote) main() common.Executor {
 				return sar.RunContext.JobContainer.CopyDir(copyToPath, sar.RunContext.Config.Workdir+string(filepath.Separator)+".", sar.RunContext.Config.UseGitIgnore)(ctx)
 			}
 
-			actionDir := fmt.Sprintf("%s/%s", sar.RunContext.ActionCacheDir(), safeFilename(sar.Step.Uses))
-
-			return sar.runAction(sar, actionDir, sar.remoteAction)(ctx)
+			return sar.runAction(sar)(ctx)
 		}),
 	)
 }
@@ -178,11 +176,42 @@ func (sar *stepActionRemote) getActionModel() *model.Action {
 	return sar.action
 }
 
+func (sar *stepActionRemote) getContainerActionPaths() (string, string) {
+	return sar.getContainerActionPathsExt(sar.getActionPath())
+}
+
+func (sar *stepActionRemote) getContainerActionPathsExt(subPath string) (string, string) {
+	cacheDir := sar.RunContext.ActionCacheDir()
+	actionDir := filepath.Join(cacheDir, safeFilename(sar.Step.Uses), subPath)
+	actionName := getOsSafeRelativePath(actionDir, cacheDir)
+	containerActionDir := sar.RunContext.JobContainer.GetActPath() + "/actions/" + actionName
+	return actionName, containerActionDir
+}
+
+func (sar *stepActionRemote) getTarArchive(ctx context.Context, src string) (io.ReadCloser, error) {
+	return sar.RunContext.getActionCache().GetTarArchive(ctx, sar.cacheDir, sar.resolvedSha, src)
+}
+
+func (sar *stepActionRemote) getActionPath() string {
+	return sar.remoteAction.Path
+}
+
+func (sar *stepActionRemote) maybeCopyToActionDir(ctx context.Context) error {
+	rc := sar.getRunContext()
+
+	_, containerRootPath := sar.getContainerActionPathsExt("")
+
+	ta, err := sar.getTarArchive(ctx, "")
+	if err != nil {
+		return err
+	}
+	defer ta.Close()
+	return rc.JobContainer.CopyTarStream(ctx, strings.TrimSuffix(containerRootPath, "/")+"/", ta)
+}
+
 func (sar *stepActionRemote) getCompositeRunContext(ctx context.Context) *RunContext {
 	if sar.compositeRunContext == nil {
-		actionDir := fmt.Sprintf("%s/%s", sar.RunContext.ActionCacheDir(), safeFilename(sar.Step.Uses))
-		actionLocation := path.Join(actionDir, sar.remoteAction.Path)
-		_, containerActionDir := getContainerActionPaths(sar.getStepModel(), actionLocation, sar.RunContext)
+		_, containerActionDir := sar.getContainerActionPaths()
 
 		sar.compositeRunContext = newCompositeRunContext(ctx, sar.RunContext, sar, containerActionDir)
 		sar.compositeSteps = sar.compositeRunContext.compositeExecutor(sar.action)

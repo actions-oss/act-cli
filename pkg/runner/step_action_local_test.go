@@ -19,8 +19,8 @@ type stepActionLocalMocks struct {
 	mock.Mock
 }
 
-func (salm *stepActionLocalMocks) runAction(step actionStep, actionDir string, remoteAction *remoteAction) common.Executor {
-	args := salm.Called(step, actionDir, remoteAction)
+func (salm *stepActionLocalMocks) runAction(step actionStep) common.Executor {
+	args := salm.Called(step)
 	return args.Get(0).(func(context.Context) error)
 }
 
@@ -88,7 +88,7 @@ func TestStepActionLocalTest(t *testing.T) {
 	cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
 	cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
 
-	salm.On("runAction", sal, filepath.Clean("/tmp/path/to/action"), (*remoteAction)(nil)).Return(func(_ context.Context) error {
+	salm.On("runAction", sal).Return(func(_ context.Context) error {
 		return nil
 	})
 

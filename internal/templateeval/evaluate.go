@@ -64,7 +64,7 @@ func (ee ExpressionEvaluator) canEvaluate(parsed exprparser.Node, snode *schema.
 		canEvaluate = canEvaluate && ee.EvaluationContext.Variables.Get(v) != nil
 	}
 	for _, v := range snode.GetFunctions() {
-		canEvaluate = canEvaluate && ee.EvaluationContext.Functions.Get(v.Name) != nil
+		canEvaluate = canEvaluate && ee.EvaluationContext.Functions.Get(v.GetName()) != nil
 	}
 	exprparser.VisitNode(parsed, func(node exprparser.Node) {
 		switch el := node.(type) {

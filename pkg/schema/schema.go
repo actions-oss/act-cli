@@ -198,10 +198,42 @@ type Node struct {
 	Context      []string
 }
 
-type FunctionInfo struct {
+type FunctionInfo interface {
+	GetName() string
+	Check(args []exprparser.Node) error
+}
+
+type BasicFunctionInfo struct {
 	Name string
 	Min  int
 	Max  int
+}
+
+func (f BasicFunctionInfo) GetName() string {
+	return f.Name
+}
+
+func (f BasicFunctionInfo) Check(args []exprparser.Node) error {
+	var err error
+	if f.Min > len(args) {
+		err = errors.Join(err, fmt.Errorf("missing parameters for %s expected >= %v got %v", f.Name, f.Min, len(args)))
+	}
+	if f.Max < len(args) {
+		err = errors.Join(err, fmt.Errorf("too many parameters for %s expected <= %v got %v", f.Name, f.Max, len(args)))
+	}
+	return err
+}
+
+type OddFunctionInfo struct {
+	BasicFunctionInfo
+}
+
+func (f OddFunctionInfo) Check(args []exprparser.Node) error {
+	var err error
+	if len(args)%2 == 0 {
+		err = errors.Join(err, fmt.Errorf("expected odd number of parameters for %s got %v", f.Name, len(args)))
+	}
+	return errors.Join(err, f.BasicFunctionInfo.Check(args))
 }
 
 func (s *Node) checkSingleExpression(exprNode exprparser.Node) error {
@@ -220,13 +252,8 @@ func (s *Node) checkSingleExpression(exprNode exprparser.Node) error {
 	exprparser.VisitNode(exprNode, func(node exprparser.Node) {
 		if funcCallNode, ok := node.(*exprparser.FunctionNode); ok {
 			for _, v := range funcs {
-				if strings.EqualFold(funcCallNode.Name, v.Name) {
-					if v.Min > len(funcCallNode.Args) {
-						err = errors.Join(err, fmt.Errorf("missing parameters for %s expected >= %v got %v", funcCallNode.Name, v.Min, len(funcCallNode.Args)))
-					}
-					if v.Max < len(funcCallNode.Args) {
-						err = errors.Join(err, fmt.Errorf("too many parameters for %s expected <= %v got %v", funcCallNode.Name, v.Max, len(funcCallNode.Args)))
-					}
+				if strings.EqualFold(funcCallNode.Name, v.GetName()) {
+					err = v.Check(funcCallNode.Args)
 					return
 				}
 			}
@@ -255,6 +282,13 @@ func (s *Node) GetFunctions() []FunctionInfo {
 	AddFunction(&funcs, "startsWith", 2, 2)
 	AddFunction(&funcs, "toJson", 1, 1)
 	AddFunction(&funcs, "fromJson", 1, 1)
+	funcs = append(funcs, &OddFunctionInfo{
+		BasicFunctionInfo: BasicFunctionInfo{
+			Name: "case",
+			Min:  3,
+			Max:  255,
+		},
+	})
 	for _, v := range s.Context {
 		i := strings.Index(v, "(")
 		if i == -1 {
@@ -271,7 +305,7 @@ func (s *Node) GetFunctions() []FunctionInfo {
 			} else {
 				maxParameters, _ = strconv.ParseInt(maxParametersRaw, 10, 32)
 			}
-			funcs = append(funcs, FunctionInfo{
+			funcs = append(funcs, &BasicFunctionInfo{
 				Name: functionName,
 				Min:  int(minParameters),
 				Max:  int(maxParameters),
@@ -330,7 +364,7 @@ func (s *Node) checkExpression(node *yaml.Node) (bool, error) {
 }
 
 func AddFunction(funcs *[]FunctionInfo, s string, i1, i2 int) {
-	*funcs = append(*funcs, FunctionInfo{
+	*funcs = append(*funcs, &BasicFunctionInfo{
 		Name: s,
 		Min:  i1,
 		Max:  i2,
@@ -450,9 +484,6 @@ func (s *Node) checkOneOf(def Definition, node *yaml.Node) error {
 						continue
 					}
 				}
-			}
-			if matched == 0 {
-				matched = math.MaxInt
 			}
 			if matched <= invalidProps {
 				if matched < invalidProps {
