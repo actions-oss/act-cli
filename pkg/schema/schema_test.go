@@ -223,3 +223,41 @@ jobs:
 		})
 	}
 }
+
+func TestActionSchemaErrors(t *testing.T) {
+	table := []struct {
+		name  string // test name
+		input string // workflow yaml input
+		err   string // error message substring
+	}{
+		{
+			name: "missing property shell",
+			input: `
+runs:
+  using: composite
+  steps:
+  - run: echo failure
+`,
+			err: "missing property shell",
+		},
+	}
+
+	for _, test := range table {
+		t.Run(test.name, func(t *testing.T) {
+			var node yaml.Node
+			err := yaml.Unmarshal([]byte(test.input), &node)
+			if !assert.NoError(t, err) {
+				return
+			}
+			err = (&Node{
+				Definition: "action-root",
+				Schema:     GetActionSchema(),
+			}).UnmarshalYAML(&node)
+			if test.err != "" {
+				assert.ErrorContains(t, err, test.err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
