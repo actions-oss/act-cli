@@ -7,7 +7,7 @@ import (
 	v2 "github.com/actions-oss/act-cli/internal/eval/v2"
 	"github.com/actions-oss/act-cli/pkg/schema"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 func TestEval(t *testing.T) {

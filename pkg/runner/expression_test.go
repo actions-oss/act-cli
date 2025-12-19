@@ -11,7 +11,7 @@ import (
 	"github.com/actions-oss/act-cli/pkg/exprparser"
 	"github.com/actions-oss/act-cli/pkg/model"
 	assert "github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v3"
+	yaml "go.yaml.in/yaml/v4"
 )
 
 func createRunContext(t *testing.T) *RunContext {

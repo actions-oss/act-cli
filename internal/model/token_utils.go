@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	v2 "github.com/actions-oss/act-cli/internal/eval/v2"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // DeepEquals compares two yaml.Node values recursively.
