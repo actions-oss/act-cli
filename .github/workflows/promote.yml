@@ -10,7 +10,7 @@ jobs:
     name: promote
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: master
@@ -20,7 +20,7 @@ jobs:
         with:
           go-version-file: go.mod
           check-latest: true
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         if: ${{ !env.ACT }}
         with:
           path: ~/go/pkg/mod
