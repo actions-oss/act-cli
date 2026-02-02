@@ -21,7 +21,7 @@ func resolveAliasesExt(node *yaml.Node, path map[*yaml.Node]bool, skipCheck bool
 		if err := resolveAliasesExt(node, path, true); err != nil {
 			return err
 		}
-		delete(path, aliasTarget)
+		delete(path, node)
 
 	case yaml.DocumentNode, yaml.MappingNode, yaml.SequenceNode:
 		for _, child := range node.Content {

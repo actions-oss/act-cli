@@ -614,17 +614,21 @@ jobs:
 
 func TestReadWorkflow_Anchor(t *testing.T) {
 	yaml := `
-on: push
 
 jobs:
   test:
     runs-on: &runner ubuntu-latest
     steps:
     - uses: &checkout actions/checkout@v5
-  test2:
+  test2: &job
     runs-on: *runner
     steps:
     - uses: *checkout
+    - run: echo $TRIGGER
+      env:
+        TRIGGER: &trigger push
+  test3: *job
+on: push #*trigger
 `
 
 	w, err := ReadWorkflow(strings.NewReader(yaml), false)
