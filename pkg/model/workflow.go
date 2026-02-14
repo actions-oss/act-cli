@@ -17,12 +17,30 @@ import (
 
 // Workflow is the structure of the files in .github/workflows
 type Workflow struct {
-	File     string
-	Name     string            `yaml:"name"`
-	RawOn    yaml.Node         `yaml:"on"`
-	Env      map[string]string `yaml:"env"`
-	Jobs     map[string]*Job   `yaml:"jobs"`
-	Defaults Defaults          `yaml:"defaults"`
+	File       string
+	Name       string            `yaml:"name"`
+	RawOn      yaml.Node         `yaml:"on"`
+	Env        map[string]string `yaml:"env"`
+	Jobs       map[string]*Job   `yaml:"jobs"`
+	Defaults   Defaults          `yaml:"defaults"`
+	Schema     *schema.Schema    `yaml:"-"`
+	Definition string            `yaml:"-"`
+}
+
+// GetDefinition gets the schema definition name for the workflow
+func (w *Workflow) GetDefinition() string {
+	if w.Definition == "" {
+		return "workflow-root"
+	}
+	return w.Definition
+}
+
+// GetSchema gets the schema for the workflow
+func (w *Workflow) GetSchema() *schema.Schema {
+	if w.Schema == nil {
+		return schema.GetWorkflowSchema()
+	}
+	return w.Schema
 }
 
 // On events for the workflow
@@ -74,27 +92,10 @@ func (w *Workflow) UnmarshalYAML(node *yaml.Node) error {
 	}
 	// Validate the schema before deserializing it into our model
 	if err := (&schema.Node{
-		Definition: "workflow-root",
-		Schema:     schema.GetWorkflowSchema(),
+		Definition: w.GetDefinition(),
+		Schema:     w.GetSchema(),
 	}).UnmarshalYAML(node); err != nil {
-		return errors.Join(err, fmt.Errorf("actions YAML Schema Validation Error detected:\nFor more information, see: https://actions-oss.github.io/act-docs/usage/schema.html"))
-	}
-	type WorkflowDefault Workflow
-	return node.Decode((*WorkflowDefault)(w))
-}
-
-type WorkflowStrict Workflow
-
-func (w *WorkflowStrict) UnmarshalYAML(node *yaml.Node) error {
-	if err := resolveAliases(node); err != nil {
-		return err
-	}
-	// Validate the schema before deserializing it into our model
-	if err := (&schema.Node{
-		Definition: "workflow-root-strict",
-		Schema:     schema.GetWorkflowSchema(),
-	}).UnmarshalYAML(node); err != nil {
-		return errors.Join(err, fmt.Errorf("actions YAML Strict Schema Validation Error detected:\nFor more information, see: https://nektosact.com/usage/schema.html"))
+		return errors.Join(err, fmt.Errorf("actions YAML Schema Validation Error of definition '%s' detected:\nFor more information, see: https://actions-oss.github.io/act-docs/usage/schema.html", w.GetDefinition()))
 	}
 	type WorkflowDefault Workflow
 	return node.Decode((*WorkflowDefault)(w))
@@ -708,14 +709,20 @@ func (s *Step) Type() StepType {
 	return StepTypeUsesActionRemote
 }
 
+type WorkflowConfig struct {
+	Definition string
+	Schema     *schema.Schema
+	Strict     bool
+}
+
 // ReadWorkflow returns a list of jobs for a given workflow file reader
-func ReadWorkflow(in io.Reader, strict bool) (*Workflow, error) {
-	if strict {
-		w := new(WorkflowStrict)
-		err := yaml.NewDecoder(in).Decode(w)
-		return (*Workflow)(w), err
-	}
+func ReadWorkflow(in io.Reader, config WorkflowConfig) (*Workflow, error) {
 	w := new(Workflow)
+	w.Schema = config.Schema
+	w.Definition = config.Definition
+	if config.Strict {
+		w.Definition = "workflow-root-strict"
+	}
 	err := yaml.NewDecoder(in).Decode(w)
 	return w, err
 }

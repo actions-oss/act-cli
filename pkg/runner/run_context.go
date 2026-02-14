@@ -1109,36 +1109,47 @@ func nestedMapLookup(m map[string]interface{}, ks ...string) (rval interface{}) 
 	return nestedMapLookup(m, ks[1:]...)
 }
 
+func (rc *RunContext) setMainCtxVars(env map[string]string, name string, value string) {
+	// Use this to set GITHUB_<name> and any additional main context names in env
+	ctxNames := rc.Config.MainContextNames
+	if len(ctxNames) == 0 {
+		ctxNames = []string{"github"}
+	}
+	for _, ctxName := range ctxNames {
+		env[strings.ToUpper(ctxName)+"_"+name] = value
+	}
+}
+
 func (rc *RunContext) withGithubEnv(ctx context.Context, github *model.GithubContext, env map[string]string) map[string]string {
 	env["CI"] = "true"
-	env["GITHUB_WORKFLOW"] = github.Workflow
-	env["GITHUB_RUN_ATTEMPT"] = github.RunAttempt
-	env["GITHUB_RUN_ID"] = github.RunID
-	env["GITHUB_RUN_NUMBER"] = github.RunNumber
-	env["GITHUB_ACTION"] = github.Action
-	env["GITHUB_ACTION_PATH"] = github.ActionPath
-	env["GITHUB_ACTION_REPOSITORY"] = github.ActionRepository
-	env["GITHUB_ACTION_REF"] = github.ActionRef
-	env["GITHUB_ACTIONS"] = "true"
-	env["GITHUB_ACTOR"] = github.Actor
-	env["GITHUB_REPOSITORY"] = github.Repository
-	env["GITHUB_EVENT_NAME"] = github.EventName
-	env["GITHUB_EVENT_PATH"] = github.EventPath
-	env["GITHUB_WORKSPACE"] = github.Workspace
-	env["GITHUB_SHA"] = github.Sha
-	env["GITHUB_REF"] = github.Ref
-	env["GITHUB_REF_NAME"] = github.RefName
-	env["GITHUB_REF_TYPE"] = github.RefType
-	env["GITHUB_JOB"] = github.Job
-	env["GITHUB_REPOSITORY_OWNER"] = github.RepositoryOwner
-	env["GITHUB_RETENTION_DAYS"] = github.RetentionDays
+	rc.setMainCtxVars(env, "WORKFLOW", github.Workflow)
+	rc.setMainCtxVars(env, "RUN_ATTEMPT", github.RunAttempt)
+	rc.setMainCtxVars(env, "RUN_ID", github.RunID)
+	rc.setMainCtxVars(env, "RUN_NUMBER", github.RunNumber)
+	rc.setMainCtxVars(env, "ACTION", github.Action)
+	rc.setMainCtxVars(env, "ACTION_PATH", github.ActionPath)
+	rc.setMainCtxVars(env, "ACTION_REPOSITORY", github.ActionRepository)
+	rc.setMainCtxVars(env, "ACTION_REF", github.ActionRef)
+	rc.setMainCtxVars(env, "ACTIONS", "true")
+	rc.setMainCtxVars(env, "ACTOR", github.Actor)
+	rc.setMainCtxVars(env, "REPOSITORY", github.Repository)
+	rc.setMainCtxVars(env, "EVENT_NAME", github.EventName)
+	rc.setMainCtxVars(env, "EVENT_PATH", github.EventPath)
+	rc.setMainCtxVars(env, "WORKSPACE", github.Workspace)
+	rc.setMainCtxVars(env, "SHA", github.Sha)
+	rc.setMainCtxVars(env, "REF", github.Ref)
+	rc.setMainCtxVars(env, "REF_NAME", github.RefName)
+	rc.setMainCtxVars(env, "REF_TYPE", github.RefType)
+	rc.setMainCtxVars(env, "JOB", github.Job)
+	rc.setMainCtxVars(env, "REPOSITORY_OWNER", github.RepositoryOwner)
+	rc.setMainCtxVars(env, "RETENTION_DAYS", github.RetentionDays)
 	env["RUNNER_PERFLOG"] = github.RunnerPerflog
 	env["RUNNER_TRACKING_ID"] = github.RunnerTrackingID
-	env["GITHUB_BASE_REF"] = github.BaseRef
-	env["GITHUB_HEAD_REF"] = github.HeadRef
-	env["GITHUB_SERVER_URL"] = github.ServerURL
-	env["GITHUB_API_URL"] = github.APIURL
-	env["GITHUB_GRAPHQL_URL"] = github.GraphQLURL
+	rc.setMainCtxVars(env, "BASE_REF", github.BaseRef)
+	rc.setMainCtxVars(env, "HEAD_REF", github.HeadRef)
+	rc.setMainCtxVars(env, "SERVER_URL", github.ServerURL)
+	rc.setMainCtxVars(env, "API_URL", github.APIURL)
+	rc.setMainCtxVars(env, "GRAPHQL_URL", github.GraphQLURL)
 
 	if rc.Config.ArtifactServerPath != "" {
 		setActionRuntimeVars(rc, env)

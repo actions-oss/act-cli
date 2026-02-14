@@ -12,7 +12,7 @@ import (
 )
 
 func newLocalReusableWorkflowExecutor(rc *RunContext) common.Executor {
-	return newReusableWorkflowExecutor(rc, rc.Config.Workdir, rc.Run.Job().Uses)
+	return newReusableWorkflowExecutor(rc, rc.Config.Workdir, rc.Run.Job().Uses, rc.Config.Planner)
 }
 
 func newRemoteReusableWorkflowExecutor(rc *RunContext) common.Executor {
@@ -28,10 +28,10 @@ func newRemoteReusableWorkflowExecutor(rc *RunContext) common.Executor {
 	// multiple reusable workflows from the same repository and ref since for each workflow we won't have to clone it again
 	filename := fmt.Sprintf("%s/%s@%s", remoteReusableWorkflow.Org, remoteReusableWorkflow.Repo, remoteReusableWorkflow.Ref)
 
-	return newActionCacheReusableWorkflowExecutor(rc, filename, remoteReusableWorkflow)
+	return newActionCacheReusableWorkflowExecutor(rc, filename, remoteReusableWorkflow, rc.Config.Planner)
 }
 
-func newActionCacheReusableWorkflowExecutor(rc *RunContext, filename string, remoteReusableWorkflow *remoteReusableWorkflow) common.Executor {
+func newActionCacheReusableWorkflowExecutor(rc *RunContext, filename string, remoteReusableWorkflow *remoteReusableWorkflow, config model.PlannerConfig) common.Executor {
 	return func(ctx context.Context) error {
 		ghctx := rc.getGithubContext(ctx)
 		remoteReusableWorkflow.URL = ghctx.ServerURL
@@ -49,7 +49,7 @@ func newActionCacheReusableWorkflowExecutor(rc *RunContext, filename string, rem
 		if _, err = treader.Next(); err != nil {
 			return err
 		}
-		planner, err := model.NewSingleWorkflowPlanner(remoteReusableWorkflow.Filename, treader)
+		planner, err := model.NewSingleWorkflowPlanner(remoteReusableWorkflow.Filename, treader, config)
 		if err != nil {
 			return err
 		}
@@ -67,9 +67,9 @@ func newActionCacheReusableWorkflowExecutor(rc *RunContext, filename string, rem
 	}
 }
 
-func newReusableWorkflowExecutor(rc *RunContext, directory string, workflow string) common.Executor {
+func newReusableWorkflowExecutor(rc *RunContext, directory string, workflow string, config model.PlannerConfig) common.Executor {
 	return func(ctx context.Context) error {
-		planner, err := model.NewWorkflowPlanner(path.Join(directory, workflow), true, false)
+		planner, err := model.NewWorkflowPlanner(path.Join(directory, workflow), config)
 		if err != nil {
 			return err
 		}

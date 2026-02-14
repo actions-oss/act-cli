@@ -141,19 +141,19 @@ func runStepExecutor(step step, stage stepStage, executor common.Executor) commo
 		actPath := rc.JobContainer.GetActPath()
 
 		outputFileCommand := path.Join("workflow", "outputcmd.txt")
-		(*step.getEnv())["GITHUB_OUTPUT"] = path.Join(actPath, outputFileCommand)
+		rc.setMainCtxVars(*step.getEnv(), "OUTPUT", path.Join(actPath, outputFileCommand))
 
 		stateFileCommand := path.Join("workflow", "statecmd.txt")
-		(*step.getEnv())["GITHUB_STATE"] = path.Join(actPath, stateFileCommand)
+		rc.setMainCtxVars(*step.getEnv(), "STATE", path.Join(actPath, stateFileCommand))
 
 		pathFileCommand := path.Join("workflow", "pathcmd.txt")
-		(*step.getEnv())["GITHUB_PATH"] = path.Join(actPath, pathFileCommand)
+		rc.setMainCtxVars(*step.getEnv(), "PATH", path.Join(actPath, pathFileCommand))
 
 		envFileCommand := path.Join("workflow", "envs.txt")
-		(*step.getEnv())["GITHUB_ENV"] = path.Join(actPath, envFileCommand)
+		rc.setMainCtxVars(*step.getEnv(), "ENV", path.Join(actPath, envFileCommand))
 
 		summaryFileCommand := path.Join("workflow", "SUMMARY.md")
-		(*step.getEnv())["GITHUB_STEP_SUMMARY"] = path.Join(actPath, summaryFileCommand)
+		rc.setMainCtxVars(*step.getEnv(), "STEP_SUMMARY", path.Join(actPath, summaryFileCommand))
 
 		_ = rc.JobContainer.Copy(actPath, &container.FileEntry{
 			Name: outputFileCommand,

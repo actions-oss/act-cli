@@ -29,3 +29,16 @@ func updateUses(mapping *MappingDefinition) {
 	uses.Type = "string-strategy-context"
 	mapping.Properties["uses"] = uses
 }
+
+func GetGiteaActionSchema() *Schema {
+	schema := GetActionSchema()
+	in := schema.Definitions
+	schema.Definitions = map[string]Definition{}
+	for k, v := range in {
+		if v.Context != nil && slices.Contains(v.Context, "github") {
+			v.Context = append(v.Context, "gitea", "env")
+		}
+		schema.Definitions[k] = v
+	}
+	return schema
+}

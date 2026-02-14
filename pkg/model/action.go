@@ -83,13 +83,29 @@ type Action struct {
 		Color string `yaml:"color"`
 		Icon  string `yaml:"icon"`
 	} `yaml:"branding"`
+	Definition string         `yaml:"-"`
+	Schema     *schema.Schema `yaml:"-"`
+}
+
+func (a *Action) GetDefinition() string {
+	if a.Definition == "" {
+		return "action-root"
+	}
+	return a.Definition
+}
+
+func (a *Action) GetSchema() *schema.Schema {
+	if a.Schema == nil {
+		return schema.GetActionSchema()
+	}
+	return a.Schema
 }
 
 func (a *Action) UnmarshalYAML(node *yaml.Node) error {
 	// Validate the schema before deserializing it into our model
 	if err := (&schema.Node{
-		Definition: "action-root",
-		Schema:     schema.GetActionSchema(),
+		Definition: a.GetDefinition(),
+		Schema:     a.GetSchema(),
 	}).UnmarshalYAML(node); err != nil {
 		return err
 	}
@@ -110,9 +126,16 @@ type Output struct {
 	Value       string `yaml:"value"`
 }
 
+type ActionConfig struct {
+	Definition string
+	Schema     *schema.Schema
+}
+
 // ReadAction reads an action from a reader
-func ReadAction(in io.Reader) (*Action, error) {
+func ReadAction(in io.Reader, config ActionConfig) (*Action, error) {
 	a := new(Action)
+	a.Schema = config.Schema
+	a.Definition = config.Definition
 	err := yaml.NewDecoder(in).Decode(a)
 	if err != nil {
 		return nil, err

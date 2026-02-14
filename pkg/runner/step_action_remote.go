@@ -92,7 +92,7 @@ func (sar *stepActionRemote) prepareActionExecutor() common.Executor {
 			}
 		}
 
-		actionModel, err := sar.readAction(ctx, sar.Step, sar.resolvedSha, sar.remoteAction.Path, remoteReader(ctx), os.WriteFile)
+		actionModel, err := sar.readAction(ctx, sar.Step, remoteReader(ctx), sar.RunContext.Config.Action)
 		sar.action = actionModel
 		return err
 	}

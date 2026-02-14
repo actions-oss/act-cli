@@ -19,8 +19,8 @@ type stepActionRemoteMocks struct {
 	mock.Mock
 }
 
-func (sarm *stepActionRemoteMocks) readAction(_ context.Context, step *model.Step, actionDir string, actionPath string, readFile actionYamlReader, writeFile fileWriter) (*model.Action, error) {
-	args := sarm.Called(step, actionDir, actionPath, readFile, writeFile)
+func (sarm *stepActionRemoteMocks) readAction(_ context.Context, step *model.Step, readFile actionYamlReader, config model.ActionConfig) (*model.Action, error) {
+	args := sarm.Called(step, readFile, config)
 	return args.Get(0).(*model.Action), args.Error(1)
 }
 
@@ -175,6 +175,9 @@ func TestStepActionRemote(t *testing.T) {
 						GitHubServerURL:           tt.gitHubServerURL,
 						GitHubAPIServerURL:        tt.gitHubAPIServerURL,
 						GitHubGraphQlAPIServerURL: tt.gitHubGraphQlAPIServerURL,
+						Action: model.ActionConfig{
+							Definition: "action-root",
+						},
 					},
 					Run: &model.Run{
 						JobID: "1",
@@ -201,7 +204,7 @@ func TestStepActionRemote(t *testing.T) {
 			cacheMock.Mock.On("Fetch", ctx, mock.AnythingOfType("string"), serverURL+"/remote/action", "v1", "").Return("someval")
 
 			if tt.mocks.read {
-				sarm.Mock.On("readAction", sar.Step, "someval", "", mock.Anything, mock.Anything).Return(&model.Action{}, nil)
+				sarm.Mock.On("readAction", sar.Step, mock.Anything, sar.RunContext.Config.Action).Return(&model.Action{}, nil)
 			}
 			if tt.mocks.run {
 				remoteAction := newRemoteAction(sar.Step.Uses)
@@ -282,7 +285,7 @@ func TestStepActionRemotePre(t *testing.T) {
 				readAction: sarm.readAction,
 			}
 
-			sarm.Mock.On("readAction", sar.Step, "someval", "path", mock.Anything, mock.Anything).Return(&model.Action{}, nil)
+			sarm.Mock.On("readAction", sar.Step, mock.Anything, sar.RunContext.Config.Action).Return(&model.Action{}, nil)
 			cacheMock.Mock.On("Fetch", ctx, mock.AnythingOfType("string"), "https://github.com/org/repo", "ref", "").Return("someval")
 
 			err := sar.pre()(ctx)
@@ -335,7 +338,7 @@ func TestStepActionRemotePreThroughAction(t *testing.T) {
 				readAction: sarm.readAction,
 			}
 
-			sarm.Mock.On("readAction", sar.Step, mock.AnythingOfType("string"), "path", mock.Anything, mock.Anything).Return(&model.Action{}, nil)
+			sarm.Mock.On("readAction", sar.Step, mock.Anything, sar.RunContext.Config.Action).Return(&model.Action{}, nil)
 			cacheMock.Mock.On("Fetch", ctx, mock.AnythingOfType("string"), "https://github.com/org/repo", "ref", "").Return("someval")
 
 			err := sar.pre()(ctx)
@@ -389,7 +392,7 @@ func TestStepActionRemotePreThroughActionToken(t *testing.T) {
 				readAction: sarm.readAction,
 			}
 
-			sarm.Mock.On("readAction", sar.Step, mock.AnythingOfType("string"), "path", mock.Anything, mock.Anything).Return(&model.Action{}, nil)
+			sarm.Mock.On("readAction", sar.Step, mock.Anything, sar.RunContext.Config.Action).Return(&model.Action{}, nil)
 			cacheMock.Mock.On("Fetch", ctx, mock.AnythingOfType("string"), "https://github.com/org/repo", "ref", "PRIVATE_ACTIONS_TOKEN_ON_GITHUB").Return("someval")
 
 			err := sar.pre()(ctx)

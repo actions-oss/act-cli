@@ -31,7 +31,9 @@ func TestPlanner(t *testing.T) {
 	assert.NoError(t, err, workdir)
 	for _, table := range tables {
 		fullWorkflowPath := filepath.Join(workdir, table.workflowPath)
-		_, err = NewWorkflowPlanner(fullWorkflowPath, table.noWorkflowRecurse, false)
+		_, err = NewWorkflowPlanner(fullWorkflowPath, PlannerConfig{
+			Recursive: !table.noWorkflowRecurse,
+		})
 		if table.errorMessage == "" {
 			assert.NoError(t, err, "WorkflowPlanner should exit without any error")
 		} else {

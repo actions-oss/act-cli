@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/model"
@@ -40,17 +39,7 @@ func (sal *stepActionLocal) main() common.Executor {
 			return nil
 		}
 
-		workdir := sal.getRunContext().Config.Workdir
-		actionDir := filepath.Join(workdir, sal.Step.Uses)
-
 		localReader := func(ctx context.Context) actionYamlReader {
-			// In case we want to limit resolving symlinks, folders are resolved by archive function
-			// _, cpath = sal.getContainerActionPathsExt(".")
-			roots := []string{
-				".", // Allow everything, other code permits it already
-				// path.Dir(cpath),                          // Allow RUNNER_WORKSPACE e.g. GITHUB_WORKSPACE/../
-				// sal.RunContext.JobContainer.GetActPath(), // Allow remote action folders
-			}
 			_, cpath := sal.getContainerActionPaths()
 			return func(filename string) (io.Reader, io.Closer, error) {
 				spath := path.Join(cpath, filename)
@@ -69,7 +58,7 @@ func (sal *stepActionLocal) main() common.Executor {
 						return nil, nil, err
 					}
 					if header.FileInfo().Mode()&os.ModeSymlink == os.ModeSymlink {
-						spath, err = symlinkJoin(spath, header.Linkname, roots...)
+						spath, err = symlinkJoin(spath, header.Linkname, ".")
 						if err != nil {
 							return nil, nil, err
 						}
@@ -81,7 +70,7 @@ func (sal *stepActionLocal) main() common.Executor {
 			}
 		}
 
-		actionModel, err := sal.readAction(ctx, sal.Step, actionDir, "", localReader(ctx), os.WriteFile)
+		actionModel, err := sal.readAction(ctx, sal.Step, localReader(ctx), sal.RunContext.Config.Action)
 		if err != nil {
 			return err
 		}

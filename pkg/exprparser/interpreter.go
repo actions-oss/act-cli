@@ -38,9 +38,10 @@ type Needs struct {
 }
 
 type Config struct {
-	Run        *model.Run
-	WorkingDir string
-	Context    string
+	Run              *model.Run
+	WorkingDir       string
+	Context          string
+	MainContextNames []string // e.g. "github", "gitea", "forgejo"
 }
 
 type DefaultStatusCheck int
@@ -253,7 +254,8 @@ func (impl *interperterImpl) GetFunctions() eval.CaseInsensitiveObject[eval.Func
 }
 
 func (impl *interperterImpl) GetVariables() eval.ReadOnlyObject[any] {
-	githubCtx := toRawObj(reflect.ValueOf(impl.env.Github))
+	mainCtx := eval.CaseInsensitiveObject[any](toRawObj(reflect.ValueOf(impl.env.Github)))
+
 	var env any
 	if impl.env.EnvCS {
 		env = eval.CaseSensitiveObject[any](toRawObj(reflect.ValueOf(impl.env.Env)))
@@ -261,7 +263,6 @@ func (impl *interperterImpl) GetVariables() eval.ReadOnlyObject[any] {
 		env = eval.CaseInsensitiveObject[any](toRawObj(reflect.ValueOf(impl.env.Env)))
 	}
 	vars := eval.CaseInsensitiveObject[any]{
-		"github":   githubCtx,
 		"env":      env,
 		"vars":     toRawObj(reflect.ValueOf(impl.env.Vars)),
 		"steps":    toRawObj(reflect.ValueOf(impl.env.Steps)),
@@ -274,17 +275,28 @@ func (impl *interperterImpl) GetVariables() eval.ReadOnlyObject[any] {
 		"jobs":     toRawObj(reflect.ValueOf(impl.env.Jobs)),
 		"inputs":   toRawObj(reflect.ValueOf(impl.env.Inputs)),
 	}
+	ctxNames := impl.config.MainContextNames
+	if len(ctxNames) == 0 {
+		ctxNames = []string{"github"}
+	}
+	for _, cn := range ctxNames {
+		vars[cn] = mainCtx
+	}
 	for name, cd := range impl.env.CtxData {
-		lowerName := strings.ToLower(name)
-		if serverPayload, ok := cd.(map[string]interface{}); ok {
-			if lowerName == "github" {
-				for k, v := range serverPayload {
-					// skip empty values, because github.workspace was set by Gitea Actions to an empty string
-					if _, ok := githubCtx[k]; !ok || v != "" && v != nil {
-						githubCtx[k] = v
+		if rawOtherCtx := vars.Get(name); rawOtherCtx != nil {
+			res := eval.CreateIntermediateResult(eval.NewEvaluationContext(), rawOtherCtx)
+			if rOtherCd, ok := res.TryGetCollectionInterface(); ok {
+				if otherCd, ok := rOtherCd.(eval.ReadOnlyObject[any]); ok {
+					if rawPayload, ok := cd.(map[string]interface{}); ok {
+						for k, v := range rawPayload {
+							// skip empty values, because github.workspace was set by Gitea Actions to an empty string
+							if mk, _ := otherCd.GetKv(k); v != "" && v != nil {
+								otherCd.GetEnumerator()[mk] = v
+							}
+						}
+						continue
 					}
 				}
-				continue
 			}
 		}
 		vars[name] = cd

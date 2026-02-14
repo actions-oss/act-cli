@@ -68,9 +68,12 @@ type Config struct {
 	ActionCache                        ActionCache                  // Use a custom ActionCache Implementation
 	HostEnvironmentDir                 string                       // Custom folder for host environment, parallel jobs must be 1
 
-	CustomExecutor map[model.JobType]func(*RunContext) common.Executor // Custom executor to run jobs
-	semaphore      *semaphore.Weighted
-	Parallel       int // Number of parallel jobs to run
+	CustomExecutor   map[model.JobType]func(*RunContext) common.Executor // Custom executor to run jobs
+	semaphore        *semaphore.Weighted
+	Parallel         int                 // Number of parallel jobs to run
+	Planner          model.PlannerConfig // Configuration for the workflow planner
+	Action           model.ActionConfig  // Configuration for action reading
+	MainContextNames []string            // e.g. "github", "gitea", "forgejo"
 }
 
 func (runnerConfig *Config) GetGitHubServerURL() string {

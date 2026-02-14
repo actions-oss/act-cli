@@ -66,6 +66,7 @@ type Input struct {
 	validate                           bool
 	strict                             bool
 	parallel                           int
+	gitea                              bool
 }
 
 func (i *Input) resolve(path string) string {

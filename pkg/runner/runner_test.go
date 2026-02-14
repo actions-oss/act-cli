@@ -56,7 +56,7 @@ func init() {
 }
 
 func TestNoWorkflowsFoundByPlanner(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("res", true, false)
+	planner, err := model.NewWorkflowPlanner("hashfiles", model.PlannerConfig{})
 	assert.NoError(t, err)
 
 	out := log.StandardLogger().Out
@@ -76,7 +76,7 @@ func TestNoWorkflowsFoundByPlanner(t *testing.T) {
 }
 
 func TestGraphMissingEvent(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/no-event.yml", true, false)
+	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/no-event.yml", model.PlannerConfig{})
 	assert.NoError(t, err)
 
 	out := log.StandardLogger().Out
@@ -94,7 +94,7 @@ func TestGraphMissingEvent(t *testing.T) {
 }
 
 func TestGraphMissingFirst(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/no-first.yml", true, false)
+	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/no-first.yml", model.PlannerConfig{})
 	assert.NoError(t, err)
 
 	plan, err := planner.PlanEvent("push")
@@ -104,7 +104,7 @@ func TestGraphMissingFirst(t *testing.T) {
 }
 
 func TestGraphWithMissing(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/missing.yml", true, false)
+	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/missing.yml", model.PlannerConfig{})
 	assert.NoError(t, err)
 
 	out := log.StandardLogger().Out
@@ -123,7 +123,7 @@ func TestGraphWithMissing(t *testing.T) {
 func TestGraphWithSomeMissing(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/", true, false)
+	planner, err := model.NewWorkflowPlanner("testdata/issue-1595/", model.PlannerConfig{})
 	assert.NoError(t, err)
 
 	out := log.StandardLogger().Out
@@ -141,7 +141,7 @@ func TestGraphWithSomeMissing(t *testing.T) {
 }
 
 func TestGraphEvent(t *testing.T) {
-	planner, err := model.NewWorkflowPlanner("testdata/basic", true, false)
+	planner, err := model.NewWorkflowPlanner("testdata/basic", model.PlannerConfig{})
 	assert.NoError(t, err)
 
 	plan, err := planner.PlanEvent("push")
@@ -200,7 +200,7 @@ func (j *TestJobFileInfo) runTest(ctx context.Context, t *testing.T, cfg *Config
 	runner, err := New(runnerConfig)
 	assert.Nil(t, err, j.workflowPath)
 
-	planner, err := model.NewWorkflowPlanner(fullWorkflowPath, true, false)
+	planner, err := model.NewWorkflowPlanner(fullWorkflowPath, model.PlannerConfig{})
 	if j.errorMessage != "" && err != nil {
 		assert.Error(t, err, j.errorMessage)
 	} else if assert.Nil(t, err, fullWorkflowPath) {
