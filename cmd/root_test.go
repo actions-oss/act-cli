@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -91,5 +92,18 @@ func TestWorkflowCall(t *testing.T) {
 		workflowsPath: "./workflow_call_inputs/workflow_call_inputs.yml",
 		inputs:        []string{"required=required input", "boolean=true"},
 	})(rootCmd, []string{"workflow_call"})
+	assert.NoError(t, err)
+}
+
+func TestLocalRepositories(t *testing.T) {
+	wd, _ := filepath.Abs("../pkg/runner/testdata/")
+	rootCmd := createRootCommand(context.Background(), &Input{}, "")
+	err := newRunCommand(context.Background(), &Input{
+		githubInstance:  "github.com",
+		platforms:       []string{"ubuntu-latest=node:16-buster-slim"},
+		workdir:         wd,
+		workflowsPath:   "./remote-action-composite-action-ref-partial-override/push.yml",
+		localRepository: []string{"needs/override@main=" + wd + "/actions-environment-and-context-tests"},
+	})(rootCmd, []string{"push"})
 	assert.NoError(t, err)
 }

@@ -1,0 +1,3 @@
+gitea_urls:
+  api: https://gitea.com/api/v1/
+  download: https://gitea.com/

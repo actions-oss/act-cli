@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -24,8 +23,8 @@ func (salm *stepActionLocalMocks) runAction(step actionStep) common.Executor {
 	return args.Get(0).(func(context.Context) error)
 }
 
-func (salm *stepActionLocalMocks) readAction(_ context.Context, step *model.Step, actionDir string, actionPath string, readFile actionYamlReader, writeFile fileWriter) (*model.Action, error) {
-	args := salm.Called(step, actionDir, actionPath, readFile, writeFile)
+func (salm *stepActionLocalMocks) readAction(_ context.Context, step *model.Step, readFile actionYamlReader, config model.ActionConfig) (*model.Action, error) {
+	args := salm.Called(step, readFile, config)
 	return args.Get(0).(*model.Action), args.Error(1)
 }
 
@@ -66,7 +65,7 @@ func TestStepActionLocalTest(t *testing.T) {
 		},
 	}
 
-	salm.On("readAction", sal.Step, filepath.Clean("/tmp/path/to/action"), "", mock.Anything, mock.Anything).
+	salm.On("readAction", sal.Step, mock.Anything, sal.RunContext.Config.Action).
 		Return(&model.Action{}, nil)
 
 	cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(_ context.Context) error {

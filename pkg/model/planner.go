@@ -55,8 +55,13 @@ type WorkflowFiles struct {
 	dirPath          string
 }
 
+type PlannerConfig struct {
+	Recursive bool
+	Workflow  WorkflowConfig
+}
+
 // NewWorkflowPlanner will load a specific workflow, all workflows from a directory or all workflows from a directory and its subdirectories
-func NewWorkflowPlanner(path string, noWorkflowRecurse, strict bool) (WorkflowPlanner, error) {
+func NewWorkflowPlanner(path string, config PlannerConfig) (WorkflowPlanner, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
@@ -71,7 +76,7 @@ func NewWorkflowPlanner(path string, noWorkflowRecurse, strict bool) (WorkflowPl
 
 	if fi.IsDir() {
 		log.Debugf("Loading workflows from '%s'", path)
-		if noWorkflowRecurse {
+		if !config.Recursive {
 			files, err := os.ReadDir(path)
 			if err != nil {
 				return nil, err
@@ -124,7 +129,7 @@ func NewWorkflowPlanner(path string, noWorkflowRecurse, strict bool) (WorkflowPl
 			}
 
 			log.Debugf("Reading workflow '%s'", f.Name())
-			workflow, err := ReadWorkflow(f, strict)
+			workflow, err := ReadWorkflow(f, config.Workflow)
 			if err != nil {
 				_ = f.Close()
 				if err == io.EOF {
@@ -157,11 +162,11 @@ func NewWorkflowPlanner(path string, noWorkflowRecurse, strict bool) (WorkflowPl
 	return wp, nil
 }
 
-func NewSingleWorkflowPlanner(name string, f io.Reader) (WorkflowPlanner, error) {
+func NewSingleWorkflowPlanner(name string, f io.Reader, config PlannerConfig) (WorkflowPlanner, error) {
 	wp := new(workflowPlanner)
 
 	log.Debugf("Reading workflow %s", name)
-	workflow, err := ReadWorkflow(f, false)
+	workflow, err := ReadWorkflow(f, config.Workflow)
 	if err != nil {
 		if err == io.EOF {
 			return nil, fmt.Errorf("unable to read workflow '%s': file is empty: %w", name, err)

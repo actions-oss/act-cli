@@ -2,14 +2,11 @@ package runner
 
 import (
 	"context"
-	"embed"
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -33,23 +30,18 @@ type actionStep interface {
 	maybeCopyToActionDir(ctx context.Context) error
 }
 
-type readAction func(ctx context.Context, step *model.Step, actionDir string, actionPath string, readFile actionYamlReader, writeFile fileWriter) (*model.Action, error)
+type readAction func(ctx context.Context, step *model.Step, readFile actionYamlReader, config model.ActionConfig) (*model.Action, error)
 
 type actionYamlReader func(filename string) (io.Reader, io.Closer, error)
 
-type fileWriter func(filename string, data []byte, perm fs.FileMode) error
-
 type runAction func(step actionStep) common.Executor
 
-//go:embed res/trampoline.js
-var trampoline embed.FS
-
-func readActionImpl(ctx context.Context, step *model.Step, actionDir string, actionPath string, readFile actionYamlReader, writeFile fileWriter) (*model.Action, error) {
+func readActionImpl(ctx context.Context, step *model.Step, readFile actionYamlReader, config model.ActionConfig) (*model.Action, error) {
 	logger := common.Logger(ctx)
 	allErrors := []error{}
 	addError := func(fileName string, err error) {
 		if err != nil {
-			allErrors = append(allErrors, fmt.Errorf("failed to read '%s' from action '%s' with path '%s' of step %w", fileName, step.String(), actionPath, err))
+			allErrors = append(allErrors, fmt.Errorf("failed to read '%s' from action '%s': %w", fileName, step.String(), err))
 		} else {
 			// One successful read, clear error state
 			allErrors = nil
@@ -75,39 +67,6 @@ func readActionImpl(ctx context.Context, step *model.Step, actionDir string, act
 				logger.Debugf("Using synthetic action %v for Dockerfile", action)
 				return action, nil
 			}
-			if step.With != nil {
-				if val, ok := step.With["args"]; ok {
-					var b []byte
-					if b, err = trampoline.ReadFile("res/trampoline.js"); err != nil {
-						return nil, err
-					}
-					err2 := writeFile(filepath.Join(actionDir, actionPath, "trampoline.js"), b, 0o400)
-					if err2 != nil {
-						return nil, err2
-					}
-					action := &model.Action{
-						Name: "(Synthetic)",
-						Inputs: map[string]model.Input{
-							"cwd": {
-								Description: "(Actual working directory)",
-								Required:    false,
-								Default:     filepath.Join(actionDir, actionPath),
-							},
-							"command": {
-								Description: "(Actual program)",
-								Required:    false,
-								Default:     val,
-							},
-						},
-						Runs: model.ActionRuns{
-							Using: "node12",
-							Main:  "trampoline.js",
-						},
-					}
-					logger.Debugf("Using synthetic action %v", action)
-					return action, nil
-				}
-			}
 		}
 	}
 	if allErrors != nil {
@@ -115,8 +74,8 @@ func readActionImpl(ctx context.Context, step *model.Step, actionDir string, act
 	}
 	defer closer.Close()
 
-	action, err := model.ReadAction(reader)
-	logger.Debugf("Read action %v from '%s'", action, "Unknown")
+	action, err := model.ReadAction(reader, config)
+	logger.Debugf("Read action %v", action)
 	return action, err
 }
 

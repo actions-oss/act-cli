@@ -32,6 +32,7 @@ import (
 	"github.com/actions-oss/act-cli/pkg/gh"
 	"github.com/actions-oss/act-cli/pkg/model"
 	"github.com/actions-oss/act-cli/pkg/runner"
+	"github.com/actions-oss/act-cli/pkg/schema"
 )
 
 type Flag struct {
@@ -55,7 +56,7 @@ func Execute(ctx context.Context, version string) {
 
 func createRootCommand(ctx context.Context, input *Input, version string) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:              "act [event name to run] [flags]\n\nIf no event name passed, will default to \"on: push\"\nIf actions handles only one event it will be used as default instead of \"on: push\"",
+		Use:              "act [event name to run] [flags]\n\nIf no event name passed, will default to \"on: push\"\nIf actions handles only one event it will be used as default instead of \"on: push\"\nSee documentation at: https://gitea.com/actions-oss/act-cli or https://github.com/actions-oss/act-cli",
 		Short:            "Run GitHub actions locally by specifying the event name (e.g. `push`) or an action name directly.",
 		Args:             cobra.MaximumNArgs(1),
 		RunE:             newRunCommand(ctx, input),
@@ -131,6 +132,7 @@ func createRootCommand(ctx context.Context, input *Input, version string) *cobra
 	rootCmd.PersistentFlags().StringVarP(&input.networkName, "network", "", "host", "Sets a docker network name. Defaults to host.")
 	rootCmd.PersistentFlags().StringArrayVarP(&input.localRepository, "local-repository", "", []string{}, "Replaces the specified repository and ref with a local folder (e.g. https://github.com/test/test@v0=/home/act/test or test/test@v0=/home/act/test, the latter matches any hosts or protocols)")
 	rootCmd.PersistentFlags().BoolVar(&input.listOptions, "list-options", false, "Print a json structure of compatible options")
+	rootCmd.PersistentFlags().BoolVar(&input.gitea, "gitea", false, "Use Gitea instead of GitHub")
 	rootCmd.SetArgs(args())
 	return rootCmd
 }
@@ -171,6 +173,7 @@ func bugReport(ctx context.Context, version string) error {
 	}
 
 	report := sprintf("act version:", version)
+	report += sprintf("Variant:", "https://gitea.com/actions-oss/act-cli / https://github.com/actions-oss/act-cli")
 	report += sprintf("GOOS:", runtime.GOOS)
 	report += sprintf("GOARCH:", runtime.GOARCH)
 	report += sprintf("NumCPU:", fmt.Sprint(runtime.NumCPU()))
@@ -452,7 +455,18 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 		matrixes := parseMatrix(input.matrix)
 		log.Debugf("Evaluated matrix inclusions: %v", matrixes)
 
-		planner, err := model.NewWorkflowPlanner(input.WorkflowsPath(), !input.workflowRecurse, input.strict)
+		// TODO switch to Gitea Schema when supported
+		plannerConfig := model.PlannerConfig{
+			Recursive: input.workflowRecurse,
+			Workflow: model.WorkflowConfig{
+				Strict: input.strict,
+			},
+		}
+		if input.gitea {
+			plannerConfig.Workflow.Schema = schema.GetGiteaWorkflowSchema()
+		}
+
+		planner, err := model.NewWorkflowPlanner(input.WorkflowsPath(), plannerConfig)
 		if err != nil {
 			return err
 		}
@@ -652,12 +666,21 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 			Matrix:                             matrixes,
 			ContainerNetworkMode:               docker_container.NetworkMode(input.networkName),
 			Parallel:                           input.parallel,
+			Planner:                            plannerConfig,
+			Action:                             model.ActionConfig{}, // TODO Gitea Action Schema
+			MainContextNames:                   []string{"github"},
 		}
+		if input.gitea {
+			config.Action.Schema = schema.GetGiteaActionSchema()
+			config.MainContextNames = append(config.MainContextNames, "gitea")
+		}
+		actionCache := runner.GoGitActionCache{
+			Path: config.ActionCacheDir,
+		}
+		config.ActionCache = &actionCache
 		if input.actionOfflineMode {
 			config.ActionCache = &runner.GoGitActionCacheOfflineMode{
-				Parent: runner.GoGitActionCache{
-					Path: config.ActionCacheDir,
-				},
+				Parent: actionCache,
 			}
 		}
 		if len(input.localRepository) > 0 {

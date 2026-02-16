@@ -79,33 +79,6 @@ runs:
 				},
 			},
 		},
-		{
-			name: "readWithArgs",
-			step: &model.Step{
-				With: map[string]string{
-					"args": "cmd",
-				},
-			},
-			expected: &model.Action{
-				Name: "(Synthetic)",
-				Inputs: map[string]model.Input{
-					"cwd": {
-						Description: "(Actual working directory)",
-						Required:    false,
-						Default:     "actionDir/actionPath",
-					},
-					"command": {
-						Description: "(Actual program)",
-						Required:    false,
-						Default:     "cmd",
-					},
-				},
-				Runs: model.ActionRuns{
-					Using: "node12",
-					Main:  "trampoline.js",
-				},
-			},
-		},
 	}
 
 	for _, tt := range table {
@@ -120,17 +93,11 @@ runs:
 				return strings.NewReader(tt.fileContent), closerMock, nil
 			}
 
-			writeFile := func(filename string, _ []byte, perm fs.FileMode) error {
-				assert.Equal(t, "actionDir/actionPath/trampoline.js", filename)
-				assert.Equal(t, fs.FileMode(0400), perm)
-				return nil
-			}
-
 			if tt.filename != "" {
 				closerMock.On("Close")
 			}
 
-			action, err := readActionImpl(context.Background(), tt.step, "actionDir", "actionPath", readFile, writeFile)
+			action, err := readActionImpl(context.Background(), tt.step, readFile, model.ActionConfig{})
 
 			assert.Nil(t, err)
 			assert.Equal(t, tt.expected, action)

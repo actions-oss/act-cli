@@ -34,6 +34,7 @@ type ReadOnlyArray[T any] interface {
 
 type ReadOnlyObject[T any] interface {
 	Get(key string) T
+	GetKv(key string) (string, T) // Returns the actual key used (for case-insensitive objects)
 	GetEnumerator() map[string]T
 }
 
@@ -54,13 +55,18 @@ func (a BasicArray[T]) GetEnumerator() []T {
 type CaseInsensitiveObject[T any] map[string]T
 
 func (o CaseInsensitiveObject[T]) Get(key string) T {
+	_, v := o.GetKv(key)
+	return v
+}
+
+func (o CaseInsensitiveObject[T]) GetKv(key string) (k string, v T) {
 	for k, v := range o {
 		if strings.EqualFold(k, key) {
-			return v
+			return k, v
 		}
 	}
 	var zero T
-	return zero
+	return key, zero
 }
 
 func (o CaseInsensitiveObject[T]) GetEnumerator() map[string]T {
@@ -71,6 +77,10 @@ type CaseSensitiveObject[T any] map[string]T
 
 func (o CaseSensitiveObject[T]) Get(key string) T {
 	return o[key]
+}
+
+func (o CaseSensitiveObject[T]) GetKv(key string) (string, T) {
+	return key, o[key]
 }
 
 func (o CaseSensitiveObject[T]) GetEnumerator() map[string]T {

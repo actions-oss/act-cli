@@ -98,9 +98,10 @@ func (rc *RunContext) NewExpressionEvaluatorWithEnv(ctx context.Context, env map
 	}
 	return expressionEvaluator{
 		interpreter: exprparser.NewInterpeter(ee, exprparser.Config{
-			Run:        rc.Run,
-			WorkingDir: rc.Config.Workdir,
-			Context:    "job",
+			Run:              rc.Run,
+			WorkingDir:       rc.Config.Workdir,
+			Context:          "job",
+			MainContextNames: rc.Config.MainContextNames,
 		}),
 	}
 }
@@ -164,9 +165,10 @@ func (rc *RunContext) newStepExpressionEvaluator(ctx context.Context, step step,
 	}
 	return expressionEvaluator{
 		interpreter: exprparser.NewInterpeter(ee, exprparser.Config{
-			Run:        rc.Run,
-			WorkingDir: rc.Config.Workdir,
-			Context:    "step",
+			Run:              rc.Run,
+			WorkingDir:       rc.Config.Workdir,
+			Context:          "step",
+			MainContextNames: rc.Config.MainContextNames,
 		}),
 	}
 }

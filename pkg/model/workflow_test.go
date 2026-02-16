@@ -21,7 +21,7 @@ jobs:
     - uses: ./actions/docker-url
 `
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 
 	assert.Len(t, workflow.On(), 1)
@@ -40,7 +40,7 @@ jobs:
     - uses: ./actions/docker-url
 `
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 
 	assert.Len(t, workflow.On(), 2)
@@ -66,7 +66,7 @@ jobs:
     - uses: ./actions/docker-url
 `
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	assert.Len(t, workflow.On(), 2)
 	assert.Contains(t, workflow.On(), "push")
@@ -85,7 +85,7 @@ jobs:
     steps:
     - uses: ./actions/docker-url`
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	assert.Equal(t, workflow.Jobs["test"].RunsOn(), []string{"ubuntu-latest"})
 }
@@ -103,7 +103,7 @@ jobs:
     steps:
     - uses: ./actions/docker-url`
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	assert.Equal(t, workflow.Jobs["test"].RunsOn(), []string{"ubuntu-latest", "linux"})
 }
@@ -128,7 +128,7 @@ jobs:
     - uses: ./actions/docker-url
 `
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	assert.Len(t, workflow.Jobs, 2)
 	assert.Contains(t, workflow.Jobs["test"].Container().Image, "nginx:latest")
@@ -158,7 +158,7 @@ jobs:
     - uses: ./actions/docker-url
 `
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	assert.Len(t, workflow.Jobs, 1)
 
@@ -196,7 +196,7 @@ jobs:
     uses: ./some/path/to/workflow.yaml
 `
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	assert.Len(t, workflow.Jobs, 6)
 
@@ -240,7 +240,7 @@ jobs:
     uses: some/path/to/workflow.yaml
 `
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	assert.Len(t, workflow.Jobs, 4)
 
@@ -282,7 +282,7 @@ jobs:
         uses: ./local-action
 `
 
-	_, err := ReadWorkflow(strings.NewReader(yaml), false)
+	_, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.Error(t, err, "read workflow should fail")
 }
 
@@ -314,7 +314,7 @@ jobs:
           echo "${{ needs.test1.outputs.some-b-key }}"
 `
 
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	assert.Len(t, workflow.Jobs, 2)
 
@@ -329,7 +329,7 @@ jobs:
 }
 
 func TestReadWorkflow_Strategy(t *testing.T) {
-	w, err := NewWorkflowPlanner("testdata/strategy/push.yml", true, false)
+	w, err := NewWorkflowPlanner("testdata/strategy/push.yml", PlannerConfig{})
 	assert.NoError(t, err)
 
 	p, err := w.PlanJob("strategy-only-max-parallel")
@@ -451,7 +451,7 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
         steps:
         - run: echo Test
     `
-	workflow, err := ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	workflowDispatch := workflow.WorkflowDispatchConfig()
 	assert.Nil(t, workflowDispatch)
@@ -465,7 +465,7 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
         steps:
         - run: echo Test
     `
-	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err = ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	workflowDispatch = workflow.WorkflowDispatchConfig()
 	assert.NotNil(t, workflowDispatch)
@@ -480,7 +480,7 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
         steps:
         - run: echo Test
     `
-	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err = ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	workflowDispatch = workflow.WorkflowDispatchConfig()
 	assert.Nil(t, workflowDispatch)
@@ -494,7 +494,7 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
         steps:
         - run: echo Test
     `
-	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err = ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	workflowDispatch = workflow.WorkflowDispatchConfig()
 	assert.NotNil(t, workflowDispatch)
@@ -511,7 +511,7 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
         steps:
         - run: echo Test
     `
-	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err = ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	workflowDispatch = workflow.WorkflowDispatchConfig()
 	assert.NotNil(t, workflowDispatch)
@@ -528,7 +528,7 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
         steps:
         - run: echo Test
     `
-	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err = ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	workflowDispatch = workflow.WorkflowDispatchConfig()
 	assert.Nil(t, workflowDispatch)
@@ -555,7 +555,7 @@ func TestReadWorkflow_WorkflowDispatchConfig(t *testing.T) {
         steps:
         - run: echo Test
     `
-	workflow, err = ReadWorkflow(strings.NewReader(yaml), false)
+	workflow, err = ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 	workflowDispatch = workflow.WorkflowDispatchConfig()
 	assert.NotNil(t, workflowDispatch)
@@ -584,7 +584,7 @@ jobs:
     - uses: ./actions/docker-url
 `
 
-	_, err := ReadWorkflow(strings.NewReader(yaml), true)
+	_, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{Strict: true})
 	assert.Error(t, err, "read workflow should succeed")
 }
 
@@ -603,7 +603,7 @@ jobs:
     - uses: *checkout
 `
 
-	w, err := ReadWorkflow(strings.NewReader(yaml), true)
+	w, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{Strict: true})
 	assert.NoError(t, err, "read workflow should succeed")
 
 	for _, job := range w.Jobs {
@@ -614,20 +614,24 @@ jobs:
 
 func TestReadWorkflow_Anchor(t *testing.T) {
 	yaml := `
-on: push
 
 jobs:
   test:
     runs-on: &runner ubuntu-latest
     steps:
     - uses: &checkout actions/checkout@v5
-  test2:
+  test2: &job
     runs-on: *runner
     steps:
     - uses: *checkout
+    - run: echo $TRIGGER
+      env:
+        TRIGGER: &trigger push
+  test3: *job
+on: push #*trigger
 `
 
-	w, err := ReadWorkflow(strings.NewReader(yaml), false)
+	w, err := ReadWorkflow(strings.NewReader(yaml), WorkflowConfig{})
 	assert.NoError(t, err, "read workflow should succeed")
 
 	for _, job := range w.Jobs {
