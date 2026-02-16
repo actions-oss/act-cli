@@ -16,7 +16,7 @@ import (
 	"github.com/actions-oss/act-cli/pkg/container"
 	"github.com/actions-oss/act-cli/pkg/exprparser"
 	"github.com/actions-oss/act-cli/pkg/model"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // ExpressionEvaluator is the interface for evaluating expressions

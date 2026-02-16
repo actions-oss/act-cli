@@ -16,7 +16,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	assert "github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v3"
+	yaml "go.yaml.in/yaml/v4"
 )
 
 func TestRunContext_EvalBool(t *testing.T) {
