@@ -6,8 +6,8 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/docker/docker/api/types/system"
 	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/moby/moby/api/types/system"
 	"github.com/pkg/errors"
 )
 

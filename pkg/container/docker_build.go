@@ -9,11 +9,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/docker/docker/api/types/build"
 	"github.com/moby/go-archive"
+	"github.com/moby/moby/client"
 
 	"github.com/moby/patternmatcher"
 	"github.com/moby/patternmatcher/ignorefile"
+	specs "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/actions-oss/act-cli/pkg/common"
 )
@@ -40,12 +41,14 @@ func NewDockerBuildExecutor(input NewDockerBuildExecutorInput) common.Executor {
 		logger.Debugf("Building image from '%v'", input.ContextDir)
 
 		tags := []string{input.ImageTag}
-		options := build.ImageBuildOptions{
+		options := client.ImageBuildOptions{
 			Tags:        tags,
 			Remove:      true,
-			Platform:    input.Platform,
 			AuthConfigs: LoadDockerAuthConfigs(ctx),
 			Dockerfile:  input.Dockerfile,
+		}
+		if platform := parsePlatform(input.Platform); platform != nil {
+			options.Platforms = []specs.Platform{*platform}
 		}
 		var buildContext io.ReadCloser
 		if input.BuildContext != nil {

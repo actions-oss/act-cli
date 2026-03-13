@@ -20,18 +20,17 @@ import (
 	"dario.cat/mergo"
 	"github.com/Masterminds/semver"
 	"github.com/docker/cli/cli/connhelper"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/system"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/go-git/go-billy/v5/helper/polyfill"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/joho/godotenv"
 	"github.com/kballard/go-shellquote"
+	"github.com/moby/moby/api/pkg/stdcopy"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/system"
+	"github.com/moby/moby/client"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/pflag"
 
@@ -50,7 +49,7 @@ func NewContainer(input *NewContainerInput) ExecutionsEnvironment {
 // API version is 1.41 and beyond
 func supportsContainerImagePlatform(ctx context.Context, cli client.APIClient) bool {
 	logger := common.Logger(ctx)
-	ver, err := cli.ServerVersion(ctx)
+	ver, err := cli.ServerVersion(ctx, client.ServerVersionOptions{})
 	if err != nil {
 		logger.Panicf("Failed to get Docker API Version: %s", err)
 		return false
@@ -139,8 +138,11 @@ func (cr *containerReference) GetContainerArchive(ctx context.Context, srcPath s
 	if common.Dryrun(ctx) {
 		return nil, fmt.Errorf("dryrun is not supported in GetContainerArchive")
 	}
-	a, _, err := cr.cli.CopyFromContainer(ctx, cr.id, srcPath)
-	return a, err
+	result, err := cr.cli.CopyFromContainer(ctx, cr.id, client.CopyFromContainerOptions{SourcePath: srcPath})
+	if err != nil {
+		return nil, err
+	}
+	return result.Content, nil
 }
 
 func (cr *containerReference) UpdateFromEnv(srcPath string, env *map[string]string) common.Executor {
@@ -170,19 +172,20 @@ func (cr *containerReference) Remove() common.Executor {
 }
 
 func (cr *containerReference) GetHealth(ctx context.Context) Health {
-	resp, err := cr.cli.ContainerInspect(ctx, cr.id)
+	resp, err := cr.cli.ContainerInspect(ctx, cr.id, client.ContainerInspectOptions{})
 	logger := common.Logger(ctx)
 	if err != nil {
 		logger.Errorf("failed to query container health %s", err)
 		return HealthUnHealthy
 	}
-	if resp.Config == nil || resp.Config.Healthcheck == nil || resp.State == nil || resp.State.Health == nil || len(resp.Config.Healthcheck.Test) == 1 && strings.EqualFold(resp.Config.Healthcheck.Test[0], "NONE") {
+	inspect := resp.Container
+	if inspect.Config == nil || inspect.Config.Healthcheck == nil || inspect.State == nil || inspect.State.Health == nil || len(inspect.Config.Healthcheck.Test) == 1 && strings.EqualFold(inspect.Config.Healthcheck.Test[0], "NONE") {
 		logger.Debugf("no container health check defined")
 		return HealthHealthy
 	}
 
-	logger.Infof("container health of %s (%s) is %s", cr.id, resp.Config.Image, resp.State.Health.Status)
-	switch resp.State.Health.Status {
+	logger.Infof("container health of %s (%s) is %s", cr.id, inspect.Config.Image, inspect.State.Health.Status)
+	switch inspect.State.Health.Status {
 	case "starting":
 		return HealthStarting
 	case "healthy":
@@ -213,8 +216,26 @@ type containerReference struct {
 }
 
 func GetDockerClient(ctx context.Context) (cli client.APIClient, err error) {
-	dockerHost := os.Getenv("DOCKER_HOST")
+	dockerHost, err := resolveReachableDockerHost(ctx)
+	if err != nil {
+		return nil, err
+	}
 
+	cli, err = newDockerClient(dockerHost)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = cli.Ping(ctx, client.PingOptions{NegotiateAPIVersion: true})
+	if err != nil {
+		cli.Close()
+		return nil, fmt.Errorf("failed to ping docker daemon: %w", err)
+	}
+
+	return cli, nil
+}
+
+func newDockerClient(dockerHost string) (cli client.APIClient, err error) {
 	if strings.HasPrefix(dockerHost, "ssh://") {
 		var helper *connhelper.ConnectionHelper
 
@@ -222,19 +243,34 @@ func GetDockerClient(ctx context.Context) (cli client.APIClient, err error) {
 		if err != nil {
 			return nil, err
 		}
-		cli, err = client.NewClientWithOpts(
+		cli, err = client.New(
+			client.FromEnv,
 			client.WithHost(helper.Host),
 			client.WithDialContext(helper.Dialer),
 		)
 	} else {
-		cli, err = client.NewClientWithOpts(client.FromEnv)
+		opts := []client.Opt{client.FromEnv}
+		if dockerHost != "" {
+			opts = append(opts, client.WithHost(dockerHost))
+		}
+		cli, err = client.New(opts...)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to docker daemon: %w", err)
 	}
-	cli.NegotiateAPIVersion(ctx)
 
 	return cli, nil
+}
+
+func pingDockerHost(ctx context.Context, dockerHost string) error {
+	cli, err := newDockerClient(dockerHost)
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+
+	_, err = cli.Ping(ctx, client.PingOptions{NegotiateAPIVersion: true})
+	return err
 }
 
 func GetHostInfo(ctx context.Context) (info system.Info, err error) {
@@ -245,12 +281,12 @@ func GetHostInfo(ctx context.Context) (info system.Info, err error) {
 	}
 	defer cli.Close()
 
-	info, err = cli.Info(ctx)
+	result, err := cli.Info(ctx, client.InfoOptions{})
 	if err != nil {
 		return info, err
 	}
 
-	return info, nil
+	return result.Info, nil
 }
 
 // Arch fetches values from docker info and translates architecture to
@@ -307,14 +343,14 @@ func (cr *containerReference) find() common.Executor {
 		if cr.id != "" {
 			return nil
 		}
-		containers, err := cr.cli.ContainerList(ctx, container.ListOptions{
+		containers, err := cr.cli.ContainerList(ctx, client.ContainerListOptions{
 			All: true,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to list containers: %w", err)
 		}
 
-		for _, c := range containers {
+		for _, c := range containers.Items {
 			for _, name := range c.Names {
 				if name[1:] == cr.input.Name {
 					cr.id = c.ID
@@ -335,7 +371,7 @@ func (cr *containerReference) remove() common.Executor {
 		}
 
 		logger := common.Logger(ctx)
-		err := cr.cli.ContainerRemove(ctx, cr.id, container.RemoveOptions{
+		_, err := cr.cli.ContainerRemove(ctx, cr.id, client.ContainerRemoveOptions{
 			RemoveVolumes: true,
 			Force:         true,
 		})
@@ -415,12 +451,20 @@ func (cr *containerReference) create(capAdd []string, capDrop []string) common.E
 		logger := common.Logger(ctx)
 		isTerminal := containerAllocateTerminal
 		input := cr.input
+		exposedPorts, err := convertPortSet(input.ExposedPorts)
+		if err != nil {
+			return err
+		}
+		portBindings, err := convertPortMap(input.PortBindings)
+		if err != nil {
+			return err
+		}
 
 		config := &container.Config{
 			Image:        input.Image,
 			WorkingDir:   input.WorkingDir,
 			Env:          input.Env,
-			ExposedPorts: input.ExposedPorts,
+			ExposedPorts: exposedPorts,
 			Tty:          isTerminal,
 		}
 		logger.Debugf("Common container.Config ==> %+v", config)
@@ -464,11 +508,11 @@ func (cr *containerReference) create(capAdd []string, capDrop []string) common.E
 			NetworkMode:  container.NetworkMode(input.NetworkMode),
 			Privileged:   input.Privileged,
 			UsernsMode:   container.UsernsMode(input.UsernsMode),
-			PortBindings: input.PortBindings,
+			PortBindings: portBindings,
 		}
 		logger.Debugf("Common container.HostConfig ==> %+v", hostConfig)
 
-		config, hostConfig, err := cr.mergeContainerConfigs(ctx, config, hostConfig)
+		config, hostConfig, err = cr.mergeContainerConfigs(ctx, config, hostConfig)
 		if err != nil {
 			return err
 		}
@@ -488,7 +532,13 @@ func (cr *containerReference) create(capAdd []string, capDrop []string) common.E
 			}
 		}
 
-		resp, err := cr.cli.ContainerCreate(ctx, config, hostConfig, networkingConfig, platSpecs, input.Name)
+		resp, err := cr.cli.ContainerCreate(ctx, client.ContainerCreateOptions{
+			Config:           config,
+			HostConfig:       hostConfig,
+			NetworkingConfig: networkingConfig,
+			Platform:         platSpecs,
+			Name:             input.Name,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to create container: '%w'", err)
 		}
@@ -569,12 +619,12 @@ func (cr *containerReference) exec(ctx context.Context, cmd []string, env map[st
 	}
 	logger.Debugf("Working directory '%s'", wd)
 
-	idResp, err := cr.cli.ContainerExecCreate(ctx, cr.id, container.ExecOptions{
+	idResp, err := cr.cli.ExecCreate(ctx, cr.id, client.ExecCreateOptions{
 		User:         user,
 		Cmd:          cmd,
 		WorkingDir:   wd,
 		Env:          envList,
-		Tty:          isTerminal,
+		TTY:          isTerminal,
 		AttachStderr: true,
 		AttachStdout: true,
 	})
@@ -582,20 +632,20 @@ func (cr *containerReference) exec(ctx context.Context, cmd []string, env map[st
 		return fmt.Errorf("failed to create exec: %w", err)
 	}
 
-	resp, err := cr.cli.ContainerExecAttach(ctx, idResp.ID, container.ExecStartOptions{
-		Tty: isTerminal,
+	resp, err := cr.cli.ExecAttach(ctx, idResp.ID, client.ExecAttachOptions{
+		TTY: isTerminal,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to attach to exec: %w", err)
 	}
 	defer resp.Close()
 
-	err = cr.waitForCommand(ctx, isTerminal, resp)
+	err = cr.waitForCommand(ctx, isTerminal, resp.HijackedResponse)
 	if err != nil {
 		return err
 	}
 
-	inspectResp, err := cr.cli.ContainerExecInspect(ctx, idResp.ID)
+	inspectResp, err := cr.cli.ExecInspect(ctx, idResp.ID, client.ExecInspectOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to inspect exec: %w", err)
 	}
@@ -625,7 +675,7 @@ func (cr *containerReference) execExt(cmd []string, env map[string]string, user,
 		case <-ctx.Done():
 			timed, cancelTimed := context.WithTimeout(context.Background(), 2*time.Minute)
 			defer cancelTimed()
-			err := cr.cli.ContainerKill(timed, cr.id, "kill")
+			_, err := cr.cli.ContainerKill(timed, cr.id, client.ContainerKillOptions{Signal: "kill"})
 			if err != nil {
 				logger.Error(err)
 			}
@@ -640,7 +690,7 @@ func (cr *containerReference) execExt(cmd []string, env map[string]string, user,
 
 func (cr *containerReference) tryReadID(opt string, cbk func(id int)) common.Executor {
 	return func(ctx context.Context) error {
-		idResp, err := cr.cli.ContainerExecCreate(ctx, cr.id, container.ExecOptions{
+		idResp, err := cr.cli.ExecCreate(ctx, cr.id, client.ExecCreateOptions{
 			Cmd:          []string{"id", opt},
 			AttachStdout: true,
 			AttachStderr: true,
@@ -649,7 +699,7 @@ func (cr *containerReference) tryReadID(opt string, cbk func(id int)) common.Exe
 			return nil
 		}
 
-		resp, err := cr.cli.ContainerExecAttach(ctx, idResp.ID, container.ExecStartOptions{})
+		resp, err := cr.cli.ExecAttach(ctx, idResp.ID, client.ExecAttachOptions{})
 		if err != nil {
 			return nil
 		}
@@ -679,7 +729,7 @@ func (cr *containerReference) tryReadGID() common.Executor {
 	return cr.tryReadID("-g", func(id int) { cr.GID = id })
 }
 
-func (cr *containerReference) waitForCommand(ctx context.Context, isTerminal bool, resp types.HijackedResponse) error {
+func (cr *containerReference) waitForCommand(ctx context.Context, isTerminal bool, resp client.HijackedResponse) error {
 	logger := common.Logger(ctx)
 
 	cmdResponse := make(chan error)
@@ -737,12 +787,18 @@ func (cr *containerReference) CopyTarStream(ctx context.Context, destPath string
 		Typeflag: tar.TypeDir,
 	})
 	tw.Close()
-	err := cr.cli.CopyToContainer(ctx, cr.id, "/", buf, container.CopyToContainerOptions{})
+	_, err := cr.cli.CopyToContainer(ctx, cr.id, client.CopyToContainerOptions{
+		DestinationPath: "/",
+		Content:         buf,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to mkdir to copy content to container: %w", err)
 	}
 	// Copy Content
-	err = cr.cli.CopyToContainer(ctx, cr.id, destPath, tarStream, container.CopyToContainerOptions{})
+	_, err = cr.cli.CopyToContainer(ctx, cr.id, client.CopyToContainerOptions{
+		DestinationPath: destPath,
+		Content:         tarStream,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to copy content to container: %w", err)
 	}
@@ -816,7 +872,10 @@ func (cr *containerReference) copyDir(dstPath string, srcPath string, useGitIgno
 		if err != nil {
 			return fmt.Errorf("failed to seek tar archive: %w", err)
 		}
-		err = cr.cli.CopyToContainer(ctx, cr.id, "/", tarFile, container.CopyToContainerOptions{})
+		_, err = cr.cli.CopyToContainer(ctx, cr.id, client.CopyToContainerOptions{
+			DestinationPath: "/",
+			Content:         tarFile,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to copy content to container: %w", err)
 		}
@@ -850,7 +909,10 @@ func (cr *containerReference) copyContent(dstPath string, files ...*FileEntry) c
 		}
 
 		logger.Debugf("Extracting content to '%s'", dstPath)
-		err := cr.cli.CopyToContainer(ctx, cr.id, dstPath, &buf, container.CopyToContainerOptions{})
+		_, err := cr.cli.CopyToContainer(ctx, cr.id, client.CopyToContainerOptions{
+			DestinationPath: dstPath,
+			Content:         &buf,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to copy content to container: %w", err)
 		}
@@ -860,7 +922,7 @@ func (cr *containerReference) copyContent(dstPath string, files ...*FileEntry) c
 
 func (cr *containerReference) attach() common.Executor {
 	return func(ctx context.Context) error {
-		out, err := cr.cli.ContainerAttach(ctx, cr.id, container.AttachOptions{
+		out, err := cr.cli.ContainerAttach(ctx, cr.id, client.ContainerAttachOptions{
 			Stream: true,
 			Stdout: true,
 			Stderr: true,
@@ -898,7 +960,7 @@ func (cr *containerReference) start() common.Executor {
 		logger := common.Logger(ctx)
 		logger.Debugf("Starting container: %v", cr.id)
 
-		if err := cr.cli.ContainerStart(ctx, cr.id, container.StartOptions{}); err != nil {
+		if _, err := cr.cli.ContainerStart(ctx, cr.id, client.ContainerStartOptions{}); err != nil {
 			return fmt.Errorf("failed to start container: %w", err)
 		}
 
@@ -910,14 +972,16 @@ func (cr *containerReference) start() common.Executor {
 func (cr *containerReference) wait() common.Executor {
 	return func(ctx context.Context) error {
 		logger := common.Logger(ctx)
-		statusCh, errCh := cr.cli.ContainerWait(ctx, cr.id, container.WaitConditionNotRunning)
+		waitResult := cr.cli.ContainerWait(ctx, cr.id, client.ContainerWaitOptions{
+			Condition: container.WaitConditionNotRunning,
+		})
 		var statusCode int64
 		select {
-		case err := <-errCh:
+		case err := <-waitResult.Error:
 			if err != nil {
 				return fmt.Errorf("failed to wait for container: %w", err)
 			}
-		case status := <-statusCh:
+		case status := <-waitResult.Result:
 			statusCode = status.StatusCode
 		}
 

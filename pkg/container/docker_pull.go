@@ -4,14 +4,14 @@ package container
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/distribution/reference"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/pkg/authconfig"
+	"github.com/moby/moby/api/types/registry"
+	"github.com/moby/moby/client"
+	specs "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/actions-oss/act-cli/pkg/common"
 )
@@ -74,26 +74,25 @@ func NewDockerPullExecutor(input NewDockerPullExecutorInput) common.Executor {
 	}
 }
 
-func getImagePullOptions(ctx context.Context, input NewDockerPullExecutorInput) (image.PullOptions, error) {
-	imagePullOptions := image.PullOptions{
-		Platform: input.Platform,
+func getImagePullOptions(ctx context.Context, input NewDockerPullExecutorInput) (client.ImagePullOptions, error) {
+	imagePullOptions := client.ImagePullOptions{}
+	if platform := parsePlatform(input.Platform); platform != nil {
+		imagePullOptions.Platforms = []specs.Platform{*platform}
 	}
 	logger := common.Logger(ctx)
 
 	if input.Username != "" && input.Password != "" {
 		logger.Debugf("using authentication for docker pull")
 
-		authConfig := registry.AuthConfig{
+		encodedAuth, err := authconfig.Encode(registry.AuthConfig{
 			Username: input.Username,
 			Password: input.Password,
-		}
-
-		encodedJSON, err := json.Marshal(authConfig)
+		})
 		if err != nil {
 			return imagePullOptions, err
 		}
 
-		imagePullOptions.RegistryAuth = base64.URLEncoding.EncodeToString(encodedJSON)
+		imagePullOptions.RegistryAuth = encodedAuth
 	} else {
 		authConfig, err := LoadDockerAuthConfig(ctx, input.Image)
 		if err != nil {
@@ -104,12 +103,10 @@ func getImagePullOptions(ctx context.Context, input NewDockerPullExecutorInput) 
 		}
 		logger.Info("using DockerAuthConfig authentication for docker pull")
 
-		encodedJSON, err := json.Marshal(authConfig)
+		imagePullOptions.RegistryAuth, err = authconfig.Encode(authConfig)
 		if err != nil {
 			return imagePullOptions, err
 		}
-
-		imagePullOptions.RegistryAuth = base64.URLEncoding.EncodeToString(encodedJSON)
 	}
 
 	return imagePullOptions, nil
