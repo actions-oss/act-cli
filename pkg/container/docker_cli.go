@@ -7,7 +7,7 @@
 // See DOCKER_LICENSE for the full license text.
 //
 
-//nolint:unparam,errcheck,deadcode
+//nolint:unparam,errcheck
 package container
 
 import (

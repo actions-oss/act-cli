@@ -67,3 +67,14 @@ func NewDockerNetworkRemoveExecutor(name string) common.Executor {
 		return nil
 	}
 }
+
+var CommonSocketLocations []string
+
+type SocketAndHost struct {
+	Socket string
+	Host   string
+}
+
+func GetSocketAndHost(_ string) (SocketAndHost, error) {
+	return SocketAndHost{}, errors.New("Unsupported Operation")
+}

@@ -1,3 +1,5 @@
+//go:build !(WITHOUT_DOCKER || !(linux || darwin || windows || netbsd))
+
 package container
 
 import (
