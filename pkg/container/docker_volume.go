@@ -6,8 +6,7 @@ import (
 	"context"
 
 	"github.com/actions-oss/act-cli/pkg/common"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/volume"
+	"github.com/moby/moby/client"
 )
 
 func NewDockerVolumeRemoveExecutor(volumeName string, force bool) common.Executor {
@@ -18,12 +17,12 @@ func NewDockerVolumeRemoveExecutor(volumeName string, force bool) common.Executo
 		}
 		defer cli.Close()
 
-		list, err := cli.VolumeList(ctx, volume.ListOptions{Filters: filters.NewArgs()})
+		list, err := cli.VolumeList(ctx, client.VolumeListOptions{})
 		if err != nil {
 			return err
 		}
 
-		for _, vol := range list.Volumes {
+		for _, vol := range list.Items {
 			if vol.Name == volumeName {
 				return removeExecutor(volumeName, force)(ctx)
 			}
@@ -49,6 +48,7 @@ func removeExecutor(volume string, force bool) common.Executor {
 		}
 		defer cli.Close()
 
-		return cli.VolumeRemove(ctx, volume, force)
+		_, err = cli.VolumeRemove(ctx, volume, client.VolumeRemoveOptions{Force: force})
+		return err
 	}
 }

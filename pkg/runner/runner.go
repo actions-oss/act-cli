@@ -10,7 +10,7 @@ import (
 
 	"github.com/actions-oss/act-cli/pkg/common"
 	"github.com/actions-oss/act-cli/pkg/model"
-	docker_container "github.com/docker/docker/api/types/container"
+	docker_container "github.com/moby/moby/api/types/container"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/semaphore"
 )

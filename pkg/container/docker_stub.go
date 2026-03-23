@@ -6,8 +6,8 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/docker/docker/api/types/system"
 	"github.com/actions-oss/act-cli/pkg/common"
+	"github.com/moby/moby/api/types/system"
 	"github.com/pkg/errors"
 )
 
@@ -66,4 +66,15 @@ func NewDockerNetworkRemoveExecutor(name string) common.Executor {
 	return func(ctx context.Context) error {
 		return nil
 	}
+}
+
+var CommonSocketLocations []string
+
+type SocketAndHost struct {
+	Socket string
+	Host   string
+}
+
+func GetSocketAndHost(_ string) (SocketAndHost, error) {
+	return SocketAndHost{}, errors.New("Unsupported Operation")
 }

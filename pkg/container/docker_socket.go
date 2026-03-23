@@ -1,10 +1,14 @@
+//go:build !(WITHOUT_DOCKER || !(linux || darwin || windows || netbsd))
+
 package container
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -19,22 +23,20 @@ var CommonSocketLocations = []string{
 	"$HOME/.docker/run/docker.sock",
 }
 
-// returns socket URI or false if not found any
-func socketLocation() (string, bool) {
-	if dockerHost, exists := os.LookupEnv("DOCKER_HOST"); exists {
-		return dockerHost, true
-	}
+var dockerHostProbe = pingDockerHost
 
+func socketCandidates() []string {
+	candidates := make([]string, 0, len(CommonSocketLocations))
 	for _, p := range CommonSocketLocations {
 		if _, err := os.Lstat(os.ExpandEnv(p)); err == nil {
 			if strings.HasPrefix(p, `\\.\`) {
-				return "npipe://" + filepath.ToSlash(os.ExpandEnv(p)), true
+				candidates = append(candidates, "npipe://"+filepath.ToSlash(os.ExpandEnv(p)))
+				continue
 			}
-			return "unix://" + filepath.ToSlash(os.ExpandEnv(p)), true
+			candidates = append(candidates, "unix://"+filepath.ToSlash(os.ExpandEnv(p)))
 		}
 	}
-
-	return "", false
+	return candidates
 }
 
 // This function, `isDockerHostURI`, takes a string argument `daemonPath`. It checks if the
@@ -59,12 +61,33 @@ type SocketAndHost struct {
 	Host   string
 }
 
+func resolveReachableDockerHost(ctx context.Context) (string, error) {
+	if dockerHost, exists := os.LookupEnv("DOCKER_HOST"); exists && dockerHost != "" {
+		if err := probeDockerHost(ctx, dockerHost); err != nil {
+			return "", fmt.Errorf("docker host aka DOCKER_HOST %q is unreachable: %w", dockerHost, err)
+		}
+		return dockerHost, nil
+	}
+
+	for _, candidate := range socketCandidates() {
+		if err := probeDockerHost(ctx, candidate); err == nil {
+			return candidate, nil
+		}
+	}
+
+	return "", fmt.Errorf("no reachable container runtime found in the usual locations")
+}
+
+func probeDockerHost(ctx context.Context, host string) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	return dockerHostProbe(ctx, host)
+}
+
 func GetSocketAndHost(containerSocket string) (SocketAndHost, error) {
 	log.Debugf("Handling container host and socket")
 
-	// Prefer DOCKER_HOST, don't override it
-	dockerHost, hasDockerHost := socketLocation()
-	socketHost := SocketAndHost{Socket: containerSocket, Host: dockerHost}
+	ctx := context.Background()
 
 	// ** socketHost.Socket cases **
 	// Case 1: User does _not_ want to mount a daemon socket (passes a dash)
@@ -76,12 +99,26 @@ func GetSocketAndHost(containerSocket string) (SocketAndHost, error) {
 	// Case A: DOCKER_HOST is set; use it, i.e. do nothing
 	// Case B: DOCKER_HOST is empty; use sane defaults
 
-	// Set host for sanity's sake, when the socket isn't useful
-	if !hasDockerHost && (socketHost.Socket == "-" || !isDockerHostURI(socketHost.Socket) || socketHost.Socket == "") {
-		// Cases: 1B, 2B, 4B
-		socket, found := socketLocation()
-		socketHost.Host = socket
-		hasDockerHost = found
+	// Case 3B: User supplied a valid URI socket. Probe it directly before
+	// doing the more expensive generic resolution, since we already have
+	// a specific target.
+	if containerSocket != "" && containerSocket != "-" && isDockerHostURI(containerSocket) {
+		if err := probeDockerHost(ctx, containerSocket); err != nil {
+			return SocketAndHost{}, fmt.Errorf("container daemon socket %q is unreachable: %w", containerSocket, err)
+		}
+		log.Debugf("Setting DOCKER_HOST to container socket '%s'", containerSocket)
+		return SocketAndHost{Socket: containerSocket, Host: containerSocket}, nil
+	}
+
+	// Resolve a reachable docker host (checks DOCKER_HOST, then common socket locations)
+	dockerHost, resolveErr := resolveReachableDockerHost(ctx)
+	hasDockerHost := resolveErr == nil
+
+	socketHost := SocketAndHost{Socket: containerSocket, Host: dockerHost}
+
+	// If no runtime found and socket is empty or dash, fail early
+	if !hasDockerHost && (socketHost.Socket == "" || socketHost.Socket == "-") {
+		return SocketAndHost{}, resolveErr
 	}
 
 	// A - (dash) in socketHost.Socket means don't mount, preserve this value
@@ -89,7 +126,6 @@ func GetSocketAndHost(containerSocket string) (SocketAndHost, error) {
 	// Exit early if we're in an invalid state (e.g. when no DOCKER_HOST and user supplied "-", a dash or omitted)
 	if !hasDockerHost && socketHost.Socket != "" && !isDockerHostURI(socketHost.Socket) {
 		// Cases: 1B, 2B
-		// Should we early-exit here, since there is no host nor socket to talk to?
 		return SocketAndHost{}, fmt.Errorf("docker host aka DOCKER_HOST was not set, couldn't be found in the usual locations, and the container daemon socket ('%s') is invalid", socketHost.Socket)
 	}
 
@@ -102,10 +138,8 @@ func GetSocketAndHost(containerSocket string) (SocketAndHost, error) {
 	// Set sane default socket location if user omitted it
 	if socketHost.Socket == "" {
 		// Cases: 4B
-		socket, _ := socketLocation()
-		// socket is empty if it isn't found, so assignment here is at worst a no-op
-		log.Debugf("Defaulting container socket to default '%s'", socket)
-		socketHost.Socket = socket
+		log.Debugf("Defaulting container socket to default '%s'", socketHost.Host)
+		socketHost.Socket = socketHost.Host
 	}
 
 	// Exit if both the DOCKER_HOST and socket are fulfilled
@@ -118,17 +152,5 @@ func GetSocketAndHost(containerSocket string) (SocketAndHost, error) {
 		return socketHost, nil
 	}
 
-	// Set a sane DOCKER_HOST default if we can
-	if isDockerHostURI(socketHost.Socket) {
-		// Cases: 3B
-		log.Debugf("Setting DOCKER_HOST to container socket '%s'", socketHost.Socket)
-		socketHost.Host = socketHost.Socket
-		// Both DOCKER_HOST and container socket are valid; short-circuit exit
-		return socketHost, nil
-	}
-
-	// Here there is no DOCKER_HOST _and_ the supplied container socket is not a valid URI (either invalid or a file path)
-	// Cases: 2B <- but is already handled at the top
-	// I.e. this path should never be taken
 	return SocketAndHost{}, fmt.Errorf("no DOCKER_HOST and an invalid container socket '%s'", socketHost.Socket)
 }

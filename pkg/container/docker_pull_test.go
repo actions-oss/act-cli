@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/docker/cli/cli/config"
+	"github.com/moby/moby/api/pkg/authconfig"
+	specs "github.com/opencontainers/image-spec/specs-go/v1"
 
 	log "github.com/sirupsen/logrus"
 	assert "github.com/stretchr/testify/assert"
@@ -36,26 +38,40 @@ func TestCleanImage(t *testing.T) {
 
 func TestGetImagePullOptions(t *testing.T) {
 	ctx := context.Background()
+	originalDir := config.Dir()
+	t.Cleanup(func() {
+		config.SetDir(originalDir)
+	})
 
 	config.SetDir("/non-existent/docker")
+	t.Setenv("DOCKER_CONFIG", "/non-existent/docker")
 
 	options, err := getImagePullOptions(ctx, NewDockerPullExecutorInput{})
-	assert.Nil(t, err, "Failed to create ImagePullOptions")
-	assert.Equal(t, "", options.RegistryAuth, "RegistryAuth should be empty if no username or password is set")
+	assert.NoError(t, err, "Failed to create ImagePullOptions")
+	assert.Empty(t, options.RegistryAuth, "RegistryAuth should be empty if no username or password is set")
 
 	options, err = getImagePullOptions(ctx, NewDockerPullExecutorInput{
-		Image:    "",
+		Image:    "alpine:latest",
+		Platform: "linux/amd64",
 		Username: "username",
 		Password: "password",
 	})
-	assert.Nil(t, err, "Failed to create ImagePullOptions")
-	assert.Equal(t, "eyJ1c2VybmFtZSI6InVzZXJuYW1lIiwicGFzc3dvcmQiOiJwYXNzd29yZCJ9", options.RegistryAuth, "Username and Password should be provided")
+	assert.NoError(t, err, "Failed to create ImagePullOptions")
+	assert.Equal(t, []specs.Platform{{OS: "linux", Architecture: "amd64"}}, options.Platforms)
+	explicitAuth, err := authconfig.Decode(options.RegistryAuth)
+	assert.NoError(t, err)
+	assert.Equal(t, "username", explicitAuth.Username)
+	assert.Equal(t, "password", explicitAuth.Password)
 
 	config.SetDir("testdata/docker-pull-options")
 
 	options, err = getImagePullOptions(ctx, NewDockerPullExecutorInput{
 		Image: "nektos/act",
 	})
-	assert.Nil(t, err, "Failed to create ImagePullOptions")
-	assert.Equal(t, "eyJ1c2VybmFtZSI6InVzZXJuYW1lIiwicGFzc3dvcmQiOiJwYXNzd29yZFxuIiwic2VydmVyYWRkcmVzcyI6Imh0dHBzOi8vaW5kZXguZG9ja2VyLmlvL3YxLyJ9", options.RegistryAuth, "RegistryAuth should be taken from local docker config")
+	assert.NoError(t, err, "Failed to create ImagePullOptions")
+	dockerAuth, err := authconfig.Decode(options.RegistryAuth)
+	assert.NoError(t, err)
+	assert.Equal(t, "username", dockerAuth.Username)
+	assert.Equal(t, "password\n", dockerAuth.Password)
+	assert.Equal(t, "https://index.docker.io/v1/", dockerAuth.ServerAddress)
 }

@@ -16,8 +16,8 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/adrg/xdg"
 	"github.com/andreaskoch/go-fswatch"
-	docker_container "github.com/docker/docker/api/types/container"
 	"github.com/joho/godotenv"
+	docker_container "github.com/moby/moby/api/types/container"
 	gitignore "github.com/sabhiram/go-gitignore"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -403,7 +403,7 @@ func newRunCommand(ctx context.Context, input *Input) func(*cobra.Command, []str
 			return listOptions(cmd)
 		}
 
-		if ret, err := container.GetSocketAndHost(input.containerDaemonSocket); err != nil {
+		if ret, err := container.GetSocketAndHost(input.containerDaemonSocket); err != nil { //nolint:contextcheck
 			log.Warnf("Couldn't get a valid docker connection: %+v", err)
 		} else {
 			os.Setenv("DOCKER_HOST", ret.Host)
